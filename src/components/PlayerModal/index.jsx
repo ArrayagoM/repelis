@@ -169,7 +169,14 @@ export default function PlayerModal() {
     const h = (e) => { if (e.key === 'Escape') handleClose() }
     window.addEventListener('keydown', h)
     document.body.style.overflow = 'hidden'
-    return () => { window.removeEventListener('keydown', h); document.body.style.overflow = '' }
+    // Marca al body para que el CSS apague overlays/blur que comen GPU
+    // mientras el video se reproduce (noise-overlay, glass, etc.)
+    document.body.classList.add('player-active')
+    return () => {
+      window.removeEventListener('keydown', h)
+      document.body.style.overflow = ''
+      document.body.classList.remove('player-active')
+    }
   }, [isOpen, handleClose])
 
   // PostMessage de cualquier player que reporte 'play' / 'playing'
@@ -252,7 +259,7 @@ export default function PlayerModal() {
           key="bg"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/92 backdrop-blur-2xl p-3 sm:p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-3 sm:p-4"
           onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
         >
           <motion.div
@@ -494,6 +501,14 @@ export default function PlayerModal() {
                 importance="high"
                 onLoad={onIframeLoad}
                 onError={onIframeError}
+                style={{
+                  // Fuerza al iframe a su propia capa de GPU para que el
+                  // browser no recomponga el video con cada repaint del DOM.
+                  transform: 'translateZ(0)',
+                  willChange: 'transform',
+                  contain: 'layout paint',
+                  backfaceVisibility: 'hidden',
+                }}
                 {...(src?.sandbox ? { sandbox: src.sandbox } : {})}
               />
             </div>

@@ -80,6 +80,16 @@ body {
   background-size: 200px 200px;
 }
 
+/* ── Player activo: apagar todo lo que come GPU ──────────
+   Cuando el modal del reproductor está abierto, el browser no debería
+   gastar ciclos componiendo overlays decorativos sobre el iframe del
+   video. Apagamos noise + bajamos el blur de glass al mínimo. */
+body.player-active .noise-overlay { display: none; }
+body.player-active .glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* ── Reduce motion ────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

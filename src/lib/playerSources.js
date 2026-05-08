@@ -1,19 +1,56 @@
 // ─── EmbedMaster Player ID ────────────────────────────────────────────────
 const EM_ID = 'yw2gr95fzq5ta5k0'
 
-// ⚠️  EmbedMaster NO acepta sandbox — si se lo ponés el player no carga.
+/**
+ * SOURCES está ORDENADA por afinidad con audio español latino.
+ * Los primeros 5 son los que mejor cumplen con doblaje LATAM:
+ *   1. EmbedMaster — multi-idioma con pistas latinas curadas (premium).
+ *   2. VidLink     — acepta lang=es y suele tener LATAM por default.
+ *   3. AutoEmbed   — acepta lang=es, base de datos amplia.
+ *   4. VidFast     — acepta lang=es.
+ *   5. SmashyStream — buen catálogo LATAM.
+ *
+ * El resto va de respaldo. La lista no es estática: si un server "X" funciona
+ * para un usuario, queda recordado en localStorage y arranca por ese la próxima vez.
+ *
+ * ⚠️  EmbedMaster NO acepta sandbox — si se lo ponés, el player no carga.
+ */
 export const SOURCES = [
   {
-    id: 'embedmaster', label: 'EmbedMaster', premium: true,
+    id: 'embedmaster', label: 'EmbedMaster', premium: true, esLat: true,
     movieUrl: (id)       => `https://embedmaster.link/${EM_ID}/movie/${id}`,
     tvUrl:    (id, s, e) => `https://embedmaster.link/${EM_ID}/tv/${id}/${s}/${e}`,
     sandbox: null,
     allowAttr: 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *',
   },
   {
-    id: 'vidsrc', label: 'VidSrc',
-    movieUrl: (id)       => `https://vidsrc.to/embed/movie/${id}`,
-    tvUrl:    (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+    id: 'vidlink', label: 'VidLink', esLat: true,
+    movieUrl: (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=es&primaryColor=E8A020`,
+    tvUrl:    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&primaryColor=E8A020`,
+    sandbox: null,
+  },
+  {
+    id: 'autoembed', label: 'AutoEmbed', esLat: true,
+    movieUrl: (id)       => `https://player.autoembed.cc/embed/movie/${id}?lang=es`,
+    tvUrl:    (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: 'vidfast', label: 'VidFast', esLat: true,
+    movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true&lang=es`,
+    tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es`,
+    sandbox: null,
+  },
+  {
+    id: 'smashy', label: 'SmashyStream', esLat: true,
+    movieUrl: (id)       => `https://player.smashy.stream/movie/${id}?lang=es`,
+    tvUrl:    (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}&lang=es`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: 'multiembed', label: 'MultiEmbed',
+    movieUrl: (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1&lang=es`,
+    tvUrl:    (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}&lang=es`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
@@ -29,33 +66,15 @@ export const SOURCES = [
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
+    id: 'vidsrc', label: 'VidSrc',
+    movieUrl: (id)       => `https://vidsrc.to/embed/movie/${id}`,
+    tvUrl:    (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
     id: 'vidsrcxyz', label: 'VidSrc.xyz',
     movieUrl: (id)       => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
     tvUrl:    (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
-    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
-  },
-  {
-    id: 'vidlink', label: 'VidLink',
-    movieUrl: (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=es&primaryColor=E8A020`,
-    tvUrl:    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&primaryColor=E8A020`,
-    sandbox: null,
-  },
-  {
-    id: 'smashy', label: 'SmashyStream',
-    movieUrl: (id)       => `https://player.smashy.stream/movie/${id}`,
-    tvUrl:    (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}`,
-    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
-  },
-  {
-    id: 'multiembed', label: 'MultiEmbed',
-    movieUrl: (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    tvUrl:    (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
-  },
-  {
-    id: 'autoembed', label: 'AutoEmbed',
-    movieUrl: (id)       => `https://player.autoembed.cc/embed/movie/${id}?lang=es`,
-    tvUrl:    (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
@@ -69,12 +88,6 @@ export const SOURCES = [
     movieUrl: (id)       => `https://www.2embed.cc/embed/${id}`,
     tvUrl:    (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
-  },
-  {
-    id: 'vidfast', label: 'VidFast',
-    movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true`,
-    tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true`,
-    sandbox: null,
   },
 ]
 

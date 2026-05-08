@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { getOrderedSources, buildUrl, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
 
@@ -23,11 +24,15 @@ export default function PlayerPrefetch({
   episode = 1,
   enabled = true,
 }) {
+  // Si el modal está abierto, NO prefetchamos — sería un segundo iframe del
+  // mismo video decodificándose en paralelo, lo que mata FPS de reproducción.
+  const isPlayerOpen = useSelector((s) => s.player.isOpen)
+
   const [armed, setArmed] = useState(false)
   const sourceRef = useRef(null)
 
   useEffect(() => {
-    if (!enabled || !id) {
+    if (!enabled || !id || isPlayerOpen) {
       setArmed(false)
       return
     }
@@ -42,9 +47,9 @@ export default function PlayerPrefetch({
       clearTimeout(t)
       setArmed(false)
     }
-  }, [enabled, id, mediaType, season, episode])
+  }, [enabled, id, mediaType, season, episode, isPlayerOpen])
 
-  if (!armed || !id || !sourceRef.current) return null
+  if (!armed || !id || !sourceRef.current || isPlayerOpen) return null
 
   const top = sourceRef.current
   const url = buildUrl(top, { mediaType, id, season, episode })
