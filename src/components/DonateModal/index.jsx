@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Coffee, Heart, ArrowSquareOut } from '@phosphor-icons/react'
+import CafecitoButton from '../CafecitoButton'
 
 // 💡 Cambiá estos enlaces cuando crees tus cuentas reales.
 // Cafecito: https://cafecito.app/ → registrate y obtené tu URL
@@ -62,6 +63,15 @@ export default function DonateModal({ open, onClose }) {
                 mantenerlo, cualquier aporte cuenta. ¡Gracias!
               </p>
             </div>
+
+            {/* Botón oficial de Cafecito al frente */}
+            <div className="flex justify-center pt-5 pb-2">
+              <CafecitoButton />
+            </div>
+
+            <p className="text-muted/40 text-[10px] text-center font-mono uppercase tracking-widest mt-2">
+              ó también
+            </p>
 
             <div className="p-5 space-y-3">
               {DONATE_OPTIONS.map((opt) => {

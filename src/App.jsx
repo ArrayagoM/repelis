@@ -5,6 +5,7 @@ import Navbar       from './components/Navbar'
 import Footer       from './components/Footer'
 import PlayerModal  from './components/PlayerModal'
 import DonateModal  from './components/DonateModal'
+import FloatingCafecito from './components/FloatingCafecito'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
 import Home         from './pages/Home'
@@ -38,6 +39,7 @@ export default function App() {
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
       <DonateModal open={donateOpen} onClose={() => setDonateOpen(false)} />
+      <FloatingCafecito />
 
       <Suspense fallback={<RouteFallback />}>
         <AnimatePresence mode="wait">

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { FilmSlate, Heart, Code, Coffee } from '@phosphor-icons/react'
+import { FilmSlate, Heart, Code } from '@phosphor-icons/react'
+import CafecitoButton from '../CafecitoButton'
 
 export default function Footer({ onDonateClick }) {
   return (
@@ -53,13 +54,9 @@ export default function Footer({ onDonateClick }) {
               <li><Link to="/dmca"    className="hover:text-gold transition-colors">DMCA / Reclamos</Link></li>
             </ul>
 
-            <button
-              onClick={onDonateClick}
-              className="mt-4 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs font-semibold hover:bg-gold/20 transition-all duration-200"
-            >
-              <Coffee size={12} weight="fill" />
-              Invitanos un café
-            </button>
+            <div className="mt-4">
+              <CafecitoButton />
+            </div>
           </div>
         </div>
 

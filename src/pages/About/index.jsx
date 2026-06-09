@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Code, Lightning, ShieldStar, GithubLogo, Globe, Coffee } from '@phosphor-icons/react'
+import CafecitoButton from '../../components/CafecitoButton'
 
 export default function About() {
   return (
@@ -81,15 +82,10 @@ export default function About() {
               Repelis se banca con horas de mi tiempo y un hosting humilde.
               Si te gusta y querés ayudar a mantenerlo vivo, podés invitarme un café en Cafecito.
             </p>
-            <a
-              href="https://cafecito.app/tintech"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi transition-colors"
-            >
-              <Coffee size={14} weight="fill" />
-              Invitar un café
-            </a>
+            <CafecitoButton />
+            <p className="text-muted/50 text-[10px] mt-2 font-mono">
+              Se procesa con Mercado Pago. 100% va al desarrollador.
+            </p>
           </div>
 
           {/* Contacto */}
