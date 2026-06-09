@@ -20,6 +20,7 @@ const About       = lazy(() => import('./pages/About'))
 const Terms       = lazy(() => import('./pages/Terms'))
 const Privacy     = lazy(() => import('./pages/Privacy'))
 const DMCA        = lazy(() => import('./pages/DMCA'))
+const Admin       = lazy(() => import('./pages/Admin'))
 
 function RouteFallback() {
   return (
@@ -75,6 +76,9 @@ export default function App() {
             <Route path="/terms"   element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/dmca"    element={<DMCA />} />
+
+            {/* Admin (gateado con PIN) */}
+            <Route path="/admin"   element={<Admin />} />
 
             {/* Movies clásicos */}
             <Route path="/populares"      element={<Catalog type="populares" />} />
