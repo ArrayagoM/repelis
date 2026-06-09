@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown } from '@phosphor-icons/react'
 import { fetchSearch } from '../../store/slices/searchSlice'
+import NavSearch from '../NavSearch'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -206,6 +207,9 @@ export default function Navbar({ onDonateClick }) {
             </span>
           </Link>
 
+          {/* Buscador inline (desktop) — entre el logo y los menús */}
+          <NavSearch className="hidden lg:block w-56 xl:w-72 flex-shrink-0" />
+
           {/* Desktop Mega Menu Links */}
           <div className="hidden lg:flex items-center gap-0.5">
             <Link to="/"
@@ -242,10 +246,11 @@ export default function Navbar({ onDonateClick }) {
               Café
             </motion.button>
 
+            {/* Botón lupa solo en mobile/tablet — en desktop está el input inline */}
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={() => setSearchOpen(true)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:text-gold hover:bg-gold/10 transition-all duration-300"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:text-gold hover:bg-gold/10 transition-all duration-300 lg:hidden"
               aria-label="Buscar"
             >
               <MagnifyingGlass size={18} weight="bold" />
