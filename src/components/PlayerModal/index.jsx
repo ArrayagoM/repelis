@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, FilmSlate, ArrowClockwise, CaretRight, CaretLeft,
   SmileySad, WifiLow, Subtitles, Info, Star,
-  SkipForward, SkipBack,
+  SkipForward, SkipBack, DownloadSimple, Warning,
 } from '@phosphor-icons/react'
 import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
 import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
+import { buildDownloadUrl, wasDisclaimerShown, markDisclaimerShown } from '../../lib/downloadLinks'
 
 // ─── Timeouts (clave para velocidad) ────────────────────────────────────
 // Antes: 8s en buena red, 16s en lenta. El usuario esperaba demasiado para
@@ -78,6 +79,7 @@ export default function PlayerModal() {
   const [phase,     setPhase]     = useState('loading')
   const [progress,  setProgress]  = useState(0)
   const [showLang,  setShowLang]  = useState(false)
+  const [showDlConfirm, setShowDlConfirm] = useState(false)
   // TV local state
   const [localSeason,  setLocalSeason]  = useState(initSeason  || 1)
   const [localEpisode, setLocalEpisode] = useState(initEpisode || 1)
@@ -252,6 +254,22 @@ export default function PlayerModal() {
   const isTV = mediaType === 'tv'
   const url = movieId ? buildUrl(src, { mediaType, id: movieId, season: localSeason, episode: localEpisode }) : ''
 
+  const handleDownload = useCallback((providerIdx = 0) => {
+    if (!movieId) return
+    const dlUrl = buildDownloadUrl(
+      { mediaType, id: movieId, season: localSeason, episode: localEpisode },
+      providerIdx,
+    )
+    window.open(dlUrl, '_blank', 'noopener,noreferrer')
+    markDisclaimerShown()
+    setShowDlConfirm(false)
+  }, [movieId, mediaType, localSeason, localEpisode])
+
+  const handleDownloadClick = useCallback(() => {
+    if (wasDisclaimerShown()) handleDownload(0)
+    else setShowDlConfirm(true)
+  }, [handleDownload])
+
   return (
     <AnimatePresence>
       {isOpen && movieId && (
@@ -372,6 +390,10 @@ export default function PlayerModal() {
                 </span>
               </div>
 
+              <button onClick={handleDownloadClick} title="Descargar (externo)"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-gold hover:bg-gold/8 transition-all flex-shrink-0">
+                <DownloadSimple size={13} weight="bold" />
+              </button>
               <button onClick={() => goTo(srcIdx)} title="Recargar"
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-chalk hover:bg-white/5 transition-all flex-shrink-0">
                 <ArrowClockwise size={13} />
@@ -512,6 +534,54 @@ export default function PlayerModal() {
                 {...(src?.sandbox ? { sandbox: src.sandbox } : {})}
               />
             </div>
+
+            {/* ── DIÁLOGO CONFIRMACIÓN DESCARGA ── */}
+            <AnimatePresence>
+              {showDlConfirm && (
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+                  onClick={() => setShowDlConfirm(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
+                    className="max-w-md mx-4 p-5 rounded-2xl bg-[#0E0E18] border border-white/10 shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-start gap-3 mb-4">
+                      <Warning size={20} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-chalk font-display font-semibold text-sm mb-1">Descarga externa</p>
+                        <p className="text-muted text-xs leading-relaxed">
+                          Te vamos a abrir un servidor de terceros (no controlamos su contenido ni su seguridad).
+                          Puede mostrar publicidad agresiva o pop-ups. <strong className="text-chalk/80">No instales nada que te ofrezca.</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setShowDlConfirm(false)}
+                        className="px-4 py-2 rounded-full text-muted text-xs font-semibold hover:text-chalk transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => handleDownload(1)}
+                        className="px-4 py-2 rounded-full border border-white/10 text-muted text-xs font-semibold hover:text-chalk hover:border-white/20 transition-colors"
+                      >
+                        Servidor alternativo
+                      </button>
+                      <button
+                        onClick={() => handleDownload(0)}
+                        className="px-4 py-2 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi transition-colors"
+                      >
+                        Continuar
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* ── BARRA INFERIOR ── */}
             <div className="flex items-center justify-between px-4 py-1.5 bg-[#0A0A14] border-t border-white/[0.03]">

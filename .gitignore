@@ -9,3 +9,4 @@ vite.config.js.timestamp-*.mjs
 .DS_Store
 .vscode
 .idea
+.claude/

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { track } from '../lib/errorMonitor'
 
 const BASE_URL = 'https://api.themoviedb.org/3'
 
@@ -10,6 +11,7 @@ if (!ACCESS_TOKEN && typeof console !== 'undefined') {
 }
 
 export const IMG_BASE     = 'https://image.tmdb.org/t/p'
+export const IMG_W342     = IMG_BASE + '/w342'   // poster más liviano para red lenta
 export const IMG_W500     = IMG_BASE + '/w500'
 export const IMG_W780     = IMG_BASE + '/w780'
 export const IMG_ORIGINAL = IMG_BASE + '/original'
@@ -21,7 +23,38 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   params: { language: 'es-MX' },
+  timeout: 8000,
 })
+
+// ─── Retry con backoff exponencial ──────────────────────────────────────
+// Reintenta 3x con 500ms / 1s / 2s en errores de red o 5xx.
+// 4xx no se reintenta (es problema de la request).
+const MAX_RETRIES = 3
+const BASE_DELAY  = 500
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const cfg = error.config || {}
+    cfg.__retryCount = cfg.__retryCount || 0
+
+    const status = error.response?.status
+    const isNetwork = !error.response
+    const is5xx = status >= 500 && status < 600
+    const should = (isNetwork || is5xx) && cfg.__retryCount < MAX_RETRIES
+
+    if (!should) {
+      track('tmdb', error, { url: cfg.url, status })
+      return Promise.reject(error)
+    }
+
+    cfg.__retryCount += 1
+    await sleep(BASE_DELAY * Math.pow(2, cfg.__retryCount - 1))
+    return api(cfg)
+  },
+)
 
 // Movies
 export const getTrending      = (page = 1) => api.get('/trending/movie/week',  { params: { page } })

@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion'
 import Navbar       from './components/Navbar'
 import PlayerModal  from './components/PlayerModal'
 import ErrorBoundary from './components/ErrorBoundary'
+import ErrorBar     from './components/ErrorBar'
 import Home         from './pages/Home'
 
 // Code splitting — el Home se sirve eager para que el primer paint sea rápido;
@@ -25,6 +26,7 @@ export default function App() {
   const location = useLocation()
   return (
     <ErrorBoundary>
+      <ErrorBar />
       <div className="noise-overlay" aria-hidden="true" />
       <Navbar />
       <PlayerModal />

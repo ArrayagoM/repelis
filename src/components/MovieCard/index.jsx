@@ -3,8 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion } from 'framer-motion'
 import { Play, Star, CalendarBlank, TelevisionSimple } from '@phosphor-icons/react'
-import { IMG_W500 } from '../../api/tmdb'
+import { IMG_W342, IMG_W500 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
+import { getNetworkInfo } from '../../lib/network'
+
+// Detectamos una sola vez (no recomputamos en cada card) si la red es lenta.
+// En red lenta: poster más chico (w342 vs w500) y sin tilt 3D (ahorra paint).
+const _netInfo = typeof window !== 'undefined' ? getNetworkInfo() : { quality: 'unknown', saveData: false }
+const LOW_END = _netInfo.quality === 'slow' || _netInfo.quality === 'moderate' || _netInfo.saveData
 
 export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   const navigate = useNavigate()
@@ -17,12 +23,14 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
 
   if (!movie) return null
 
-  const posterUrl = movie.poster_path ? `${IMG_W500}${movie.poster_path}` : null
+  const posterBase = LOW_END ? IMG_W342 : IMG_W500
+  const posterUrl  = movie.poster_path ? `${posterBase}${movie.poster_path}` : null
   const rating    = movie.vote_average?.toFixed(1) ?? '–'
   const year      = (movie.release_date || movie.first_air_date)?.slice(0, 4) ?? ''
   const title     = movie.title ?? movie.name ?? 'Sin título'
 
   const handleMouseMove = (e) => {
+    if (LOW_END) return                       // sin tilt en red lenta — ahorra paint
     const rect = cardRef.current?.getBoundingClientRect()
     if (!rect) return
     setTilt({

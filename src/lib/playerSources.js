@@ -25,26 +25,26 @@ export const SOURCES = [
   },
   {
     id: 'vidlink', label: 'VidLink', esLat: true,
-    movieUrl: (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=es&primaryColor=E8A020`,
-    tvUrl:    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&primaryColor=E8A020`,
+    movieUrl: (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=es&dub=es-LA&primaryColor=E8A020`,
+    tvUrl:    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&dub=es-LA&primaryColor=E8A020`,
     sandbox: null,
   },
   {
     id: 'autoembed', label: 'AutoEmbed', esLat: true,
-    movieUrl: (id)       => `https://player.autoembed.cc/embed/movie/${id}?lang=es`,
-    tvUrl:    (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es`,
+    movieUrl: (id)       => `https://player.autoembed.cc/embed/movie/${id}?lang=es&audio=spanish`,
+    tvUrl:    (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es&audio=spanish`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
     id: 'vidfast', label: 'VidFast', esLat: true,
-    movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true&lang=es`,
-    tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es`,
+    movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true&lang=es&dub=true`,
+    tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&dub=true`,
     sandbox: null,
   },
   {
     id: 'smashy', label: 'SmashyStream', esLat: true,
-    movieUrl: (id)       => `https://player.smashy.stream/movie/${id}?lang=es`,
-    tvUrl:    (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}&lang=es`,
+    movieUrl: (id)       => `https://player.smashy.stream/movie/${id}?lang=es&audio=spanish`,
+    tvUrl:    (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}&lang=es&audio=spanish`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
@@ -103,16 +103,47 @@ const safeSet = (v) => { try { localStorage.setItem(STORAGE_KEY, v) } catch (_) 
 export const rememberSource = (sourceId) => { if (sourceId) safeSet(sourceId) }
 
 /**
- * Devuelve SOURCES con el último que funcionó al frente.
- * Así el primer iframe que se monta es el que históricamente anduvo,
- * lo que reduce drásticamente el time-to-play.
+ * Devuelve SOURCES con orden compuesto:
+ *   1. Si tenemos ranking de velocidad medido (speedTest cache) → lo usamos.
+ *   2. Caso contrario → orden estático por afinidad LATAM.
+ *   3. Sobre cualquiera, el último que funcionó para el usuario va al frente.
+ *
+ * Importante: cargamos el ranking en forma perezosa para evitar dependencia
+ * circular con speedTest.js.
  */
 export const getOrderedSources = () => {
   const remembered = safeGet()
-  if (!remembered) return SOURCES
-  const idx = SOURCES.findIndex((s) => s.id === remembered)
-  if (idx <= 0) return SOURCES
-  return [SOURCES[idx], ...SOURCES.slice(0, idx), ...SOURCES.slice(idx + 1)]
+
+  // Carga perezosa del ranking
+  let ordered = SOURCES
+  try {
+    const raw = localStorage.getItem('repelis:speed:v1')
+    if (raw) {
+      const { ts, ranking } = JSON.parse(raw)
+      const fresh = ts && Date.now() - ts < 6 * 60 * 60 * 1000
+      if (fresh && Array.isArray(ranking)) {
+        const byId = new Map(SOURCES.map((s) => [s.id, s]))
+        const rankedIds = new Set(ranking.map((r) => r.id))
+        // 1) Mejores latinos del ranking primero
+        const latinos = ranking.filter((r) => r.ok && byId.get(r.id)?.esLat).map((r) => byId.get(r.id))
+        // 2) Resto del ranking (no-latinos pero ok)
+        const others  = ranking.filter((r) => r.ok && !byId.get(r.id)?.esLat).map((r) => byId.get(r.id))
+        // 3) Los que fallaron en la medición, al final
+        const failed  = ranking.filter((r) => !r.ok).map((r) => byId.get(r.id))
+        // 4) Cualquiera no medido aún
+        const unmeasured = SOURCES.filter((s) => !rankedIds.has(s.id))
+        ordered = [...latinos, ...others, ...unmeasured, ...failed].filter(Boolean)
+      }
+    }
+  } catch {}
+
+  // El último servidor que funcionó al frente
+  if (remembered) {
+    const idx = ordered.findIndex((s) => s.id === remembered)
+    if (idx > 0) ordered = [ordered[idx], ...ordered.slice(0, idx), ...ordered.slice(idx + 1)]
+  }
+
+  return ordered
 }
 
 export const buildUrl = (source, { mediaType, id, season = 1, episode = 1 }) => {
