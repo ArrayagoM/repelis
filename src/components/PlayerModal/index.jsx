@@ -4,24 +4,24 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, FilmSlate, ArrowClockwise, CaretRight, CaretLeft,
   SmileySad, WifiLow, Subtitles, Info, Star,
-  SkipForward, SkipBack, DownloadSimple, Warning,
+  SkipForward, SkipBack, ArrowSquareOut, Warning,
 } from '@phosphor-icons/react'
 import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
 import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
-import { buildDownloadUrl, wasDisclaimerShown, markDisclaimerShown } from '../../lib/downloadLinks'
 
-// ─── Timeouts (clave para velocidad) ────────────────────────────────────
-// Antes: 8s en buena red, 16s en lenta. El usuario esperaba demasiado para
-// que se descartara un servidor caído. Ahora: 3.5s (good) / 5s (moderate)
-// / 7s (slow). En 1 Mbps un buen embed ya devolvió onLoad en <2s.
-const NEXT_MS_GOOD = 3500
-const NEXT_MS_MODERATE = 5000
-const NEXT_MS_SLOW = 7000
+// ─── Timeouts (balance entre velocidad y NO interrumpir reproducción) ──
+// Lección: timeouts agresivos cortaban videos que tardaban en arrancar.
+// Ahora damos mucho más tiempo y mostramos un botón "cambiar servidor"
+// en vez de cambiarlo automáticamente. El auto-next solo aplica si el
+// iframe NUNCA dispara onLoad (servidor totalmente caído).
+const NEXT_MS_GOOD     = 12000
+const NEXT_MS_MODERATE = 16000
+const NEXT_MS_SLOW     = 22000
 
-// Tras cuánto tiempo de iframe abierto sin error consideramos "ya está reproduciendo"
-// y lo dejamos quieto sin importar interacción.
-const ASSUME_PLAYING_MS = 6000
+// Tras cuánto tiempo de iframe abierto consideramos éxito por defecto
+// (a menos que el usuario o postMessage diga lo contrario antes).
+const ASSUME_PLAYING_MS = 10000
 
 // ─── Guards ──────────────────────────────────────────────────────────────
 const useWindowFocusGuard = (active) => {
@@ -79,7 +79,7 @@ export default function PlayerModal() {
   const [phase,     setPhase]     = useState('loading')
   const [progress,  setProgress]  = useState(0)
   const [showLang,  setShowLang]  = useState(false)
-  const [showDlConfirm, setShowDlConfirm] = useState(false)
+  const [showExtConfirm, setShowExtConfirm] = useState(false)
   // TV local state
   const [localSeason,  setLocalSeason]  = useState(initSeason  || 1)
   const [localEpisode, setLocalEpisode] = useState(initEpisode || 1)
@@ -141,7 +141,11 @@ export default function PlayerModal() {
       setSrcIdx(0)
       setKey((k) => k + 1)
       setPhase('loading')
-      setShowLang(false)
+      // Mostramos el tip de audio español por 10s al abrir.
+      // El usuario lo puede cerrar con la X.
+      setShowLang(true)
+      const t = setTimeout(() => setShowLang(false), 10_000)
+      return () => clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, movieId])
@@ -229,20 +233,9 @@ export default function PlayerModal() {
     }, autoNextMs)
   }, [autoNextMs, sources, srcIdx, lockSuccess, stopTimers])
 
-  const onIframeError = useCallback(() => {
-    // El servidor murió de forma explícita → saltar inmediato.
-    if (successRef.current) return
-    stopTimers()
-    setSrcIdx((cur) => {
-      const next = cur + 1
-      if (next >= sources.length) { setPhase('failed'); return cur }
-      successRef.current = false
-      setKey((k) => k + 1)
-      setPhase('loading')
-      setShowLang(false)
-      return next
-    })
-  }, [sources.length, stopTimers])
+  // El onError de iframe es muy poco confiable (dispara falsos positivos
+  // incluso en servidores que cargan bien). Lo dejamos como no-op a propósito.
+  const onIframeError = useCallback(() => {}, [])
 
   const onUserInteract = useCallback(() => {
     // Cualquier mouse/click del usuario sobre el player es un voto fuerte
@@ -254,21 +247,23 @@ export default function PlayerModal() {
   const isTV = mediaType === 'tv'
   const url = movieId ? buildUrl(src, { mediaType, id: movieId, season: localSeason, episode: localEpisode }) : ''
 
-  const handleDownload = useCallback((providerIdx = 0) => {
-    if (!movieId) return
-    const dlUrl = buildDownloadUrl(
-      { mediaType, id: movieId, season: localSeason, episode: localEpisode },
-      providerIdx,
-    )
-    window.open(dlUrl, '_blank', 'noopener,noreferrer')
-    markDisclaimerShown()
-    setShowDlConfirm(false)
-  }, [movieId, mediaType, localSeason, localEpisode])
+  // Abre el URL actual del servidor en una pestaña nueva.
+  // Esto sirve para: (1) usar extensiones de descarga del browser (Video
+  // DownloadHelper, etc.), (2) pasar el iframe a fullscreen del servidor,
+  // (3) debug rápido cuando el embed se rompe.
+  const handleOpenExternal = useCallback(() => {
+    if (!url) return
+    try { localStorage.setItem('repelis:extConfirm:v1', '1') } catch {}
+    window.open(url, '_blank', 'noopener,noreferrer')
+    setShowExtConfirm(false)
+  }, [url])
 
-  const handleDownloadClick = useCallback(() => {
-    if (wasDisclaimerShown()) handleDownload(0)
-    else setShowDlConfirm(true)
-  }, [handleDownload])
+  const handleExternalClick = useCallback(() => {
+    let confirmed = false
+    try { confirmed = localStorage.getItem('repelis:extConfirm:v1') === '1' } catch {}
+    if (confirmed) handleOpenExternal()
+    else setShowExtConfirm(true)
+  }, [handleOpenExternal])
 
   return (
     <AnimatePresence>
@@ -390,9 +385,9 @@ export default function PlayerModal() {
                 </span>
               </div>
 
-              <button onClick={handleDownloadClick} title="Descargar (externo)"
+              <button onClick={handleExternalClick} title="Abrir en pestaña externa"
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-gold hover:bg-gold/8 transition-all flex-shrink-0">
-                <DownloadSimple size={13} weight="bold" />
+                <ArrowSquareOut size={13} weight="bold" />
               </button>
               <button onClick={() => goTo(srcIdx)} title="Recargar"
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-chalk hover:bg-white/5 transition-all flex-shrink-0">
@@ -415,11 +410,14 @@ export default function PlayerModal() {
                 >
                   <div className="flex items-start gap-3 px-4 py-3">
                     <Info size={14} className="text-gold flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-1">
-                      <p className="text-chalk/80 text-xs font-semibold">Audio en español</p>
-                      <p className="text-muted/65 text-[11px] leading-relaxed">
-                        EmbedMaster (fuente 1) tiene los mejores servidores Premium con multi-idioma. Si la pista de doblaje existe, la vas a encontrar ahí primero.
-                        <span className="text-gold/70 ml-1">Buscá el ícono de audio 🔊 en el player para cambiar idioma.</span>
+                    <div className="flex-1 space-y-1.5">
+                      <p className="text-chalk/85 text-xs font-semibold">Audio en español — leé esto</p>
+                      <p className="text-muted/75 text-[11px] leading-relaxed">
+                        El idioma <strong className="text-chalk/85">se cambia dentro del player</strong>, no desde acá.
+                        Cuando arranque el video, buscá en sus controles el ícono <strong className="text-gold/90">🔊 Audio</strong> o <strong className="text-gold/90">CC</strong> y elegí "Español" o "Latino".
+                      </p>
+                      <p className="text-muted/55 text-[10px] leading-relaxed">
+                        Si este servidor no tiene doblaje, probá el siguiente con los números de arriba (1, 2, 3…). EmbedMaster y VidLink suelen tener LATAM.
                       </p>
                     </div>
                     <button onClick={() => setShowLang(false)} className="text-muted/30 hover:text-chalk transition-colors">
@@ -535,13 +533,13 @@ export default function PlayerModal() {
               />
             </div>
 
-            {/* ── DIÁLOGO CONFIRMACIÓN DESCARGA ── */}
+            {/* ── DIÁLOGO ABRIR EN PESTAÑA EXTERNA ── */}
             <AnimatePresence>
-              {showDlConfirm && (
+              {showExtConfirm && (
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 backdrop-blur-sm"
-                  onClick={() => setShowDlConfirm(false)}
+                  onClick={() => setShowExtConfirm(false)}
                 >
                   <motion.div
                     initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
@@ -551,31 +549,28 @@ export default function PlayerModal() {
                     <div className="flex items-start gap-3 mb-4">
                       <Warning size={20} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-chalk font-display font-semibold text-sm mb-1">Descarga externa</p>
-                        <p className="text-muted text-xs leading-relaxed">
-                          Te vamos a abrir un servidor de terceros (no controlamos su contenido ni su seguridad).
-                          Puede mostrar publicidad agresiva o pop-ups. <strong className="text-chalk/80">No instales nada que te ofrezca.</strong>
+                        <p className="text-chalk font-display font-semibold text-sm mb-1">Abrir en pestaña externa</p>
+                        <p className="text-muted text-xs leading-relaxed mb-2">
+                          Vamos a abrir el reproductor de <strong className="text-chalk/80">{src?.label}</strong> en una pestaña nueva.
+                          Es un servidor de terceros — puede mostrar publicidad o pop-ups. <strong className="text-chalk/80">No instales nada que te ofrezca.</strong>
+                        </p>
+                        <p className="text-muted/70 text-xs leading-relaxed">
+                          <strong className="text-gold/80">¿Querés descargar?</strong> Instalá la extensión <em>"Video DownloadHelper"</em> en tu navegador y, en la pestaña externa, va a aparecer el ícono para bajar el video.
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
                       <button
-                        onClick={() => setShowDlConfirm(false)}
+                        onClick={() => setShowExtConfirm(false)}
                         className="px-4 py-2 rounded-full text-muted text-xs font-semibold hover:text-chalk transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
-                        onClick={() => handleDownload(1)}
-                        className="px-4 py-2 rounded-full border border-white/10 text-muted text-xs font-semibold hover:text-chalk hover:border-white/20 transition-colors"
-                      >
-                        Servidor alternativo
-                      </button>
-                      <button
-                        onClick={() => handleDownload(0)}
+                        onClick={handleOpenExternal}
                         className="px-4 py-2 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi transition-colors"
                       >
-                        Continuar
+                        Abrir
                       </button>
                     </div>
                   </motion.div>
