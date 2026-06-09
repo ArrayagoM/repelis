@@ -27,8 +27,6 @@ const api = axios.create({
 })
 
 // ─── Retry con backoff exponencial ──────────────────────────────────────
-// Reintenta 3x con 500ms / 1s / 2s en errores de red o 5xx.
-// 4xx no se reintenta (es problema de la request).
 const MAX_RETRIES = 3
 const BASE_DELAY  = 500
 
@@ -56,8 +54,11 @@ api.interceptors.response.use(
   },
 )
 
-// Movies
+// ════════════════════════════════════════════════════════════════════════
+//  MOVIES — endpoints clásicos
+// ════════════════════════════════════════════════════════════════════════
 export const getTrending      = (page = 1) => api.get('/trending/movie/week',  { params: { page } })
+export const getTrendingDay   = (page = 1) => api.get('/trending/movie/day',   { params: { page } })
 export const getPopular       = (page = 1) => api.get('/movie/popular',        { params: { page } })
 export const getTopRated      = (page = 1) => api.get('/movie/top_rated',      { params: { page } })
 export const getNowPlaying    = (page = 1) => api.get('/movie/now_playing',    { params: { page } })
@@ -69,7 +70,9 @@ export const getSimilarMovies = (id, page = 1) => api.get('/movie/' + id + '/sim
 export const getMoviesByGenre = (genreId, page = 1) =>
   api.get('/discover/movie', { params: { with_genres: genreId, sort_by: 'popularity.desc', page } })
 
-// TV Shows
+// ════════════════════════════════════════════════════════════════════════
+//  TV — endpoints clásicos
+// ════════════════════════════════════════════════════════════════════════
 export const getTrendingTV    = (page = 1) => api.get('/trending/tv/week',   { params: { page } })
 export const getPopularTV     = (page = 1) => api.get('/tv/popular',         { params: { page } })
 export const getTopRatedTV    = (page = 1) => api.get('/tv/top_rated',       { params: { page } })
@@ -81,46 +84,183 @@ export const getTVVideos      = (id)       => api.get('/tv/' + id + '/videos', {
 export const getSimilarTV     = (id, page = 1) => api.get('/tv/' + id + '/similar', { params: { page } })
 export const getTVSeason      = (id, season)   => api.get('/tv/' + id + '/season/' + season)
 
-// Anime (Animation genre=16, origin JP)
+// ════════════════════════════════════════════════════════════════════════
+//  ANIME / K-DRAMA / CLÁSICOS
+// ════════════════════════════════════════════════════════════════════════
 export const getAnime = (page = 1) =>
-  api.get('/discover/tv', {
-    params: { with_genres: 16, with_origin_country: 'JP', sort_by: 'popularity.desc', page },
-  })
-
+  api.get('/discover/tv', { params: { with_genres: 16, with_origin_country: 'JP', sort_by: 'popularity.desc', page } })
 export const getAnimeMovies = (page = 1) =>
-  api.get('/discover/movie', {
-    params: { with_genres: 16, with_origin_country: 'JP', sort_by: 'popularity.desc', page },
-  })
-
-// K-Drama
+  api.get('/discover/movie', { params: { with_genres: 16, with_origin_country: 'JP', sort_by: 'popularity.desc', page } })
 export const getKDrama = (page = 1) =>
-  api.get('/discover/tv', {
-    params: { with_origin_country: 'KR', sort_by: 'popularity.desc', page },
-  })
-
-// Classics (well-rated, pre-1995)
+  api.get('/discover/tv', { params: { with_origin_country: 'KR', sort_by: 'popularity.desc', page } })
 export const getClassics = (page = 1) =>
   api.get('/discover/movie', {
+    params: { 'vote_average.gte': 7.5, 'vote_count.gte': 1000, 'release_date.lte': '1994-12-31', sort_by: 'vote_average.desc', page },
+  })
+
+// ════════════════════════════════════════════════════════════════════════
+//  MOVIES — por género (IDs oficiales de TMDB)
+// ════════════════════════════════════════════════════════════════════════
+const movieByGenre = (genreId) => (page = 1) =>
+  api.get('/discover/movie', { params: { with_genres: genreId, sort_by: 'popularity.desc', page, 'vote_count.gte': 50 } })
+
+export const getAction       = movieByGenre(28)
+export const getAdventure    = movieByGenre(12)
+export const getAnimation    = movieByGenre(16)
+export const getComedy       = movieByGenre(35)
+export const getCrime        = movieByGenre(80)
+export const getDocumentary  = movieByGenre(99)
+export const getDrama        = movieByGenre(18)
+export const getFamily       = movieByGenre(10751)
+export const getFantasy      = movieByGenre(14)
+export const getHistory      = movieByGenre(36)
+export const getHorror       = movieByGenre(27)
+export const getMusic        = movieByGenre(10402)
+export const getMystery      = movieByGenre(9648)
+export const getRomance      = movieByGenre(10749)
+export const getSciFi        = movieByGenre(878)
+export const getThriller     = movieByGenre(53)
+export const getWar          = movieByGenre(10752)
+export const getWestern      = movieByGenre(37)
+
+// ════════════════════════════════════════════════════════════════════════
+//  TV — por género
+// ════════════════════════════════════════════════════════════════════════
+const tvByGenre = (genreId) => (page = 1) =>
+  api.get('/discover/tv', { params: { with_genres: genreId, sort_by: 'popularity.desc', page, 'vote_count.gte': 20 } })
+
+export const getTVAction      = tvByGenre(10759)   // Action & Adventure
+export const getTVComedy      = tvByGenre(35)
+export const getTVCrime       = tvByGenre(80)
+export const getTVDocumentary = tvByGenre(99)
+export const getTVDrama       = tvByGenre(18)
+export const getTVFamily      = tvByGenre(10751)
+export const getTVKids        = tvByGenre(10762)
+export const getTVMystery     = tvByGenre(9648)
+export const getTVReality     = tvByGenre(10764)
+export const getTVSciFi       = tvByGenre(10765)   // Sci-Fi & Fantasy
+export const getTVSoap        = tvByGenre(10766)   // Telenovela
+export const getTVTalk        = tvByGenre(10767)
+export const getTVWar         = tvByGenre(10768)
+export const getTVWestern     = tvByGenre(37)
+
+// ════════════════════════════════════════════════════════════════════════
+//  POR AÑO / DÉCADA
+// ════════════════════════════════════════════════════════════════════════
+const currentYear = new Date().getFullYear()
+
+export const getYear = (year) => (page = 1) =>
+  api.get('/discover/movie', { params: { primary_release_year: year, sort_by: 'popularity.desc', page } })
+
+export const getThisYear     = getYear(currentYear)
+export const getLastYear     = getYear(currentYear - 1)
+
+export const getDecade = (fromYear, toYear) => (page = 1) =>
+  api.get('/discover/movie', {
     params: {
-      'vote_average.gte': 7.5,
-      'vote_count.gte': 1000,
-      'release_date.lte': '1994-12-31',
+      'primary_release_date.gte': `${fromYear}-01-01`,
+      'primary_release_date.lte': `${toYear}-12-31`,
+      'vote_count.gte': 100,
       sort_by: 'vote_average.desc',
       page,
     },
   })
 
-// Genres
+export const get2020s = getDecade(2020, 2029)
+export const get2010s = getDecade(2010, 2019)
+export const get2000s = getDecade(2000, 2009)
+export const get1990s = getDecade(1990, 1999)
+export const get1980s = getDecade(1980, 1989)
+export const get1970s = getDecade(1970, 1979)
+
+// ════════════════════════════════════════════════════════════════════════
+//  POR PAÍS / REGIÓN
+// ════════════════════════════════════════════════════════════════════════
+const movieByCountry = (countries) => (page = 1) =>
+  api.get('/discover/movie', { params: { with_origin_country: countries, sort_by: 'popularity.desc', page } })
+
+export const getMoviesLatam      = movieByCountry('MX|AR|CO|CL|PE|VE|UY|EC|BO|PY')
+export const getMoviesSpain      = movieByCountry('ES')
+export const getMoviesUS         = movieByCountry('US')
+export const getMoviesFrance     = movieByCountry('FR')
+export const getMoviesItaly      = movieByCountry('IT')
+export const getMoviesUK         = movieByCountry('GB')
+export const getMoviesIndia      = movieByCountry('IN')   // Bollywood
+export const getMoviesJapan      = movieByCountry('JP')
+export const getMoviesKorea      = movieByCountry('KR')
+export const getMoviesChina      = movieByCountry('CN|HK|TW')
+
+// ════════════════════════════════════════════════════════════════════════
+//  POR PROVEEDOR DE STREAMING (en región MX)
+//  IDs oficiales de TMDB: 8=Netflix, 9=Prime, 337=Disney+, 384=HBO Max,
+//  350=Apple TV+, 531=Paramount+, 283=Crunchyroll
+// ════════════════════════════════════════════════════════════════════════
+const byProvider = (providerId, kind = 'movie') => (page = 1) =>
+  api.get(`/discover/${kind}`, {
+    params: {
+      with_watch_providers: providerId,
+      watch_region: 'MX',
+      sort_by: 'popularity.desc',
+      page,
+    },
+  })
+
+export const getNetflixMovies = byProvider(8, 'movie')
+export const getNetflixTV     = byProvider(8, 'tv')
+export const getPrimeMovies   = byProvider(9, 'movie')
+export const getPrimeTV       = byProvider(9, 'tv')
+export const getDisneyMovies  = byProvider(337, 'movie')
+export const getDisneyTV      = byProvider(337, 'tv')
+export const getHBOMovies     = byProvider(384, 'movie')
+export const getHBOTV         = byProvider(384, 'tv')
+export const getAppleTVMovies = byProvider(350, 'movie')
+export const getAppleTVShows  = byProvider(350, 'tv')
+export const getParamountMovies = byProvider(531, 'movie')
+export const getParamountTV   = byProvider(531, 'tv')
+export const getCrunchyroll   = byProvider(283, 'tv')
+
+// ════════════════════════════════════════════════════════════════════════
+//  POR ESTUDIO / COMPAÑÍA (with_companies)
+//  IDs: 2=Disney, 3=Pixar, 33=Universal, 174=WB, 25=20th Century,
+//  420=Marvel, 9993=DC, 10342=Studio Ghibli, 11=Lucasfilm, 21=Metro-Goldwyn
+// ════════════════════════════════════════════════════════════════════════
+const byCompany = (companyId) => (page = 1) =>
+  api.get('/discover/movie', { params: { with_companies: companyId, sort_by: 'popularity.desc', page } })
+
+export const getMarvel    = byCompany(420)
+export const getDC        = byCompany(9993)
+export const getPixar     = byCompany(3)
+export const getGhibli    = byCompany(10342)
+export const getDisneyClassic = byCompany(2)
+export const getLucasfilm = byCompany(11)
+
+// ════════════════════════════════════════════════════════════════════════
+//  KIDS / FAMILIAR (rating estricto)
+// ════════════════════════════════════════════════════════════════════════
+export const getKidsMovies = (page = 1) =>
+  api.get('/discover/movie', {
+    params: {
+      with_genres: '10751,16',          // Familia + Animación
+      certification_country: 'US',
+      'certification.lte': 'PG',
+      sort_by: 'popularity.desc',
+      page,
+    },
+  })
+
+// ════════════════════════════════════════════════════════════════════════
+//  GENRES (metadata)
+// ════════════════════════════════════════════════════════════════════════
 export const getGenres   = () => api.get('/genre/movie/list')
 export const getTVGenres = () => api.get('/genre/tv/list')
 
-// Search
+// ════════════════════════════════════════════════════════════════════════
+//  SEARCH
+// ════════════════════════════════════════════════════════════════════════
 export const searchMovies = (query, page = 1) =>
   api.get('/search/movie', { params: { query, page, include_adult: false } })
-
 export const searchTV = (query, page = 1) =>
   api.get('/search/tv', { params: { query, page, include_adult: false } })
-
 export const searchMulti = (query, page = 1) =>
   api.get('/search/multi', { params: { query, page, include_adult: false } })
 

@@ -2,14 +2,133 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Television, Star } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown } from '@phosphor-icons/react'
 import { fetchSearch } from '../../store/slices/searchSlice'
 
-export default function Navbar() {
+// Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
+const MEGA_MENU = {
+  'Películas': {
+    'Principal': [
+      ['Más populares',     '/populares'],
+      ['Tendencias',        '/tendencias'],
+      ['Tendencias de hoy', '/tendencias-hoy'],
+      ['En cartelera',      '/estrenos'],
+      ['Próximos estrenos', '/proximos'],
+      ['Top valoradas',     '/top-valoradas'],
+      ['Clásicos',          '/clasicos'],
+    ],
+    'Géneros': [
+      ['Acción',           '/genero-accion'],
+      ['Comedia',          '/genero-comedia'],
+      ['Drama',            '/genero-drama'],
+      ['Terror',           '/genero-terror'],
+      ['Ciencia Ficción',  '/genero-sci-fi'],
+      ['Romance',          '/genero-romance'],
+      ['Thriller',         '/genero-thriller'],
+      ['Aventura',         '/genero-aventura'],
+      ['Animación',        '/genero-animacion'],
+      ['Documentales',     '/genero-documental'],
+      ['Fantasía',         '/genero-fantasia'],
+      ['Familiar',         '/genero-familia'],
+      ['Crimen',           '/genero-crimen'],
+      ['Misterio',         '/genero-misterio'],
+      ['Bélica',           '/genero-belica'],
+      ['Western',          '/genero-western'],
+      ['Música',           '/genero-musica'],
+      ['Histórico',        '/genero-historia'],
+    ],
+    'Décadas': [
+      ['2020s', '/decada-2020'],
+      ['2010s', '/decada-2010'],
+      ['2000s', '/decada-2000'],
+      ['90s',   '/decada-1990'],
+      ['80s',   '/decada-1980'],
+      ['70s',   '/decada-1970'],
+    ],
+  },
+  'Series': {
+    'Principal': [
+      ['Series populares',     '/series'],
+      ['Series tendencia',     '/series-trending'],
+      ['Series mejor valoradas','/series-top'],
+      ['En emisión hoy',       '/en-emision'],
+      ['En antena',            '/en-antena'],
+    ],
+    'Géneros TV': [
+      ['Acción',     '/series-accion'],
+      ['Comedia',    '/series-comedia'],
+      ['Drama',      '/series-drama'],
+      ['Crimen',     '/series-crimen'],
+      ['Sci-Fi & Fantasía', '/series-sci-fi'],
+      ['Misterio',   '/series-misterio'],
+      ['Documental', '/series-documental'],
+      ['Familia',    '/series-familia'],
+      ['Reality',    '/series-reality'],
+      ['Telenovela', '/series-telenovela'],
+      ['Infantiles', '/series-kids'],
+    ],
+  },
+  'Anime & K-Drama': {
+    'Anime': [
+      ['Anime (series)',       '/anime'],
+      ['Películas de anime',   '/anime-peliculas'],
+      ['Studio Ghibli',        '/ghibli'],
+      ['Crunchyroll',          '/crunchyroll'],
+    ],
+    'Asia': [
+      ['K-Drama',              '/kdrama'],
+      ['Cine japonés',         '/pais-japon'],
+      ['Cine coreano',         '/pais-corea'],
+      ['Cine asiático',        '/pais-china'],
+    ],
+  },
+  'Plataformas': {
+    'Películas': [
+      ['Netflix',     '/netflix'],
+      ['Prime Video', '/prime'],
+      ['Disney+',     '/disney'],
+      ['HBO Max',     '/hbo'],
+      ['Apple TV+',   '/apple-tv'],
+      ['Paramount+',  '/paramount'],
+    ],
+    'Series': [
+      ['Netflix',     '/netflix-series'],
+      ['Prime Video', '/prime-series'],
+      ['Disney+',     '/disney-series'],
+      ['HBO Max',     '/hbo-series'],
+      ['Apple TV+',   '/apple-tv-series'],
+      ['Paramount+',  '/paramount-series'],
+    ],
+  },
+  'Más': {
+    'Franquicias': [
+      ['Marvel (MCU)',         '/marvel'],
+      ['DC',                   '/dc'],
+      ['Pixar',                '/pixar'],
+      ['Disney clásicos',      '/disney-clasicas'],
+      ['Lucasfilm (Star Wars)','/lucasfilm'],
+    ],
+    'Por país': [
+      ['Latinoamérica',  '/pais-latam'],
+      ['España',         '/pais-espana'],
+      ['USA',            '/pais-usa'],
+      ['Francia',        '/pais-francia'],
+      ['Italia',         '/pais-italia'],
+      ['Reino Unido',    '/pais-uk'],
+      ['Bollywood',      '/pais-india'],
+    ],
+    'Especiales': [
+      ['Para los más chicos', '/infantil'],
+    ],
+  },
+}
+
+export default function Navbar({ onDonateClick }) {
   const [scrolled,    setScrolled]    = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
   const [searchOpen,  setSearchOpen]  = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [openMega,    setOpenMega]    = useState(null)
   const inputRef = useRef(null)
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -21,7 +140,9 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => { setMenuOpen(false); setSearchOpen(false) }, [location.pathname])
+  useEffect(() => {
+    setMenuOpen(false); setSearchOpen(false); setOpenMega(null)
+  }, [location.pathname])
 
   useEffect(() => {
     if (searchOpen && inputRef.current) inputRef.current.focus()
@@ -29,7 +150,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const handler = (e) => {
-      if (e.key === 'Escape') { setMenuOpen(false); setSearchOpen(false) }
+      if (e.key === 'Escape') { setMenuOpen(false); setSearchOpen(false); setOpenMega(null) }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -44,43 +165,23 @@ export default function Navbar() {
     setSearchQuery('')
   }
 
-  const navLinks = [
-    { label: 'Inicio',    path: '/',            icon: null },
-    { label: 'Películas', path: '/populares',   icon: FilmSlate },
-    { label: 'Series',    path: '/series',      icon: Television },
-    { label: 'Anime',     path: '/anime',       icon: Star },
-    { label: 'K-Drama',   path: '/kdrama',      icon: null },
-    { label: 'Clásicos',  path: '/clasicos',    icon: null },
-  ]
-
-  const isActive = (path) => {
-    if (path === '/') return location.pathname === '/'
-    return location.pathname.startsWith(path)
-  }
-
   return (
     <>
-      {/* ── Floating Pill Navbar ── */}
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl"
+        className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-6xl"
         style={{ willChange: 'transform' }}
+        onMouseLeave={() => setOpenMega(null)}
       >
-        <div
-          className={`
-            flex items-center justify-between px-5 py-3 rounded-full
-            transition-all duration-500
-            ${scrolled
-              ? 'glass shadow-[0_8px_32px_rgba(0,0,0,0.6)]'
-              : 'bg-transparent border border-white/0'
-            }
-          `}
-        >
+        <div className={`
+          flex items-center justify-between px-5 py-3 rounded-full transition-all duration-500
+          ${scrolled ? 'glass shadow-[0_8px_32px_rgba(0,0,0,0.6)]' : 'bg-transparent border border-white/0'}
+        `}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center shadow-[0_0_12px_rgba(232,160,32,0.5)] group-hover:shadow-[0_0_20px_rgba(232,160,32,0.7)] transition-shadow duration-300">
+            <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center shadow-[0_0_12px_rgba(232,160,32,0.5)]">
               <FilmSlate size={16} weight="fill" className="text-void" />
             </div>
             <span className="font-display font-800 text-[1.1rem] tracking-tight text-chalk hidden sm:block">
@@ -88,27 +189,39 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Links */}
+          {/* Desktop Mega Menu Links */}
           <div className="hidden lg:flex items-center gap-0.5">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`
-                  px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
-                  ${isActive(link.path)
-                    ? 'bg-gold/10 text-gold'
-                    : 'text-muted hover:text-chalk hover:bg-white/5'
-                  }
-                `}
-              >
-                {link.label}
-              </Link>
+            <Link to="/"
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
+                ${location.pathname === '/' ? 'bg-gold/10 text-gold' : 'text-muted hover:text-chalk hover:bg-white/5'}`}>
+              Inicio
+            </Link>
+            {Object.keys(MEGA_MENU).map((mainLabel) => (
+              <div key={mainLabel} className="relative"
+                onMouseEnter={() => setOpenMega(mainLabel)}>
+                <button
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
+                    ${openMega === mainLabel ? 'bg-gold/10 text-gold' : 'text-muted hover:text-chalk hover:bg-white/5'}`}
+                >
+                  {mainLabel}
+                  <CaretDown size={10} weight="bold" className={`transition-transform ${openMega === mainLabel ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
             ))}
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={onDonateClick}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-gold text-xs font-semibold hover:bg-gold/20 transition-all duration-200"
+              aria-label="Donar"
+            >
+              <Coffee size={12} weight="fill" />
+              Café
+            </motion.button>
+
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={() => setSearchOpen(true)}
@@ -128,71 +241,109 @@ export default function Navbar() {
             </motion.button>
           </div>
         </div>
+
+        {/* Mega-menú desplegable (desktop) */}
+        <AnimatePresence>
+          {openMega && (
+            <motion.div
+              key={openMega}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="hidden lg:block absolute top-full left-1/2 -translate-x-1/2 mt-3 w-full max-w-3xl bg-[#0E0E18] rounded-2xl border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.7)] overflow-hidden"
+            >
+              <div className="grid grid-cols-3 gap-4 p-5">
+                {Object.entries(MEGA_MENU[openMega]).map(([groupTitle, items]) => (
+                  <div key={groupTitle}>
+                    <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold mb-2 px-2">{groupTitle}</p>
+                    <ul className="space-y-0.5">
+                      {items.map(([label, path]) => (
+                        <li key={path}>
+                          <Link to={path}
+                            className="block px-2 py-1.5 rounded-lg text-muted text-xs hover:text-gold hover:bg-gold/5 transition-colors">
+                            {label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
-      {/* ── Full-screen Mobile Menu ── */}
+      {/* ── Mobile Full-screen Menu ── */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
             key="mobile-menu"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[60] bg-void/97 backdrop-blur-3xl flex flex-col px-8 pt-24 pb-12"
+            className="fixed inset-0 z-[60] bg-void/97 backdrop-blur-3xl flex flex-col px-6 pt-20 pb-12 overflow-y-auto"
           >
-            {/* Close */}
             <motion.button
-              initial={{ opacity: 0, rotate: -90 }}
-              animate={{ opacity: 1, rotate: 0 }}
+              initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }}
               transition={{ delay: 0.1, duration: 0.3 }}
               onClick={() => setMenuOpen(false)}
-              className="absolute top-6 right-6 w-10 h-10 rounded-full glass flex items-center justify-center text-muted hover:text-chalk transition-colors"
+              className="absolute top-6 right-6 w-10 h-10 rounded-full glass flex items-center justify-center text-muted hover:text-chalk transition-colors z-10"
               aria-label="Cerrar menú"
             >
               <X size={20} />
             </motion.button>
 
-            {/* Logo in menu */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3 mb-6"
-            >
+            <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center shadow-[0_0_16px_rgba(232,160,32,0.5)]">
                 <FilmSlate size={20} weight="fill" className="text-void" />
               </div>
               <span className="font-display font-800 text-2xl tracking-tight text-chalk">
                 Repe<span className="text-gold">lis</span>
               </span>
-            </motion.div>
+            </Link>
 
-            {/* Divider groups */}
-            <div className="flex flex-col gap-1 mt-2">
-              {/* Movies group */}
-              <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold px-1 mb-1 mt-2">
-                Películas
-              </p>
-              {navLinks.filter(l => ['/', '/populares', '/clasicos'].includes(l.path)).map((link, i) => (
-                <MobileLink key={link.path} link={link} index={i} isActive={isActive(link.path)} />
-              ))}
+            {/* Donar móvil */}
+            <button onClick={() => { onDonateClick?.(); setMenuOpen(false) }}
+              className="self-start mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold/10 border border-gold/30 text-gold text-sm font-semibold hover:bg-gold/20 transition-all">
+              <Coffee size={14} weight="fill" /> Invitar un café
+            </button>
 
-              <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold px-1 mb-1 mt-4">
-                Series & Anime
-              </p>
-              {navLinks.filter(l => ['/series', '/anime', '/kdrama'].includes(l.path)).map((link, i) => (
-                <MobileLink key={link.path} link={link} index={i + 4} isActive={isActive(link.path)} />
+            {/* Categorías */}
+            <div className="space-y-6 pb-12">
+              {Object.entries(MEGA_MENU).map(([mainLabel, groups]) => (
+                <div key={mainLabel}>
+                  <p className="text-gold/80 text-xs uppercase tracking-widest font-bold mb-3">{mainLabel}</p>
+                  <div className="space-y-4 pl-1">
+                    {Object.entries(groups).map(([groupTitle, items]) => (
+                      <div key={groupTitle}>
+                        <p className="text-muted/40 text-[10px] uppercase tracking-widest mb-1.5">{groupTitle}</p>
+                        <ul className="space-y-0.5">
+                          {items.map(([label, path]) => (
+                            <li key={path}>
+                              <Link to={path}
+                                className="block py-1.5 text-chalk/85 text-sm hover:text-gold transition-colors">
+                                {label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mt-auto text-muted text-sm font-mono"
-            >
-              © Repelis {new Date().getFullYear()}
-            </motion.div>
+            <div className="mt-auto pt-6 border-t border-white/[0.04] text-muted text-xs font-mono space-y-2">
+              <div className="flex gap-3 text-muted/60">
+                <Link to="/about"   className="hover:text-gold">Sobre</Link>
+                <Link to="/terms"   className="hover:text-gold">Términos</Link>
+                <Link to="/privacy" className="hover:text-gold">Privacidad</Link>
+                <Link to="/dmca"    className="hover:text-gold">DMCA</Link>
+              </div>
+              <p className="text-muted/40">© Repelis by TinTech {new Date().getFullYear()}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -202,9 +353,7 @@ export default function Navbar() {
         {searchOpen && (
           <motion.div
             key="search-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-[70] bg-void/90 backdrop-blur-2xl flex items-start justify-center pt-32 px-6"
             onClick={(e) => { if (e.target === e.currentTarget) setSearchOpen(false) }}
@@ -217,44 +366,29 @@ export default function Navbar() {
               className="w-full max-w-2xl"
             >
               <form onSubmit={handleSearch} className="relative">
-                <MagnifyingGlass
-                  size={22}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-gold pointer-events-none"
-                />
+                <MagnifyingGlass size={22} className="absolute left-5 top-1/2 -translate-y-1/2 text-gold pointer-events-none" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Películas, series, anime, K-dramas..."
-                  className="
-                    w-full bg-surface border border-dim/60 rounded-2xl
-                    pl-14 pr-6 py-5 text-lg text-chalk placeholder:text-muted
-                    outline-none focus:border-gold/50 focus:shadow-[0_0_0_3px_rgba(232,160,32,0.15)]
-                    transition-all duration-300 font-display
-                  "
+                  className="w-full bg-surface border border-dim/60 rounded-2xl pl-14 pr-6 py-5 text-lg text-chalk placeholder:text-muted outline-none focus:border-gold/50 focus:shadow-[0_0_0_3px_rgba(232,160,32,0.15)] transition-all duration-300 font-display"
                 />
-                <button
-                  type="submit"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-gold text-void font-semibold px-5 py-2 rounded-xl text-sm hover:bg-gold-hi transition-colors duration-200"
-                >
+                <button type="submit"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-gold text-void font-semibold px-5 py-2 rounded-xl text-sm hover:bg-gold-hi transition-colors duration-200">
                   Buscar
                 </button>
               </form>
-              {/* Quick links */}
               <div className="flex flex-wrap gap-2 mt-5 justify-center">
                 {['Breaking Bad', 'Attack on Titan', 'Inception', 'The Office', 'Spirited Away'].map((s) => (
-                  <button
-                    key={s}
+                  <button key={s}
                     onClick={() => {
-                      setSearchQuery(s)
-                      dispatch(fetchSearch({ query: s }))
+                      setSearchQuery(s); dispatch(fetchSearch({ query: s }))
                       navigate(`/search?q=${encodeURIComponent(s)}`)
-                      setSearchOpen(false)
-                      setSearchQuery('')
+                      setSearchOpen(false); setSearchQuery('')
                     }}
-                    className="px-3 py-1.5 rounded-full bg-surface border border-dim/40 text-muted text-sm hover:text-gold hover:border-gold/30 transition-all duration-200"
-                  >
+                    className="px-3 py-1.5 rounded-full bg-surface border border-dim/40 text-muted text-sm hover:text-gold hover:border-gold/30 transition-all duration-200">
                     {s}
                   </button>
                 ))}
@@ -267,26 +401,5 @@ export default function Navbar() {
         )}
       </AnimatePresence>
     </>
-  )
-}
-
-function MobileLink({ link, index, isActive }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -32 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -32 }}
-      transition={{ delay: 0.06 * index, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Link
-        to={link.path}
-        className={`
-          block text-2xl font-display font-semibold py-3 px-1 border-b border-white/5 transition-colors duration-200
-          ${isActive ? 'text-gold' : 'text-chalk/80 hover:text-gold'}
-        `}
-      >
-        {link.label}
-      </Link>
-    </motion.div>
   )
 }

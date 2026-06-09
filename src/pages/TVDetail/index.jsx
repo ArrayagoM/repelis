@@ -11,6 +11,7 @@ import { openPlayer } from '../../store/slices/playerSlice'
 import { IMG_ORIGINAL, IMG_W500 } from '../../api/tmdb'
 import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
+import ShareButtons from '../../components/ShareButtons'
 
 export default function TVDetail() {
   const { id }     = useParams()
@@ -188,6 +189,8 @@ export default function TVDetail() {
                   Ver trailer
                 </a>
               )}
+
+              <ShareButtons title={data.name} description={data.tagline || ''} />
             </div>
           </motion.div>
         </div>

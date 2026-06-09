@@ -1,54 +1,57 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import {
-  getTrending, getPopular, getTopRated, getNowPlaying, getUpcoming,
-  getMovieDetail, getMovieCredits, getMovieVideos, getSimilarMovies, getMoviesByGenre,
-  getTrendingTV, getPopularTV, getTopRatedTV, getAiringTodayTV, getOnTheAirTV,
-  getTVDetail, getTVCredits, getTVVideos, getSimilarTV, getTVSeason,
-  getAnime, getAnimeMovies, getKDrama, getClassics,
-} from '../../api/tmdb'
+import * as TMDB from '../../api/tmdb'
 
 const emptyList = () => ({ results: [], page: 0, totalPages: 0, loading: false, error: null })
 
-// ─── Movies thunks ─────────────────────────────────────────────────────────
-export const fetchTrending     = createAsyncThunk('movies/fetchTrending',     async (page = 1) => (await getTrending(page)).data)
-export const fetchPopular      = createAsyncThunk('movies/fetchPopular',      async (page = 1) => (await getPopular(page)).data)
-export const fetchTopRated     = createAsyncThunk('movies/fetchTopRated',     async (page = 1) => (await getTopRated(page)).data)
-export const fetchNowPlaying   = createAsyncThunk('movies/fetchNowPlaying',   async (page = 1) => (await getNowPlaying(page)).data)
-export const fetchUpcoming     = createAsyncThunk('movies/fetchUpcoming',     async (page = 1) => (await getUpcoming(page)).data)
-export const fetchClassics     = createAsyncThunk('movies/fetchClassics',     async (page = 1) => (await getClassics(page)).data)
-export const fetchAnimeMovies  = createAsyncThunk('movies/fetchAnimeMovies',  async (page = 1) => (await getAnimeMovies(page)).data)
+// ─── Movies thunks clásicos ───────────────────────────────────────────────
+export const fetchTrending     = createAsyncThunk('movies/fetchTrending',     async (page = 1) => (await TMDB.getTrending(page)).data)
+export const fetchTrendingDay  = createAsyncThunk('movies/fetchTrendingDay',  async (page = 1) => (await TMDB.getTrendingDay(page)).data)
+export const fetchPopular      = createAsyncThunk('movies/fetchPopular',      async (page = 1) => (await TMDB.getPopular(page)).data)
+export const fetchTopRated     = createAsyncThunk('movies/fetchTopRated',     async (page = 1) => (await TMDB.getTopRated(page)).data)
+export const fetchNowPlaying   = createAsyncThunk('movies/fetchNowPlaying',   async (page = 1) => (await TMDB.getNowPlaying(page)).data)
+export const fetchUpcoming     = createAsyncThunk('movies/fetchUpcoming',     async (page = 1) => (await TMDB.getUpcoming(page)).data)
+export const fetchClassics     = createAsyncThunk('movies/fetchClassics',     async (page = 1) => (await TMDB.getClassics(page)).data)
+export const fetchAnimeMovies  = createAsyncThunk('movies/fetchAnimeMovies',  async (page = 1) => (await TMDB.getAnimeMovies(page)).data)
 
 export const fetchMovieDetail = createAsyncThunk('movies/fetchMovieDetail', async (id) => {
   const [detail, credits, videos, similar] = await Promise.all([
-    getMovieDetail(id), getMovieCredits(id), getMovieVideos(id), getSimilarMovies(id),
+    TMDB.getMovieDetail(id), TMDB.getMovieCredits(id), TMDB.getMovieVideos(id), TMDB.getSimilarMovies(id),
   ])
   return { detail: detail.data, credits: credits.data, videos: videos.data, similar: similar.data.results }
 })
 
 export const fetchMoviesByGenre = createAsyncThunk('movies/fetchMoviesByGenre', async ({ genreId, page = 1 }) => {
-  const res = await getMoviesByGenre(genreId, page)
+  const res = await TMDB.getMoviesByGenre(genreId, page)
   return { genreId, data: res.data }
 })
 
-// ─── TV thunks ─────────────────────────────────────────────────────────────
-export const fetchTrendingTV    = createAsyncThunk('movies/fetchTrendingTV',    async (page = 1) => (await getTrendingTV(page)).data)
-export const fetchPopularTV     = createAsyncThunk('movies/fetchPopularTV',     async (page = 1) => (await getPopularTV(page)).data)
-export const fetchTopRatedTV    = createAsyncThunk('movies/fetchTopRatedTV',    async (page = 1) => (await getTopRatedTV(page)).data)
-export const fetchAiringTodayTV = createAsyncThunk('movies/fetchAiringTodayTV', async (page = 1) => (await getAiringTodayTV(page)).data)
-export const fetchOnTheAirTV    = createAsyncThunk('movies/fetchOnTheAirTV',    async (page = 1) => (await getOnTheAirTV(page)).data)
-export const fetchAnime         = createAsyncThunk('movies/fetchAnime',         async (page = 1) => (await getAnime(page)).data)
-export const fetchKDrama        = createAsyncThunk('movies/fetchKDrama',        async (page = 1) => (await getKDrama(page)).data)
+// ─── TV thunks clásicos ───────────────────────────────────────────────────
+export const fetchTrendingTV    = createAsyncThunk('movies/fetchTrendingTV',    async (page = 1) => (await TMDB.getTrendingTV(page)).data)
+export const fetchPopularTV     = createAsyncThunk('movies/fetchPopularTV',     async (page = 1) => (await TMDB.getPopularTV(page)).data)
+export const fetchTopRatedTV    = createAsyncThunk('movies/fetchTopRatedTV',    async (page = 1) => (await TMDB.getTopRatedTV(page)).data)
+export const fetchAiringTodayTV = createAsyncThunk('movies/fetchAiringTodayTV', async (page = 1) => (await TMDB.getAiringTodayTV(page)).data)
+export const fetchOnTheAirTV    = createAsyncThunk('movies/fetchOnTheAirTV',    async (page = 1) => (await TMDB.getOnTheAirTV(page)).data)
+export const fetchAnime         = createAsyncThunk('movies/fetchAnime',         async (page = 1) => (await TMDB.getAnime(page)).data)
+export const fetchKDrama        = createAsyncThunk('movies/fetchKDrama',        async (page = 1) => (await TMDB.getKDrama(page)).data)
 
 export const fetchTVDetail = createAsyncThunk('movies/fetchTVDetail', async (id) => {
   const [detail, credits, videos, similar] = await Promise.all([
-    getTVDetail(id), getTVCredits(id), getTVVideos(id), getSimilarTV(id),
+    TMDB.getTVDetail(id), TMDB.getTVCredits(id), TMDB.getTVVideos(id), TMDB.getSimilarTV(id),
   ])
   return { detail: detail.data, credits: credits.data, videos: videos.data, similar: similar.data.results }
 })
 
 export const fetchTVSeason = createAsyncThunk('movies/fetchTVSeason', async ({ id, season }) => {
-  const res = await getTVSeason(id, season)
+  const res = await TMDB.getTVSeason(id, season)
   return { id, season, data: res.data }
+})
+
+// ─── Categoría genérica (cualquier endpoint TMDB que reciba page) ─────────
+// payload = { key, fetcher, page }
+// el state se guarda en state.byCategory[key]
+export const fetchCategory = createAsyncThunk('movies/fetchCategory', async ({ key, fetcher, page = 1 }) => {
+  const res = await fetcher(page)
+  return { key, data: res.data }
 })
 
 // ─── Initial state ─────────────────────────────────────────────────────────
@@ -56,6 +59,7 @@ const initialState = {
   trending: emptyList(), popular: emptyList(), topRated: emptyList(),
   nowPlaying: emptyList(), upcoming: emptyList(), classics: emptyList(), animeMovies: emptyList(),
   byGenre: {},
+  byCategory: {},   // ⭐ NUEVO: cualquier categoría arbitraria (acción, terror, netflix, etc.)
   trendingTV: emptyList(), popularTV: emptyList(), topRatedTV: emptyList(),
   airingTodayTV: emptyList(), onTheAirTV: emptyList(), anime: emptyList(), kdrama: emptyList(),
   detail: { data: null, credits: null, videos: null, similar: [], loading: false, error: null, mediaType: 'movie' },
@@ -85,6 +89,7 @@ const moviesSlice = createSlice({
   },
   extraReducers: (builder) => {
     addListCases(builder, fetchTrending,     'trending')
+    addListCases(builder, fetchTrendingDay,  'trending')
     addListCases(builder, fetchPopular,      'popular')
     addListCases(builder, fetchTopRated,     'topRated')
     addListCases(builder, fetchNowPlaying,   'nowPlaying')
@@ -147,6 +152,33 @@ const moviesSlice = createSlice({
       .addCase(fetchMoviesByGenre.rejected, (s, a) => {
         const gid = a.meta.arg.genreId
         if (s.byGenre[gid]) s.byGenre[gid].loading = false
+      })
+
+    // ⭐ Categoría genérica
+    builder
+      .addCase(fetchCategory.pending, (s, a) => {
+        const key = a.meta.arg.key
+        if (!s.byCategory[key]) s.byCategory[key] = emptyList()
+        s.byCategory[key].loading = true
+        s.byCategory[key].error = null
+      })
+      .addCase(fetchCategory.fulfilled, (s, a) => {
+        const { key, data } = a.payload
+        const prev = s.byCategory[key] || emptyList()
+        s.byCategory[key] = {
+          results: data.page === 1 ? data.results : [...prev.results, ...data.results],
+          page: data.page,
+          totalPages: data.total_pages,
+          loading: false,
+          error: null,
+        }
+      })
+      .addCase(fetchCategory.rejected, (s, a) => {
+        const key = a.meta.arg.key
+        if (s.byCategory[key]) {
+          s.byCategory[key].loading = false
+          s.byCategory[key].error = a.error.message
+        }
       })
   },
 })
