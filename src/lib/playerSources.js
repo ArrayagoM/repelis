@@ -25,26 +25,30 @@ export const SOURCES = [
   },
   {
     id: 'vidlink', label: 'VidLink', esLat: true,
-    movieUrl: (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=es&dub=es-LA&primaryColor=E8A020`,
-    tvUrl:    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&dub=es-LA&primaryColor=E8A020`,
+    // VidLink SÍ respeta dub=es-LA documentadamente. Lo dejamos.
+    movieUrl: (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&dub=es-LA&primaryColor=E8A020`,
+    tvUrl:    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&dub=es-LA&primaryColor=E8A020`,
     sandbox: null,
   },
   {
     id: 'autoembed', label: 'AutoEmbed', esLat: true,
-    movieUrl: (id)       => `https://player.autoembed.cc/embed/movie/${id}?lang=es&audio=spanish`,
-    tvUrl:    (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es&audio=spanish`,
+    // AutoEmbed: lang=es documentado, audio=spanish NO documentado (lo sacamos).
+    movieUrl: (id)       => `https://player.autoembed.cc/embed/movie/${id}?lang=es`,
+    tvUrl:    (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
     id: 'vidfast', label: 'VidFast', esLat: true,
-    movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true&lang=es&dub=true`,
-    tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true&lang=es&dub=true`,
+    // VidFast acepta autoplay, el resto de params estaban inventados.
+    movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true`,
+    tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true`,
     sandbox: null,
   },
   {
     id: 'smashy', label: 'SmashyStream', esLat: true,
-    movieUrl: (id)       => `https://player.smashy.stream/movie/${id}?lang=es&audio=spanish`,
-    tvUrl:    (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}&lang=es&audio=spanish`,
+    // SmashyStream maneja idiomas internamente, los params no le hacen efecto.
+    movieUrl: (id)       => `https://player.smashy.stream/movie/${id}`,
+    tvUrl:    (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
@@ -73,8 +77,9 @@ export const SOURCES = [
   },
   {
     id: 'multiembed', label: 'MultiEmbed',
-    movieUrl: (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1&lang=es`,
-    tvUrl:    (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}&lang=es`,
+    // MultiEmbed no documenta param de idioma, lo sacamos.
+    movieUrl: (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    tvUrl:    (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {

@@ -67,6 +67,27 @@ export const getMovieDetail   = (id)       => api.get('/movie/' + id)
 export const getMovieCredits  = (id)       => api.get('/movie/' + id + '/credits')
 export const getMovieVideos   = (id)       => api.get('/movie/' + id + '/videos', { params: { language: 'en-US' } })
 export const getSimilarMovies = (id, page = 1) => api.get('/movie/' + id + '/similar', { params: { page } })
+
+// Endpoints nuevos para info de doblaje y catálogo extendido
+export const getMovieReleaseDates = (id) => api.get('/movie/' + id + '/release_dates')
+export const getMovieTranslations = (id) => api.get('/movie/' + id + '/translations')
+export const getMovieKeywords     = (id) => api.get('/movie/' + id + '/keywords')
+export const getMovieExternalIds  = (id) => api.get('/movie/' + id + '/external_ids')
+export const getMovieRecommendations = (id, page = 1) =>
+  api.get('/movie/' + id + '/recommendations', { params: { page } })
+
+// Trending mezclado (películas + series)
+export const getTrendingAll = (page = 1) => api.get('/trending/all/week', { params: { page } })
+
+// Por keyword (Marvel, Star Wars, MCU, Saw, James Bond, etc.)
+export const getMoviesByKeyword = (keywordId, page = 1) =>
+  api.get('/discover/movie', { params: { with_keywords: keywordId, sort_by: 'popularity.desc', page } })
+export const getTVByKeyword = (keywordId, page = 1) =>
+  api.get('/discover/tv', { params: { with_keywords: keywordId, sort_by: 'popularity.desc', page } })
+
+// Por network de TV (Cartoon Network, FX, AMC, HBO original, etc.)
+export const getTVByNetwork = (networkId, page = 1) =>
+  api.get('/discover/tv', { params: { with_networks: networkId, sort_by: 'popularity.desc', page } })
 export const getMoviesByGenre = (genreId, page = 1) =>
   api.get('/discover/movie', { params: { with_genres: genreId, sort_by: 'popularity.desc', page } })
 
@@ -233,6 +254,50 @@ export const getPixar     = byCompany(3)
 export const getGhibli    = byCompany(10342)
 export const getDisneyClassic = byCompany(2)
 export const getLucasfilm = byCompany(11)
+
+// ════════════════════════════════════════════════════════════════════════
+//  POR KEYWORD (franquicias muy puntuales)
+//  Keywords TMDB: 180547=MCU, 4565=Distopía, 9714=Superhero, 9748=Revenge,
+//  9882=Space, 9951=Alien, 10617=Time travel, 1721=Fight,
+//  9826=Friendship, 2964=Future, 9799=Romantic comedy, 4376=Sequel,
+//  6953=Anime (filter), 10683=Magic, 14544=Robot, 161176=Spy
+// ════════════════════════════════════════════════════════════════════════
+const movieByKeyword = (kwId) => (page = 1) =>
+  api.get('/discover/movie', { params: { with_keywords: kwId, sort_by: 'popularity.desc', page, 'vote_count.gte': 30 } })
+
+export const getMCU            = movieByKeyword(180547)
+export const getDystopia       = movieByKeyword(4565)
+export const getSuperhero      = movieByKeyword(9714)
+export const getSpace          = movieByKeyword(9882)
+export const getAlien          = movieByKeyword(9951)
+export const getTimeTravel     = movieByKeyword(10617)
+export const getZombies        = movieByKeyword(12377)
+export const getVampires       = movieByKeyword(3133)
+export const getMartialArts    = movieByKeyword(9748)
+export const getSpy            = movieByKeyword(161176)
+export const getHeist          = movieByKeyword(10051)
+export const getApocalypse     = movieByKeyword(4458)
+
+// ════════════════════════════════════════════════════════════════════════
+//  POR NETWORK (canales de TV)
+//  IDs TMDB: 213=Netflix, 1024=Prime, 2739=Disney+, 49=HBO, 4=BBC,
+//  88=FX, 16=CBS, 6=NBC, 19=Fox, 174=AMC, 56=Cartoon Network,
+//  44=Disney Channel, 209=Nickelodeon, 64=Discovery, 67=Showtime,
+//  453=Hulu, 2552=AppleTV+, 4330=Paramount+
+// ════════════════════════════════════════════════════════════════════════
+const tvByNetwork = (netId) => (page = 1) =>
+  api.get('/discover/tv', { params: { with_networks: netId, sort_by: 'popularity.desc', page } })
+
+export const getHBOOriginals   = tvByNetwork(49)
+export const getBBCShows       = tvByNetwork(4)
+export const getFXShows        = tvByNetwork(88)
+export const getAMCShows       = tvByNetwork(174)
+export const getCartoonNetwork = tvByNetwork(56)
+export const getDisneyChannel  = tvByNetwork(44)
+export const getNickelodeon    = tvByNetwork(209)
+export const getDiscoveryShows = tvByNetwork(64)
+export const getShowtimeShows  = tvByNetwork(67)
+export const getHuluShows      = tvByNetwork(453)
 
 // ════════════════════════════════════════════════════════════════════════
 //  KIDS / FAMILIAR (rating estricto)

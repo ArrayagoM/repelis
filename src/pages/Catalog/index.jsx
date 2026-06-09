@@ -118,6 +118,32 @@ const DYNAMIC_CONFIG = {
 
   // INFANTIL
   'infantil':            [TMDB.getKidsMovies,  'movie', 'Para los más chicos', 'Kids',      'green'],
+
+  // KEYWORDS (franquicias muy puntuales)
+  'mcu':                 [TMDB.getMCU,         'movie', 'Marvel Cinematic Universe', 'MCU',     'red'],
+  'distopia':            [TMDB.getDystopia,    'movie', 'Distopías',            'Distopía',    'purple'],
+  'superhero':           [TMDB.getSuperhero,   'movie', 'Superhéroes',          'Hero',        'gold'],
+  'espacio':             [TMDB.getSpace,       'movie', 'Aventura espacial',    'Espacio',     'blue'],
+  'aliens':              [TMDB.getAlien,       'movie', 'Aliens y extraterrestres','Aliens',   'green'],
+  'viajes-tiempo':       [TMDB.getTimeTravel,  'movie', 'Viajes en el tiempo',  'Time Travel', 'purple'],
+  'zombies':             [TMDB.getZombies,     'movie', 'Zombies',              'Zombies',     'red'],
+  'vampiros':            [TMDB.getVampires,    'movie', 'Vampiros',             'Vampiros',    'red'],
+  'artes-marciales':     [TMDB.getMartialArts, 'movie', 'Artes marciales',      'Kung Fu',     'amber'],
+  'espias':              [TMDB.getSpy,         'movie', 'Espías',               'Spy',         'blue'],
+  'heists':              [TMDB.getHeist,       'movie', 'Robos y atracos',      'Heist',       'amber'],
+  'apocalipsis':         [TMDB.getApocalypse,  'movie', 'Post-apocalíptico',    'Apocalipsis', 'red'],
+
+  // NETWORKS
+  'hbo-originals':       [TMDB.getHBOOriginals,'tv', 'HBO Originals',         'HBO',         'purple'],
+  'bbc':                 [TMDB.getBBCShows,    'tv', 'BBC',                   'BBC',         'blue'],
+  'fx':                  [TMDB.getFXShows,     'tv', 'FX Networks',           'FX',          'red'],
+  'amc':                 [TMDB.getAMCShows,    'tv', 'AMC',                   'AMC',         'amber'],
+  'cartoon-network':     [TMDB.getCartoonNetwork,'tv','Cartoon Network',       'CN',          'amber'],
+  'disney-channel':      [TMDB.getDisneyChannel,'tv','Disney Channel',         'Disney TV',   'blue'],
+  'nickelodeon':         [TMDB.getNickelodeon, 'tv', 'Nickelodeon',           'Nick',        'amber'],
+  'discovery':           [TMDB.getDiscoveryShows,'tv','Discovery',            'Discovery',   'blue'],
+  'showtime':            [TMDB.getShowtimeShows,'tv','Showtime',              'Showtime',    'red'],
+  'hulu':                [TMDB.getHuluShows,   'tv', 'Hulu Originals',        'Hulu',        'green'],
 }
 
 const BADGE_COLORS = {

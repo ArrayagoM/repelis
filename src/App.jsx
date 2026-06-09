@@ -176,6 +176,32 @@ export default function App() {
             {/* Especiales */}
             <Route path="/infantil"         element={<Catalog type="infantil" />} />
 
+            {/* Keywords */}
+            <Route path="/mcu"             element={<Catalog type="mcu" />} />
+            <Route path="/distopia"        element={<Catalog type="distopia" />} />
+            <Route path="/superhero"       element={<Catalog type="superhero" />} />
+            <Route path="/espacio"         element={<Catalog type="espacio" />} />
+            <Route path="/aliens"          element={<Catalog type="aliens" />} />
+            <Route path="/viajes-tiempo"   element={<Catalog type="viajes-tiempo" />} />
+            <Route path="/zombies"         element={<Catalog type="zombies" />} />
+            <Route path="/vampiros"        element={<Catalog type="vampiros" />} />
+            <Route path="/artes-marciales" element={<Catalog type="artes-marciales" />} />
+            <Route path="/espias"          element={<Catalog type="espias" />} />
+            <Route path="/heists"          element={<Catalog type="heists" />} />
+            <Route path="/apocalipsis"     element={<Catalog type="apocalipsis" />} />
+
+            {/* Networks */}
+            <Route path="/hbo-originals"   element={<Catalog type="hbo-originals" />} />
+            <Route path="/bbc"             element={<Catalog type="bbc" />} />
+            <Route path="/fx"              element={<Catalog type="fx" />} />
+            <Route path="/amc"             element={<Catalog type="amc" />} />
+            <Route path="/cartoon-network" element={<Catalog type="cartoon-network" />} />
+            <Route path="/disney-channel"  element={<Catalog type="disney-channel" />} />
+            <Route path="/nickelodeon"     element={<Catalog type="nickelodeon" />} />
+            <Route path="/discovery"       element={<Catalog type="discovery" />} />
+            <Route path="/showtime"        element={<Catalog type="showtime" />} />
+            <Route path="/hulu"            element={<Catalog type="hulu" />} />
+
             {/* Fallback */}
             <Route path="*" element={<Home />} />
           </Routes>

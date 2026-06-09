@@ -14,6 +14,7 @@ import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
+import DubInfo from '../../components/DubInfo'
 
 export default function MovieDetail() {
   const { id }     = useParams()
@@ -158,6 +159,9 @@ export default function MovieDetail() {
               originalLanguage={data.original_language}
               spokenLanguages={data.spoken_languages}
             />
+
+            {/* Doblaje LATAM real (basado en release_dates de TMDB) */}
+            <DubInfo movieId={data.id} originalLanguage={data.original_language} />
 
             {/* Overview */}
             {data.overview && (
