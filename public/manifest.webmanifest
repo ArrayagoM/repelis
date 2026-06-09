@@ -1,0 +1,44 @@
+{
+  "name": "Repelis — Cinema sin límites",
+  "short_name": "Repelis",
+  "description": "Películas, series, anime y K-dramas en un solo lugar. Hecho por TinTech.",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#08080E",
+  "theme_color": "#0E0E18",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "video"],
+  "shortcuts": [
+    {
+      "name": "Películas populares",
+      "url": "/populares",
+      "description": "Las películas más vistas"
+    },
+    {
+      "name": "Series",
+      "url": "/series",
+      "description": "Series para ver ahora"
+    },
+    {
+      "name": "Anime",
+      "url": "/anime",
+      "description": "Anime ordenado por popularidad"
+    },
+    {
+      "name": "Buscar",
+      "url": "/search",
+      "description": "Encontrá lo que buscás"
+    }
+  ]
+}

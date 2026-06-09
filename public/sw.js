@@ -33,8 +33,10 @@ self.addEventListener('activate', (event) => {
 
 const isImageTMDB = (url) => url.hostname === 'image.tmdb.org'
 const isAPITMDB   = (url) => url.hostname === 'api.themoviedb.org'
-const isShell     = (url) => url.origin === self.location.origin &&
-  /\.(?:html|js|css|svg|woff2?)$/i.test(url.pathname) || url.pathname === '/'
+const isShell     = (url) => url.origin === self.location.origin && (
+  /\.(?:html|js|css|svg|woff2?|webmanifest|ico|png|jpg)$/i.test(url.pathname) ||
+  url.pathname === '/'
+)
 
 // Stale-while-revalidate
 const swr = async (request, cacheName) => {
@@ -79,6 +81,30 @@ self.addEventListener('fetch', (event) => {
 
   // No tocamos los iframes de streaming
   if (req.destination === 'iframe') return
+
+  // Fallback de navegación SPA: si el browser pide una ruta html (cambio de
+  // página vía router) y NO hay red, servimos el index.html del cache.
+  // Crítico para WebViews de Android que pierden conexión a mitad de navegación
+  // (sin esto se ve "página no disponible" estilo HTML crudo).
+  if (req.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req)
+        const cache = await caches.open(SHELL_CACHE)
+        cache.put('/', fresh.clone()).catch(() => {})
+        return fresh
+      } catch {
+        const cache = await caches.open(SHELL_CACHE)
+        const cached = await cache.match('/') || await cache.match('/index.html')
+        if (cached) return cached
+        return new Response(
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sin conexión</title><style>body{background:#08080E;color:#F0EDE8;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}</style></head><body><div><h1 style="color:#E8A020">Sin conexión</h1><p>Volvé a intentar cuando tengas internet.</p></div></body></html>',
+          { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 503 },
+        )
+      }
+    })())
+    return
+  }
 
   if (isImageTMDB(url)) {
     event.respondWith(swr(req, IMG_CACHE))

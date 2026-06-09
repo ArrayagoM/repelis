@@ -12,6 +12,8 @@ import { IMG_ORIGINAL, IMG_W500 } from '../../api/tmdb'
 import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
+import CafecitoButton from '../../components/CafecitoButton'
+import LanguagesInfo from '../../components/LanguagesInfo'
 
 export default function TVDetail() {
   const { id }     = useParams()
@@ -136,6 +138,11 @@ export default function TVDetail() {
 
             {data.tagline && <p className="text-gold/70 italic text-base">"{data.tagline}"</p>}
 
+            {/* Botón Cafecito justo debajo del título */}
+            <div className="pt-1">
+              <CafecitoButton />
+            </div>
+
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-1.5 text-gold">
@@ -161,13 +168,13 @@ export default function TVDetail() {
                   <span className="font-mono">{data.number_of_episodes} eps.</span>
                 </div>
               )}
-              {data.original_language && (
-                <div className="flex items-center gap-1.5 text-muted">
-                  <Globe size={14} />
-                  <span className="uppercase font-mono text-xs">{data.original_language}</span>
-                </div>
-              )}
             </div>
+
+            {/* Idiomas disponibles */}
+            <LanguagesInfo
+              originalLanguage={data.original_language}
+              spokenLanguages={data.spoken_languages}
+            />
 
             {data.overview && (
               <p className="text-chalk/80 text-base leading-relaxed max-w-[65ch]">{data.overview}</p>

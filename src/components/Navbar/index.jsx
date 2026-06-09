@@ -129,10 +129,26 @@ export default function Navbar({ onDonateClick }) {
   const [searchOpen,  setSearchOpen]  = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [openMega,    setOpenMega]    = useState(null)
+  const closeTimer = useRef(null)
   const inputRef = useRef(null)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Mantener abierto: el cierre se retrasa 200ms y se cancela si el mouse
+  // entra en el botón o en el dropdown. Esto soluciona el "se cierra al
+  // bajar al menú" porque hay un gap visual entre el nav y el dropdown.
+  const openMenu = (label) => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null }
+    setOpenMega(label)
+  }
+  const scheduleClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    closeTimer.current = setTimeout(() => setOpenMega(null), 200)
+  }
+  const cancelClose = () => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null }
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -173,7 +189,8 @@ export default function Navbar({ onDonateClick }) {
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-6xl"
         style={{ willChange: 'transform' }}
-        onMouseLeave={() => setOpenMega(null)}
+        onMouseLeave={scheduleClose}
+        onMouseEnter={cancelClose}
       >
         <div className={`
           flex items-center justify-between px-5 py-3 rounded-full transition-all duration-500
@@ -198,10 +215,13 @@ export default function Navbar({ onDonateClick }) {
             </Link>
             {Object.keys(MEGA_MENU).map((mainLabel) => (
               <div key={mainLabel} className="relative"
-                onMouseEnter={() => setOpenMega(mainLabel)}>
+                onMouseEnter={() => openMenu(mainLabel)}>
                 <button
+                  onClick={() => openMega === mainLabel ? setOpenMega(null) : openMenu(mainLabel)}
                   className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
                     ${openMega === mainLabel ? 'bg-gold/10 text-gold' : 'text-muted hover:text-chalk hover:bg-white/5'}`}
+                  aria-expanded={openMega === mainLabel}
+                  aria-haspopup="menu"
                 >
                   {mainLabel}
                   <CaretDown size={10} weight="bold" className={`transition-transform ${openMega === mainLabel ? 'rotate-180' : ''}`} />
@@ -251,24 +271,32 @@ export default function Navbar({ onDonateClick }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="hidden lg:block absolute top-full left-1/2 -translate-x-1/2 mt-3 w-full max-w-3xl bg-[#0E0E18] rounded-2xl border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.7)] overflow-hidden"
+              className="hidden lg:block absolute top-full left-1/2 -translate-x-1/2 pt-3 w-full max-w-3xl"
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
             >
-              <div className="grid grid-cols-3 gap-4 p-5">
-                {Object.entries(MEGA_MENU[openMega]).map(([groupTitle, items]) => (
-                  <div key={groupTitle}>
-                    <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold mb-2 px-2">{groupTitle}</p>
-                    <ul className="space-y-0.5">
-                      {items.map(([label, path]) => (
-                        <li key={path}>
-                          <Link to={path}
-                            className="block px-2 py-1.5 rounded-lg text-muted text-xs hover:text-gold hover:bg-gold/5 transition-colors">
-                            {label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+              {/* Puente invisible que conecta el nav con el dropdown — sin esto
+                  el mouse cae en el gap entre ambos y cierra el menú. */}
+              <div aria-hidden="true" className="absolute -top-1 left-0 right-0 h-4" />
+
+              <div className="bg-[#0E0E18] rounded-2xl border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.7)] overflow-hidden">
+                <div className="grid grid-cols-3 gap-4 p-5">
+                  {Object.entries(MEGA_MENU[openMega]).map(([groupTitle, items]) => (
+                    <div key={groupTitle}>
+                      <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold mb-2 px-2">{groupTitle}</p>
+                      <ul className="space-y-0.5">
+                        {items.map(([label, path]) => (
+                          <li key={path}>
+                            <Link to={path}
+                              className="block px-2 py-1.5 rounded-lg text-muted text-xs hover:text-gold hover:bg-gold/5 transition-colors">
+                              {label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}
@@ -322,7 +350,7 @@ export default function Navbar({ onDonateClick }) {
                           {items.map(([label, path]) => (
                             <li key={path}>
                               <Link to={path}
-                                className="block py-1.5 text-chalk/85 text-sm hover:text-gold transition-colors">
+                                className="block py-3 text-chalk/85 text-base hover:text-gold transition-colors min-h-[44px] active:bg-white/5 rounded-lg px-2 -mx-2">
                                 {label}
                               </Link>
                             </li>

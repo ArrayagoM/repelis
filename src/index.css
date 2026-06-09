@@ -23,6 +23,20 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Soporte safe-area para iPhone con notch y Android con barras */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  /* Anti-tap-highlight gris feo de Android */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mejor scroll en iOS */
+html, body { -webkit-overflow-scrolling: touch; }
+
+/* Buttons y links táctiles: min 44px para WCAG y Material Design */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* ── Scrollbar ────────────────────────────────────────── */
