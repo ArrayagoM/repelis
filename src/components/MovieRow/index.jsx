@@ -3,13 +3,19 @@ import { motion } from 'framer-motion'
 import { CaretRight, ArrowRight } from '@phosphor-icons/react'
 import MovieCard, { MovieCardSkeleton } from '../MovieCard'
 import { getDeviceCaps } from '../../lib/deviceCaps'
+import { useLanguageFilter } from '../../lib/useLanguageFilter'
 
 const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 const ROW_LIMIT = _LOW_END ? 8 : 20
 
 export default function MovieRow({ title, badge, movies = [], loading = false, onViewAll, mediaType = 'movie', badgeColor }) {
   const trackRef = useRef(null)
-  const visible = movies.slice(0, ROW_LIMIT)
+  // Filtra automáticamente por el modo de idioma activo
+  const filtered = useLanguageFilter(movies)
+  const visible = filtered.slice(0, ROW_LIMIT)
+
+  // Si después del filtro no queda nada, no mostramos la fila vacía
+  if (!loading && filtered.length === 0 && movies.length > 0) return null
 
   const scroll = (dir) => {
     const el = trackRef.current

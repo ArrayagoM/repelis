@@ -15,6 +15,8 @@ import {
   fetchAnime, fetchKDrama, fetchCategory,
 } from '../../store/slices/moviesSlice'
 import MovieCard, { MovieCardSkeleton } from '../../components/MovieCard'
+import { useLanguageFilter, useCurrentLanguageMode } from '../../lib/useLanguageFilter'
+import { MODE_LABELS } from '../../lib/languageMode'
 
 // ─── Categorías "clásicas" con su propio slot en el state ────────────────
 const LEGACY_CONFIG = {
@@ -197,6 +199,8 @@ export default function Catalog({ type }) {
   }
 
   const badgeClass = BADGE_COLORS[config.color] || BADGE_COLORS.gold
+  const filteredResults = useLanguageFilter(data.results)
+  const langMode = useCurrentLanguageMode()
 
   return (
     <motion.main
@@ -230,8 +234,20 @@ export default function Catalog({ type }) {
           </div>
         </div>
 
+        {/* Indicador del filtro activo */}
+        {langMode !== 'all' && data.results.length > 0 && (
+          <div className="mb-5 flex items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold font-semibold uppercase tracking-wide">
+              Filtro: {MODE_LABELS[langMode]}
+            </span>
+            <span className="text-muted/60 font-mono">
+              {filteredResults.length} de {data.results.length} resultados
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-          {data.results.map((item, i) => (
+          {filteredResults.map((item, i) => (
             <MovieCard
               key={`${item.id}-${i}`}
               movie={item}
@@ -243,6 +259,18 @@ export default function Catalog({ type }) {
             Array.from({ length: SKELETON_COUNT }).map((_, i) => <MovieCardSkeleton key={i} />)
           }
         </div>
+
+        {/* Mensaje cuando el filtro corta todo */}
+        {!data.loading && data.results.length > 0 && filteredResults.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <p className="text-chalk font-display font-semibold text-lg">
+              Sin resultados con el filtro "{MODE_LABELS[langMode]}"
+            </p>
+            <p className="text-muted text-sm max-w-md">
+              Esta categoría no tiene contenido en español. Cambiá el filtro de idioma desde la navbar para verla.
+            </p>
+          </div>
+        )}
 
         {data.loading && data.results.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 mt-5">

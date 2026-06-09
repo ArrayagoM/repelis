@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown } from '@phosphor-icons/react'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
+import LanguageModeToggle from '../LanguageModeToggle'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -236,6 +237,10 @@ export default function Navbar({ onDonateClick }) {
 
           {/* Right actions */}
           <div className="flex items-center gap-1.5">
+            <div className="hidden md:block">
+              <LanguageModeToggle variant="navbar" />
+            </div>
+
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={onDonateClick}
@@ -336,11 +341,14 @@ export default function Navbar({ onDonateClick }) {
               </span>
             </Link>
 
-            {/* Donar móvil */}
-            <button onClick={() => { onDonateClick?.(); setMenuOpen(false) }}
-              className="self-start mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold/10 border border-gold/30 text-gold text-sm font-semibold hover:bg-gold/20 transition-all">
-              <Coffee size={14} weight="fill" /> Invitar un café
-            </button>
+            {/* Toggle idioma + Donar móvil */}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <LanguageModeToggle variant="full" />
+              <button onClick={() => { onDonateClick?.(); setMenuOpen(false) }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold/10 border border-gold/30 text-gold text-sm font-semibold hover:bg-gold/20 transition-all">
+                <Coffee size={14} weight="fill" /> Café
+              </button>
+            </div>
 
             {/* Categorías */}
             <div className="space-y-6 pb-12">
