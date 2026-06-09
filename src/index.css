@@ -134,3 +134,49 @@ html.low-end *::after {
 }
 html.low-end img { image-rendering: auto; }
 html.low-end .skeleton { animation: none; background: #1A1A2A; }
+
+/* Hero con altura fija predecible para Chromes viejos que no soportan dvh */
+.hero-low-end {
+  min-height: 92vh;
+  min-height: 600px;   /* fallback más viejo aún */
+}
+
+/* Apagar TODO backdrop-filter, blur y filtros pesados en low-end:
+   son los principales asesinos de FPS en TV-box y proyectores */
+html.low-end [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.low-end [class*="blur"] {
+  filter: none !important;
+}
+
+/* Anular shadows pesadas que recompositan en cada paint */
+html.low-end [class*="shadow-"] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Reducir grids muy grandes — menos cards = menos imágenes en RAM */
+html.low-end .grid-cols-5,
+html.low-end .grid-cols-6,
+html.low-end .xl\:grid-cols-6,
+html.low-end .lg\:grid-cols-5 {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+/* Fonts del sistema en low-end — ahorra 50-100KB de descarga y parse */
+html.low-end body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
+}
+
+/* Apagar gradients sobre el viewport entero (caros de compositar) */
+html.low-end [class*="bg-gradient"] {
+  background-image: none !important;
+}
+
+/* Hidear elementos puramente decorativos en low-end */
+html.low-end .text-gold-gradient {
+  background: none !important;
+  -webkit-text-fill-color: #E8A020 !important;
+  color: #E8A020 !important;
+}

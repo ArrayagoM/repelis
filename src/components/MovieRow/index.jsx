@@ -2,9 +2,14 @@ import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { CaretRight, ArrowRight } from '@phosphor-icons/react'
 import MovieCard, { MovieCardSkeleton } from '../MovieCard'
+import { getDeviceCaps } from '../../lib/deviceCaps'
+
+const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
+const ROW_LIMIT = _LOW_END ? 8 : 20
 
 export default function MovieRow({ title, badge, movies = [], loading = false, onViewAll, mediaType = 'movie', badgeColor }) {
   const trackRef = useRef(null)
+  const visible = movies.slice(0, ROW_LIMIT)
 
   const scroll = (dir) => {
     const el = trackRef.current
@@ -22,10 +27,10 @@ export default function MovieRow({ title, badge, movies = [], loading = false, o
 
   return (
     <motion.section
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
+      initial={_LOW_END ? false : { opacity: 0 }}
+      whileInView={_LOW_END ? undefined : { opacity: 1 }}
       viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      transition={_LOW_END ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="relative"
     >
       {/* Header */}
@@ -62,10 +67,10 @@ export default function MovieRow({ title, badge, movies = [], loading = false, o
         className="flex gap-4 overflow-x-auto scrollbar-hide px-6 md:px-12 pb-4"
         style={{ scrollSnapType: 'x mandatory' }}>
         {loading
-          ? Array.from({ length: 10 }).map((_, i) => (
+          ? Array.from({ length: _LOW_END ? 4 : 10 }).map((_, i) => (
               <div key={i} style={{ scrollSnapAlign: 'start' }}><MovieCardSkeleton /></div>
             ))
-          : movies.map((movie, i) => (
+          : visible.map((movie, i) => (
               <div key={movie.id} style={{ scrollSnapAlign: 'start' }}>
                 <MovieCard movie={movie} index={i} mediaType={mediaType} />
               </div>

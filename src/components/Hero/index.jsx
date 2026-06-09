@@ -46,31 +46,37 @@ export default function Hero({ movies = [] }) {
     : movie.overview
 
   return (
-    <section className="relative w-full min-h-[100dvh] flex items-end overflow-hidden">
+    <section className={`relative w-full flex items-end overflow-hidden ${LOW_END ? 'hero-low-end' : 'min-h-[100dvh]'}`}>
       {/* ── Backdrop ── */}
-      <AnimatePresence mode="crossfade">
-        <motion.div
-          key={`backdrop-${movie.id}`}
-          className="absolute inset-0 z-0"
-          initial={{ opacity: 0, scale: 1.06 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-        >
-          {backdropUrl && (
-            <img
-              src={backdropUrl}
-              alt=""
-              className="w-full h-full object-cover object-center"
-              style={{ willChange: 'transform' }}
-            />
-          )}
-          {/* Multi-layer cinematic gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-void via-void/70 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-void via-void/30 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-void/60 via-transparent to-transparent" />
-        </motion.div>
-      </AnimatePresence>
+      {LOW_END ? (
+        // En low-end: SIN imagen backdrop. Una imagen de 780px = ~80KB en
+        // RAM, y aquí ya hay 12 cards más. Color sólido + un gradient sutil.
+        <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#1a1a2e] via-void to-[#0a0a14]" aria-hidden="true" />
+      ) : (
+        <AnimatePresence mode="crossfade">
+          <motion.div
+            key={`backdrop-${movie.id}`}
+            className="absolute inset-0 z-0"
+            initial={{ opacity: 0, scale: 1.06 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
+          >
+            {backdropUrl && (
+              <img
+                src={backdropUrl}
+                alt=""
+                className="w-full h-full object-cover object-center"
+                style={{ willChange: 'transform' }}
+              />
+            )}
+            {/* Multi-layer cinematic gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-void via-void/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-void via-void/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-void/60 via-transparent to-transparent" />
+          </motion.div>
+        </AnimatePresence>
+      )}
 
       {/* ── Content ── */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 pb-24 pt-32 grid grid-cols-1 md:grid-cols-2 gap-12 items-end">
@@ -145,24 +151,26 @@ export default function Hero({ movies = [] }) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Right: Poster (hidden on mobile) */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`poster-${movie.id}`}
-            className="hidden lg:flex justify-end items-end"
-            initial={{ opacity: 0, x: 40, scale: 0.96 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {posterUrl && (
-              <div className="relative w-52 xl:w-60 rounded-2xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.8)] border border-white/10">
-                <img src={posterUrl} alt={movie.title} className="w-full" />
-                <div className="absolute inset-0 bg-gradient-to-t from-void/50 to-transparent" />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        {/* Right: Poster — oculto en low-end (1 imagen menos en RAM) */}
+        {!LOW_END && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`poster-${movie.id}`}
+              className="hidden lg:flex justify-end items-end"
+              initial={{ opacity: 0, x: 40, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 40 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {posterUrl && (
+                <div className="relative w-52 xl:w-60 rounded-2xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.8)] border border-white/10">
+                  <img src={posterUrl} alt={movie.title} className="w-full" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-void/50 to-transparent" />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       {/* ── Slide indicators (ocultos en low-end porque solo hay 1 slide) ── */}

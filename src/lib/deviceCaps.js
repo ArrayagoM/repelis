@@ -25,17 +25,37 @@ export function getDeviceCaps() {
   const saveData = !!conn?.saveData
   const ua = (navigator.userAgent || '').toLowerCase()
 
-  const isTV = /\b(smart-tv|smarttv|googletv|appletv|hbbtv|tv\b|crkey|aftt|aftb|aftn|nettv|smart_tv)\b/i.test(ua)
+  // TVs, set-top boxes, proyectores Android, palos HDMI, dongles
+  const isTV = /\b(smart-?tv|googletv|google_tv|appletv|hbbtv|tv\b|crkey|chromecast|aftt|aftb|aftn|aftm|aftr|aftka|nettv|smart_tv|web0s|webos|tizen|netcast|viera|bravia|philips-tv|sony-tv|lg-tv|samsung-tv|sharp-tv|panasonic-tv|tv ?box|stb\b|amlogic|rockchip|allwinner|projector|miracast|displaylink|firetv|fire tv|aft|miflip|mi tv|xiaomi-tv|hisense-tv|vidaa|tcl-tv|toshiba-tv|orange-tv|movistar-tv)\b/i.test(ua)
 
+  // Heurística TV/proyector "incógnito": pantalla >= 1280, DPR=1, sin touch.
+  // Una PC normal típicamente tiene DPR >= 1.25 (Windows scaling) o pantalla < 1280.
+  let isProbablyTV = false
+  try {
+    const sw = window.screen?.width || 0
+    const dpr = window.devicePixelRatio || 1
+    const noTouch = !('ontouchstart' in window) && (navigator.maxTouchPoints || 0) === 0
+    const coarse = window.matchMedia?.('(pointer: coarse)').matches
+    const noHover = window.matchMedia?.('(hover: none)').matches
+    // TV/proyector: sin touch + sin hover real + pantalla grande + DPR exacto 1
+    if (sw >= 1280 && dpr === 1 && noTouch && (coarse || noHover)) {
+      isProbablyTV = true
+    }
+  } catch {}
+
+  // Sólo se activa low-end cuando hay UNA señal explícita y dura.
+  // Cero detección "por las dudas" que pueda penalizar PCs/móviles normales.
   const memoryLow  = memory !== null && memory <= 2
   const coresLow   = cores !== null && cores <= 2
-  const networkLow = eff === 'slow-2g' || eff === '2g' || eff === '3g' || (down !== null && down < 2)
+  const networkLow = eff === 'slow-2g' || eff === '2g'
 
-  const lowEnd = memoryLow || coresLow || networkLow || saveData || isTV
+  // El proyector cae acá: UA de TV/STB, o la heurística viewport "sin touch
+  // + DPR=1 + pantalla >=1280" que es típica de salidas HDMI a TV/proyector.
+  const lowEnd = isTV || isProbablyTV || memoryLow || coresLow || networkLow || saveData
 
   _cached = {
     lowEnd,
-    isTV,
+    isTV: isTV || isProbablyTV,
     memory,
     cores,
     network: eff || 'unknown',

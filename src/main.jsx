@@ -5,10 +5,17 @@ import { BrowserRouter } from 'react-router-dom'
 import { store } from './store'
 import App from './App'
 import { installGlobalHandlers } from './lib/errorMonitor'
+import { getDeviceCaps } from './lib/deviceCaps'
 import './index.css'
 
 // 1) Captura de errores globales (window.error + unhandledrejection)
 installGlobalHandlers()
+
+// Bandera de capacidad temprana (antes del primer render del App)
+const _CAPS = getDeviceCaps()
+if (_CAPS.lowEnd && typeof document !== 'undefined') {
+  document.documentElement.classList.add('low-end')
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -37,9 +44,14 @@ const scheduleSpeedTest = (cb) => {
   else setTimeout(cb, 2500)
 }
 
-scheduleSpeedTest(() => {
-  // Import dinámico para no inflar el initial bundle
-  import('./lib/speedTest').then(({ measureSources }) => {
-    measureSources().catch(() => {})
+// En low-end: NO ejecutamos el speed test. Son 12 HTTP requests al startup
+// que tiran la memoria al techo en TVs/proyectores. El orden por defecto de
+// SOURCES (LATAM-first) es suficiente.
+if (!_CAPS.lowEnd) {
+  scheduleSpeedTest(() => {
+    // Import dinámico para no inflar el initial bundle
+    import('./lib/speedTest').then(({ measureSources }) => {
+      measureSources().catch(() => {})
+    })
   })
-})
+}

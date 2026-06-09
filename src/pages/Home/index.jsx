@@ -9,6 +9,9 @@ import {
   fetchTrendingTV, fetchPopularTV, fetchTopRatedTV, fetchAiringTodayTV, fetchAnime, fetchKDrama,
 } from '../../store/slices/moviesSlice'
 import { fetchGenres } from '../../store/slices/genresSlice'
+import { getDeviceCaps } from '../../lib/deviceCaps'
+
+const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 
 export default function Home() {
   const dispatch = useDispatch()
@@ -20,6 +23,16 @@ export default function Home() {
   } = useSelector((s) => s.movies)
 
   useEffect(() => {
+    // En low-end pedimos SOLO lo esencial (4 endpoints vs 13).
+    // Cada endpoint = 20 películas con 20 pósters más en RAM.
+    if (_LOW_END) {
+      if (!trending.results.length)   dispatch(fetchTrending())
+      if (!popular.results.length)    dispatch(fetchPopular())
+      if (!popularTV.results.length)  dispatch(fetchPopularTV())
+      if (!anime.results.length)      dispatch(fetchAnime())
+      dispatch(fetchGenres())
+      return
+    }
     // Películas
     if (!trending.results.length)    dispatch(fetchTrending())
     if (!popular.results.length)     dispatch(fetchPopular())
@@ -37,6 +50,28 @@ export default function Home() {
     if (!kdrama.results.length)        dispatch(fetchKDrama())
     dispatch(fetchGenres())
   }, [dispatch])
+
+  // ─── Render low-end: SOLO 4 filas, sin dividers ni footer interno ───
+  if (_LOW_END) {
+    return (
+      <main className="min-h-screen bg-void">
+        <Hero movies={trending.results} />
+        <div className="relative z-10 -mt-4 space-y-8 pb-12">
+          <MovieRow title="Tendencias" movies={trending.results}
+            loading={trending.loading && !trending.results.length} />
+          <MovieRow title="Películas Populares" movies={popular.results}
+            loading={popular.loading && !popular.results.length}
+            onViewAll={() => navigate('/populares')} />
+          <MovieRow title="Series Populares" movies={popularTV.results}
+            loading={popularTV.loading && !popularTV.results.length}
+            mediaType="tv" onViewAll={() => navigate('/series')} />
+          <MovieRow title="Anime" movies={anime.results}
+            loading={anime.loading && !anime.results.length}
+            mediaType="tv" onViewAll={() => navigate('/anime')} />
+        </div>
+      </main>
+    )
+  }
 
   return (
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

@@ -29,6 +29,12 @@ function RouteFallback() {
   )
 }
 
+// AnimatePresence solo cuando enabled. En low-end servimos children pelado.
+function RouteWrapper({ enabled, children }) {
+  if (!enabled) return children
+  return <AnimatePresence mode="wait">{children}</AnimatePresence>
+}
+
 export default function App() {
   const location = useLocation()
   const [donateOpen, setDonateOpen] = useState(false)
@@ -50,10 +56,13 @@ export default function App() {
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
       <DonateModal open={donateOpen} onClose={() => setDonateOpen(false)} />
-      <FloatingCafecito />
+      {/* En low-end omitimos el botón flotante (un componente menos, una
+          suscripción Redux menos, un timer menos). El botón sigue presente
+          en el Footer y en cada detalle de peli. */}
+      {!lowEnd && <FloatingCafecito />}
 
       <Suspense fallback={<RouteFallback />}>
-        <AnimatePresence mode="wait">
+        <RouteWrapper enabled={!lowEnd}>
           <Routes location={location} key={location.pathname}>
             {/* Main */}
             <Route path="/"              element={<Home />} />
@@ -170,7 +179,7 @@ export default function App() {
             {/* Fallback */}
             <Route path="*" element={<Home />} />
           </Routes>
-        </AnimatePresence>
+        </RouteWrapper>
       </Suspense>
 
       <Footer onDonateClick={() => setDonateOpen(true)} />
