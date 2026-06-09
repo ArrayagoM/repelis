@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { getOrderedSources, buildUrl, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
+import { getDeviceCaps } from '../../lib/deviceCaps'
 
 /**
  * Calienta el top servidor mientras el usuario está en la página de detalle.
@@ -37,7 +38,10 @@ export default function PlayerPrefetch({
       return
     }
     const { saveData } = getNetworkInfo()
-    if (saveData) {
+    // En low-end (poca RAM o CPU): no precargamos. Dos iframes simultáneos
+    // — el oculto y el del modal — pueden hacer crashear Chrome con OOM.
+    const { lowEnd } = getDeviceCaps()
+    if (saveData || lowEnd) {
       setArmed(false)
       return
     }

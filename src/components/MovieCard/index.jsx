@@ -5,12 +5,14 @@ import { motion } from 'framer-motion'
 import { Play, Star, CalendarBlank, TelevisionSimple } from '@phosphor-icons/react'
 import { IMG_W342, IMG_W500 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
-import { getNetworkInfo } from '../../lib/network'
+import { getDeviceCaps } from '../../lib/deviceCaps'
 
-// Detectamos una sola vez (no recomputamos en cada card) si la red es lenta.
-// En red lenta: poster más chico (w342 vs w500) y sin tilt 3D (ahorra paint).
-const _netInfo = typeof window !== 'undefined' ? getNetworkInfo() : { quality: 'unknown', saveData: false }
-const LOW_END = _netInfo.quality === 'slow' || _netInfo.quality === 'moderate' || _netInfo.saveData
+// Capacidades detectadas UNA vez (cacheado). En low-end:
+//   - poster más chico (w342 vs w500)
+//   - sin tilt 3D
+//   - sin animación whileInView (carga directo sin fade)
+const _caps = typeof window !== 'undefined' ? getDeviceCaps() : { lowEnd: false }
+const LOW_END = _caps.lowEnd
 
 export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   const navigate = useNavigate()
@@ -57,11 +59,11 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   return (
     <motion.article
       ref={cardRef}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={LOW_END ? false : { opacity: 0, y: 24 }}
+      whileInView={LOW_END ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay: index * 0.045, ease: [0.16, 1, 0.3, 1] }}
-      style={{
+      transition={LOW_END ? { duration: 0 } : { duration: 0.5, delay: index * 0.045, ease: [0.16, 1, 0.3, 1] }}
+      style={LOW_END ? undefined : {
         transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
         transition: hovered ? 'transform 0.1s linear' : 'transform 0.5s cubic-bezier(0.32,0.72,0,1)',
         willChange: 'transform',

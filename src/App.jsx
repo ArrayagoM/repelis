@@ -1,6 +1,7 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { getDeviceCaps } from './lib/deviceCaps'
 import Navbar       from './components/Navbar'
 import Footer       from './components/Footer'
 import PlayerModal  from './components/PlayerModal'
@@ -31,11 +32,21 @@ function RouteFallback() {
 export default function App() {
   const location = useLocation()
   const [donateOpen, setDonateOpen] = useState(false)
+  const [lowEnd, setLowEnd] = useState(false)
+
+  // Setea low-end mode → CSS apaga noise-overlay y otros lujos visuales
+  useEffect(() => {
+    const caps = getDeviceCaps()
+    if (caps.lowEnd && typeof document !== 'undefined') {
+      document.documentElement.classList.add('low-end')
+      setLowEnd(true)
+    }
+  }, [])
 
   return (
     <ErrorBoundary>
       <ErrorBar />
-      <div className="noise-overlay" aria-hidden="true" />
+      {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
       <DonateModal open={donateOpen} onClose={() => setDonateOpen(false)} />

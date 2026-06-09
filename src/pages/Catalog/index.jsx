@@ -4,6 +4,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from '@phosphor-icons/react'
 import * as TMDB from '../../api/tmdb'
+import { getDeviceCaps } from '../../lib/deviceCaps'
+
+const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
+const SKELETON_COUNT = _LOW_END ? 6 : 18
 import {
   fetchPopular, fetchTopRated, fetchNowPlaying, fetchUpcoming, fetchTrending, fetchTrendingDay,
   fetchClassics, fetchAnimeMovies,
@@ -210,7 +214,7 @@ export default function Catalog({ type }) {
             />
           ))}
           {data.loading && !data.results.length &&
-            Array.from({ length: 18 }).map((_, i) => <MovieCardSkeleton key={i} />)
+            Array.from({ length: SKELETON_COUNT }).map((_, i) => <MovieCardSkeleton key={i} />)
           }
         </div>
 

@@ -13,6 +13,19 @@ const IMG_CACHE    = `repelis-img-${CACHE_VERSION}`
 const API_CACHE    = `repelis-api-${CACHE_VERSION}`
 
 const API_CACHE_TTL_MS = 10 * 60 * 1000   // 10 min
+const IMG_CACHE_MAX = 80                  // tope de pósters cacheados (RAM low-end)
+const SHELL_CACHE_MAX = 40                // tope archivos shell
+
+const trimCache = async (cacheName, max) => {
+  try {
+    const cache = await caches.open(cacheName)
+    const keys = await cache.keys()
+    if (keys.length <= max) return
+    // FIFO: borrar las más viejas (primeras en keys())
+    const toDelete = keys.length - max
+    for (let i = 0; i < toDelete; i++) await cache.delete(keys[i])
+  } catch {}
+}
 
 self.addEventListener('install', (event) => {
   // No precachemos nada en install: el shell se cachea cuando llegue la primera request.
@@ -38,12 +51,16 @@ const isShell     = (url) => url.origin === self.location.origin && (
   url.pathname === '/'
 )
 
-// Stale-while-revalidate
-const swr = async (request, cacheName) => {
+// Stale-while-revalidate con cap de entradas (FIFO)
+const swr = async (request, cacheName, maxEntries = null) => {
   const cache = await caches.open(cacheName)
   const cached = await cache.match(request)
   const network = fetch(request).then((res) => {
-    if (res && res.ok) cache.put(request, res.clone()).catch(() => {})
+    if (res && res.ok) {
+      cache.put(request, res.clone())
+        .then(() => maxEntries && trimCache(cacheName, maxEntries))
+        .catch(() => {})
+    }
     return res
   }).catch(() => cached)
   return cached || network
@@ -107,7 +124,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isImageTMDB(url)) {
-    event.respondWith(swr(req, IMG_CACHE))
+    event.respondWith(swr(req, IMG_CACHE, IMG_CACHE_MAX))
     return
   }
   if (isAPITMDB(url)) {
@@ -115,7 +132,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
   if (isShell(url)) {
-    event.respondWith(swr(req, SHELL_CACHE))
+    event.respondWith(swr(req, SHELL_CACHE, SHELL_CACHE_MAX))
     return
   }
 })

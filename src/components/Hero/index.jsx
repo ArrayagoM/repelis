@@ -3,19 +3,26 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Info, Star } from '@phosphor-icons/react'
-import { IMG_ORIGINAL, IMG_W500 } from '../../api/tmdb'
+import { IMG_ORIGINAL, IMG_W500, IMG_W780 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
+import { getDeviceCaps } from '../../lib/deviceCaps'
+
+const _caps = typeof window !== 'undefined' ? getDeviceCaps() : { lowEnd: false }
+const LOW_END = _caps.lowEnd
+
+// En low-end: solo 1 peli, sin auto-rotate, backdrop más liviano (780 vs original)
+const MAX_SLIDES = LOW_END ? 1 : 8
 
 export default function Hero({ movies = [] }) {
   const [index, setIndex] = useState(0)
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  // Auto-rotate every 7 seconds
+  // Auto-rotate every 7s (deshabilitado en low-end)
   useEffect(() => {
-    if (movies.length < 2) return
+    if (LOW_END || movies.length < 2) return
     const id = setInterval(() => {
-      setIndex((i) => (i + 1) % Math.min(movies.length, 8))
+      setIndex((i) => (i + 1) % Math.min(movies.length, MAX_SLIDES))
     }, 7000)
     return () => clearInterval(id)
   }, [movies.length])
@@ -23,8 +30,10 @@ export default function Hero({ movies = [] }) {
   if (!movies.length) return <HeroSkeleton />
 
   const movie = movies[index]
+  // Backdrop más liviano en low-end (780px vs original ~2000px)
+  const backdropBase = LOW_END ? IMG_W780 : IMG_ORIGINAL
   const backdropUrl = movie.backdrop_path
-    ? `${IMG_ORIGINAL}${movie.backdrop_path}`
+    ? `${backdropBase}${movie.backdrop_path}`
     : null
   const posterUrl = movie.poster_path
     ? `${IMG_W500}${movie.poster_path}`
@@ -156,21 +165,23 @@ export default function Hero({ movies = [] }) {
         </AnimatePresence>
       </div>
 
-      {/* ── Slide indicators ── */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
-        {movies.slice(0, 8).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setIndex(i)}
-            className={`transition-all duration-400 rounded-full ${
-              i === index
-                ? 'w-8 h-1.5 bg-gold shadow-[0_0_8px_rgba(232,160,32,0.6)]'
-                : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
-            }`}
-            aria-label={`Ir a película ${i + 1}`}
-          />
-        ))}
-      </div>
+      {/* ── Slide indicators (ocultos en low-end porque solo hay 1 slide) ── */}
+      {!LOW_END && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+          {movies.slice(0, MAX_SLIDES).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`transition-all duration-400 rounded-full ${
+                i === index
+                  ? 'w-8 h-1.5 bg-gold shadow-[0_0_8px_rgba(232,160,32,0.6)]'
+                  : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+              }`}
+              aria-label={`Ir a película ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
