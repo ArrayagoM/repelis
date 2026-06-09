@@ -27,6 +27,13 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
 
   const posterBase = LOW_END ? IMG_W342 : IMG_W500
   const posterUrl  = movie.poster_path ? `${posterBase}${movie.poster_path}` : null
+
+  // Banderita de idioma original: si la peli es originalmente en español,
+  // mostramos 🇲🇽 LATAM (alta probabilidad de doblaje natural).
+  // Para el resto (en, ja, etc.) mostramos "ES" indicando que tenemos
+  // servidores LATAM que probablemente la tienen doblada.
+  const origLang = movie.original_language
+  const isOrigSpanish = origLang === 'es'
   const rating    = movie.vote_average?.toFixed(1) ?? '–'
   const year      = (movie.release_date || movie.first_air_date)?.slice(0, 4) ?? ''
   const title     = movie.title ?? movie.name ?? 'Sin título'
@@ -119,6 +126,20 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
           <div className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-void/70 backdrop-blur-sm border border-gold/15">
             <Star size={9} weight="fill" className="text-gold" />
             <span className="text-[10px] font-mono font-medium text-chalk">{rating}</span>
+          </div>
+
+          {/* Banderita LATAM / Español — visible desde el catálogo */}
+          <div
+            className={`absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full backdrop-blur-sm border
+              ${isOrigSpanish
+                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
+                : 'bg-void/70 border-white/15 text-chalk/85'}`}
+            title={isOrigSpanish ? 'Idioma original: español' : 'Doblaje latino disponible en servidores LATAM'}
+          >
+            <span className="text-[10px] leading-none">{isOrigSpanish ? '🇲🇽' : '🌎'}</span>
+            <span className="text-[9px] font-mono font-bold tracking-wide">
+              {isOrigSpanish ? 'ESP' : 'LAT'}
+            </span>
           </div>
         </div>
 

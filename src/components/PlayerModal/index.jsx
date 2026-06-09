@@ -357,6 +357,17 @@ export default function PlayerModal() {
                 )}
               </AnimatePresence>
 
+              {/* Badge LATAM cuando el servidor activo soporta español */}
+              {src?.esLat && (
+                <span
+                  className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wide flex-shrink-0"
+                  title="Este servidor suele tener audio en español latino"
+                >
+                  <span className="text-sm leading-none">🇲🇽</span>
+                  LATAM
+                </span>
+              )}
+
               {/* Nav servidores */}
               <div className="flex items-center gap-0.5 flex-shrink-0">
                 <button onClick={() => goTo((srcIdx - 1 + sources.length) % sources.length)}
@@ -364,15 +375,18 @@ export default function PlayerModal() {
                   <CaretLeft size={10} weight="bold" />
                 </button>
                 {sources.map((s, i) => (
-                  <button key={s.id} onClick={() => goTo(i)} title={`${s.label}${s.premium ? ' ★' : ''}`}
+                  <button key={s.id} onClick={() => goTo(i)} title={`${s.label}${s.premium ? ' ★' : ''}${s.esLat ? ' 🇲🇽 LATAM' : ''}`}
                     className={`w-6 h-6 flex items-center justify-center rounded text-[11px] font-semibold transition-all duration-150 relative ${
                       i === srcIdx
-                        ? s.premium ? 'bg-purple-500/20 text-purple-300' : 'bg-gold/20 text-gold'
+                        ? s.premium ? 'bg-purple-500/20 text-purple-300' : s.esLat ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gold/20 text-gold'
                         : 'text-muted/40 hover:text-chalk hover:bg-white/5'
                     }`}>
                     {i + 1}
                     {s.premium && (
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-purple-400 border border-void" />
+                    )}
+                    {!s.premium && s.esLat && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-void" />
                     )}
                   </button>
                 ))}
@@ -597,13 +611,16 @@ export default function PlayerModal() {
               </div>
               <div className="flex items-center gap-1 mx-auto sm:mx-0 flex-wrap justify-center">
                 {sources.map((s, i) => (
-                  <button key={s.id} onClick={() => goTo(i)} title={s.label}
+                  <button key={s.id} onClick={() => goTo(i)} title={`${s.label}${s.esLat ? ' 🇲🇽 audio latino' : ''}`}
                     className={`px-2 py-0.5 rounded text-[10px] transition-all duration-150 flex items-center gap-1 ${
                       i === srcIdx
-                        ? s.premium ? 'bg-purple-500/12 text-purple-300 border border-purple-500/20' : 'bg-gold/12 text-gold border border-gold/18'
+                        ? s.premium ? 'bg-purple-500/12 text-purple-300 border border-purple-500/20'
+                          : s.esLat ? 'bg-emerald-500/12 text-emerald-300 border border-emerald-500/20'
+                          : 'bg-gold/12 text-gold border border-gold/18'
                         : 'text-muted/30 hover:text-muted border border-transparent'
                     }`}>
                     {s.premium && <Star size={8} weight="fill" className={i === srcIdx ? 'text-purple-400' : 'text-muted/20'} />}
+                    {!s.premium && s.esLat && <span className="text-[10px] leading-none">🇲🇽</span>}
                     {s.label}
                   </button>
                 ))}

@@ -91,7 +91,7 @@ export default function Hero({ movies = [] }) {
             className="flex flex-col gap-5"
           >
             {/* Eyebrow */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="px-3 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold text-[11px] uppercase tracking-[0.18em] font-semibold">
                 Tendencia global
               </span>
@@ -102,6 +102,14 @@ export default function Hero({ movies = [] }) {
               {year && (
                 <span className="text-muted text-sm font-mono">{year}</span>
               )}
+              {/* Banderita LATAM siempre visible — indica que tenemos servidores con audio latino */}
+              <span
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-[11px] font-semibold uppercase tracking-wide"
+                title="Tenemos servidores con audio latino — buscá el ícono 🔊 en el player"
+              >
+                <span className="text-sm leading-none">🇲🇽</span>
+                Audio Latino
+              </span>
             </div>
 
             {/* Title */}

@@ -48,6 +48,30 @@ export const SOURCES = [
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
+    id: 'rivestream', label: 'RiveStream', esLat: true,
+    movieUrl: (id)       => `https://rivestream.live/embed?type=movie&id=${id}`,
+    tvUrl:    (id, s, e) => `https://rivestream.live/embed?type=tv&id=${id}&season=${s}&episode=${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: 'moviesapi', label: 'MoviesAPI', esLat: true,
+    movieUrl: (id)       => `https://moviesapi.club/movie/${id}`,
+    tvUrl:    (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: '111movies', label: '111Movies', esLat: true,
+    movieUrl: (id)       => `https://111movies.com/movie/${id}`,
+    tvUrl:    (id, s, e) => `https://111movies.com/tv/${id}/${s}/${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: 'mapple', label: 'MappleTV', esLat: true,
+    movieUrl: (id)       => `https://mappletv.uk/watch/movie/${id}`,
+    tvUrl:    (id, s, e) => `https://mappletv.uk/watch/tv/${id}-${s}-${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
     id: 'multiembed', label: 'MultiEmbed',
     movieUrl: (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1&lang=es`,
     tvUrl:    (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}&lang=es`,
@@ -87,6 +111,12 @@ export const SOURCES = [
     id: '2embed', label: '2Embed',
     movieUrl: (id)       => `https://www.2embed.cc/embed/${id}`,
     tvUrl:    (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: '2embed-skin', label: '2Embed+', esLat: true,
+    movieUrl: (id)       => `https://2embed.skin/embed/${id}`,
+    tvUrl:    (id, s, e) => `https://2embed.skin/embedtv/${id}&s=${s}&e=${e}`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
 ]
