@@ -7,6 +7,7 @@ import Footer       from './components/Footer'
 import PlayerModal  from './components/PlayerModal'
 import DonateModal  from './components/DonateModal'
 import FloatingCafecito from './components/FloatingCafecito'
+import UpdateAvailable from './components/UpdateAvailable'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
 import Home         from './pages/Home'
@@ -62,6 +63,7 @@ export default function App() {
           suscripción Redux menos, un timer menos). El botón sigue presente
           en el Footer y en cada detalle de peli. */}
       {!lowEnd && <FloatingCafecito />}
+      <UpdateAvailable />
 
       <Suspense fallback={<RouteFallback />}>
         <RouteWrapper enabled={!lowEnd}>

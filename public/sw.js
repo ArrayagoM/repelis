@@ -7,7 +7,9 @@
 //   - Iframes de streaming: NO se cachean (NEVER) — siempre fresh.
 // ─────────────────────────────────────────────────────────────────────────
 
-const CACHE_VERSION = 'v2'
+// IMPORTANTE: bumpear esta versión en cada deploy de rebrand/cambio de UI
+// para forzar la purga del cache viejo y traer el nuevo bundle.
+const CACHE_VERSION = 'v3-lifehigh'
 const SHELL_CACHE  = `repelis-shell-${CACHE_VERSION}`
 const IMG_CACHE    = `repelis-img-${CACHE_VERSION}`
 const API_CACHE    = `repelis-api-${CACHE_VERSION}`
@@ -30,6 +32,14 @@ const trimCache = async (cacheName, max) => {
 self.addEventListener('install', (event) => {
   // No precachemos nada en install: el shell se cachea cuando llegue la primera request.
   self.skipWaiting()
+})
+
+// El cliente puede mandar SKIP_WAITING desde UpdateAvailable para forzar
+// la activación inmediata del SW nuevo sin esperar a cerrar todas las pestañas.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('activate', (event) => {
@@ -99,18 +109,23 @@ self.addEventListener('fetch', (event) => {
   // No tocamos los iframes de streaming
   if (req.destination === 'iframe') return
 
-  // Fallback de navegación SPA: si el browser pide una ruta html (cambio de
-  // página vía router) y NO hay red, servimos el index.html del cache.
-  // Crítico para WebViews de Android que pierden conexión a mitad de navegación
-  // (sin esto se ve "página no disponible" estilo HTML crudo).
+  // Navegación SPA: network-first STRICTO.
+  // El HTML siempre se trae fresh — sin esto, el cache podía servir un
+  // index.html viejo que referenciaba bundles JS que ya no existen en
+  // Vercel después de un deploy (el usuario ve la versión vieja).
+  // Solo caemos al cache si la red FALLA por completo (offline).
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req)
-        const cache = await caches.open(SHELL_CACHE)
-        cache.put('/', fresh.clone()).catch(() => {})
+        // Force no-cache para asegurar HTML fresco siempre
+        const fresh = await fetch(req, { cache: 'no-store' })
+        if (fresh && fresh.ok) {
+          const cache = await caches.open(SHELL_CACHE)
+          cache.put('/', fresh.clone()).catch(() => {})
+        }
         return fresh
       } catch {
+        // Solo aquí caemos al cache: cuando NO hay red en absoluto.
         const cache = await caches.open(SHELL_CACHE)
         const cached = await cache.match('/') || await cache.match('/index.html')
         if (cached) return cached
