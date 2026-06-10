@@ -89,6 +89,11 @@ export const getTVByKeyword = (keywordId, page = 1) =>
 // Por network de TV (Cartoon Network, FX, AMC, HBO original, etc.)
 export const getTVByNetwork = (networkId, page = 1) =>
   api.get('/discover/tv', { params: { with_networks: networkId, sort_by: 'popularity.desc', page } })
+
+// Watch providers: dónde ver la peli/serie legalmente por país.
+// Devuelve flatrate (suscripción), rent (alquiler), buy (compra) por país.
+export const getMovieWatchProviders = (id) => api.get('/movie/' + id + '/watch/providers')
+export const getTVWatchProviders    = (id) => api.get('/tv/' + id + '/watch/providers')
 export const getMoviesByGenre = (genreId, page = 1) =>
   api.get('/discover/movie', { params: { with_genres: genreId, sort_by: 'popularity.desc', page } })
 

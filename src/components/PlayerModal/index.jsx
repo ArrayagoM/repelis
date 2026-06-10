@@ -10,6 +10,7 @@ import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
 import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
 import { getServerHistory } from '../../lib/serverHealth'
+import WatchProviders from '../WatchProviders'
 
 // ─── Timeouts (balance entre velocidad y NO interrumpir reproducción) ──
 // Lección: timeouts agresivos cortaban videos que tardaban en arrancar.
@@ -531,29 +532,56 @@ export default function PlayerModal() {
                 )}
               </AnimatePresence>
 
-              {/* Fallo total */}
+              {/* Fallo total — pantalla honesta + WatchProviders */}
               <AnimatePresence>
                 {phase === 'failed' && (
                   <motion.div key="fail"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-void text-center px-8 pointer-events-auto">
+                    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 bg-void text-center px-6 overflow-y-auto pointer-events-auto">
                     <SmileySad size={36} className="text-dim" />
-                    <div className="space-y-1.5">
-                      <p className="text-chalk font-display font-semibold">Contenido no disponible</p>
-                      <p className="text-muted text-sm max-w-[38ch]">
-                        Probamos {sources.length} servidores y ninguno tiene este contenido. Puede ser un estreno muy reciente.
+                    <div className="space-y-2 max-w-md">
+                      <p className="text-chalk font-display font-semibold text-lg">
+                        Esta peli no la tenemos
+                      </p>
+                      <p className="text-muted text-sm">
+                        Probamos los <strong className="text-chalk/85">{sources.length} servidores</strong> y ninguno la indexó todavía.
+                        Suele pasar con estrenos recientes o cine de nicho.
+                      </p>
+                      <p className="text-muted/60 text-xs">
+                        Te mostramos abajo las opciones legales donde sí está disponible.
                       </p>
                     </div>
-                    <div className="flex gap-2">
+
+                    <div className="flex flex-wrap gap-2 justify-center">
                       <button onClick={() => goTo(0)}
                         className="px-5 py-2 rounded-full bg-gold text-void text-sm font-semibold hover:bg-gold-hi transition-colors">
                         Reintentar
+                      </button>
+                      <button onClick={() => {
+                        try {
+                          const reported = JSON.parse(localStorage.getItem('repelis:reported:v1') || '[]')
+                          if (!reported.includes(movieId)) {
+                            reported.push(movieId)
+                            localStorage.setItem('repelis:reported:v1', JSON.stringify(reported))
+                          }
+                        } catch {}
+                        alert('Gracias. Reportamos esta peli como no disponible para revisar.')
+                      }}
+                        className="px-5 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-semibold hover:bg-amber-500/20 transition-colors">
+                        Reportar
                       </button>
                       <button onClick={handleClose}
                         className="px-5 py-2 rounded-full glass border border-white/10 text-muted text-sm hover:text-chalk transition-colors">
                         Cerrar
                       </button>
                     </div>
+
+                    {/* WatchProviders embebido — soluciona honestamente el problema */}
+                    {movieId && (
+                      <div className="w-full max-w-2xl mt-2 text-left">
+                        <WatchProviders id={movieId} mediaType={mediaType} title={title} />
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -15,6 +15,7 @@ import ShareButtons from '../../components/ShareButtons'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
+import WatchProviders from '../../components/WatchProviders'
 import { useSEO, useMovieSchema } from '../../lib/useSEO'
 
 export default function MovieDetail() {
@@ -173,6 +174,9 @@ export default function MovieDetail() {
 
             {/* Doblaje LATAM real (basado en release_dates de TMDB) */}
             <DubInfo movieId={data.id} originalLanguage={data.original_language} />
+
+            {/* Plataformas legales donde está la peli */}
+            <WatchProviders id={data.id} mediaType="movie" title={data.title} />
 
             {/* Overview */}
             {data.overview && (
