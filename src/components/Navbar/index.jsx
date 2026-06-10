@@ -189,13 +189,13 @@ export default function Navbar({ onDonateClick }) {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-6xl"
+        className="fixed top-5 left-4 right-4 z-50"
         style={{ willChange: 'transform' }}
         onMouseLeave={scheduleClose}
         onMouseEnter={cancelClose}
       >
         <div className={`
-          flex items-center justify-between px-5 py-3 rounded-full transition-all duration-500
+          flex items-center justify-between gap-3 px-4 py-3 rounded-full transition-all duration-500
           ${scrolled ? 'glass shadow-[0_8px_32px_rgba(0,0,0,0.6)]' : 'bg-transparent border border-white/0'}
         `}>
           {/* Logo */}
@@ -235,28 +235,19 @@ export default function Navbar({ onDonateClick }) {
             ))}
           </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-1.5">
+          {/* Right actions — compactos para que entren en lg+ sin overflow */}
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Link to="/mundial"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wide hover:bg-emerald-500/25 transition-all whitespace-nowrap"
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all"
               title="Mundial 2026 en vivo">
-              <SoccerBall size={12} weight="fill" />
-              Mundial
+              <SoccerBall size={14} weight="fill" />
             </Link>
 
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <LanguageModeToggle variant="navbar" />
             </div>
 
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={onDonateClick}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-gold text-xs font-semibold hover:bg-gold/20 transition-all duration-200"
-              aria-label="Donar"
-            >
-              <Coffee size={12} weight="fill" />
-              Café
-            </motion.button>
+            {/* Café removido del navbar — duplicado con FloatingCafecito + Footer */}
 
             {/* Botón lupa solo en mobile/tablet — en desktop está el input inline */}
             <motion.button
