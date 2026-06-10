@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall } from '@phosphor-icons/react'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
@@ -237,6 +237,13 @@ export default function Navbar({ onDonateClick }) {
 
           {/* Right actions */}
           <div className="flex items-center gap-1.5">
+            <Link to="/mundial"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wide hover:bg-emerald-500/25 transition-all whitespace-nowrap"
+              title="Mundial 2026 en vivo">
+              <SoccerBall size={12} weight="fill" />
+              Mundial
+            </Link>
+
             <div className="hidden md:block">
               <LanguageModeToggle variant="navbar" />
             </div>
