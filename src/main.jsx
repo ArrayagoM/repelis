@@ -53,5 +53,10 @@ if (!_CAPS.lowEnd) {
     import('./lib/speedTest').then(({ measureSources }) => {
       measureSources().catch(() => {})
     })
+    // Health check de servidores en paralelo — rellena el historial de
+    // uptime para que el PlayerModal pueda decidir cuáles saltar fast.
+    import('./lib/serverHealth').then(({ pingAll }) => {
+      pingAll().catch(() => {})
+    })
   })
 }

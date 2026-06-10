@@ -9,19 +9,27 @@ import {
 import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
 import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
+import { getServerHistory } from '../../lib/serverHealth'
 
 // ─── Timeouts (balance entre velocidad y NO interrumpir reproducción) ──
 // Lección: timeouts agresivos cortaban videos que tardaban en arrancar.
-// Ahora damos mucho más tiempo y mostramos un botón "cambiar servidor"
-// en vez de cambiarlo automáticamente. El auto-next solo aplica si el
-// iframe NUNCA dispara onLoad (servidor totalmente caído).
-const NEXT_MS_GOOD     = 12000
-const NEXT_MS_MODERATE = 16000
-const NEXT_MS_SLOW     = 22000
+// Balance velocidad ↔ no-cerrarse-solo:
+//   - Si el iframe carga rápido (onLoad < 2s), asumimos que ya arrancó y
+//     dejamos que el usuario se quede ahí (sin auto-next).
+//   - Si tarda > 7s, mostramos botón "Saltar" prominente.
+//   - Si tarda > NEXT_MS_*, saltamos automático al próximo servidor.
+const NEXT_MS_GOOD     = 7000
+const NEXT_MS_MODERATE = 10000
+const NEXT_MS_SLOW     = 15000
 
-// Tras cuánto tiempo de iframe abierto consideramos éxito por defecto
-// (a menos que el usuario o postMessage diga lo contrario antes).
-const ASSUME_PLAYING_MS = 10000
+// Tras cuánto tiempo asumimos que el iframe está reproduciendo
+// (sin esperar señal del player).
+const ASSUME_PLAYING_MS = 5000
+
+// Skip rápido: si el servidor tuvo <30% uptime histórico, lo saltamos sin
+// esperar el timeout (solo aplica si hay >=5 mediciones previas).
+const UPTIME_SKIP_THRESHOLD = 30
+const UPTIME_MIN_SAMPLES = 5
 
 // ─── Guards ──────────────────────────────────────────────────────────────
 const useWindowFocusGuard = (active) => {
@@ -71,8 +79,21 @@ export default function PlayerModal() {
   const { isOpen, movieId, title, mediaType, season: initSeason, episode: initEpisode, totalSeasons } =
     useSelector((s) => s.player)
 
-  // El orden de SOURCES se calcula UNA vez por apertura (último éxito al frente).
-  const sources = useMemo(() => getOrderedSources(), [isOpen, movieId, initSeason, initEpisode])
+  // El orden de SOURCES se calcula UNA vez por apertura. Después aplicamos
+  // un "smart skip": los servidores con <30% uptime histórico van AL FINAL
+  // de la cola (no perdemos tiempo probándolos primero).
+  const sources = useMemo(() => {
+    const ordered = getOrderedSources()
+    const history = getServerHistory()
+    const isHealthy = (s) => {
+      const h = history[s.id]
+      if (!h || h.samples < UPTIME_MIN_SAMPLES) return true   // sin datos = pasa
+      return h.okPct >= UPTIME_SKIP_THRESHOLD
+    }
+    const healthy = ordered.filter(isHealthy)
+    const sick    = ordered.filter((s) => !isHealthy(s))
+    return [...healthy, ...sick]
+  }, [isOpen, movieId, initSeason, initEpisode])
 
   const [srcIdx,    setSrcIdx]    = useState(0)
   const [key,       setKey]       = useState(0)
@@ -450,15 +471,30 @@ export default function PlayerModal() {
               onMouseDown={onUserInteract}
               onTouchStart={onUserInteract}
             >
-              {/* Spinner */}
+              {/* Spinner — ahora con botón "Saltar al siguiente" prominente */}
               <AnimatePresence>
                 {phase === 'loading' && (
                   <motion.div key="spin"
                     initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
-                    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-void pointer-events-none">
+                    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-void">
                     <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                      className="w-10 h-10 rounded-full border-2 border-gold/15 border-t-gold" />
-                    <p className="text-muted/60 text-xs font-mono">{src?.label}</p>
+                      className="w-10 h-10 rounded-full border-2 border-gold/15 border-t-gold pointer-events-none" />
+                    <p className="text-chalk/70 text-sm font-mono">
+                      {src?.label}
+                      <span className="text-muted/40 ml-2">· {srcIdx + 1}/{sources.length}</span>
+                    </p>
+
+                    {/* Botón SALTAR — aparece después de 3s sin importar nada */}
+                    <motion.button
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 3, duration: 0.3 }}
+                      onClick={() => goTo((srcIdx + 1) % sources.length)}
+                      className="px-5 py-2 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi shadow-[0_4px_24px_rgba(232,160,32,0.4)] transition-all"
+                    >
+                      Saltar al siguiente →
+                    </motion.button>
+
                     {isSlowNet && (
                       <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }}
                         className="text-muted/35 text-[10px] font-mono text-center max-w-[28ch]">
