@@ -9,6 +9,7 @@ import {
   searchSmart, getHistory, addToHistory, removeFromHistory, clearHistory,
   getTitle, getYear, isPerson,
 } from '../../lib/searchEngine'
+import { useSEO } from '../../lib/useSEO'
 import { IMG_W342 } from '../../api/tmdb'
 import MovieCard, { MovieCardSkeleton } from '../../components/MovieCard'
 
@@ -60,6 +61,14 @@ export default function Search() {
   const [fromCache,   setFromCache]   = useState(false)
 
   const [history,     setHistory]     = useState(getHistory())
+
+  useSEO({
+    title: urlQuery ? `Buscar: ${urlQuery}` : 'Buscador',
+    description: urlQuery
+      ? `Resultados de búsqueda para "${urlQuery}" en Life High. Películas, series, anime y personas.`
+      : 'Buscador completo de películas, series, anime, K-drama y personas. Filtros por tipo, idioma, año y rating.',
+    keywords: urlQuery ? `buscar ${urlQuery}, ${urlQuery} online, ${urlQuery} ver` : 'buscar peliculas, buscar series, anime, kdrama',
+  })
 
   // Sync URL → state
   useEffect(() => { setQuery(urlQuery) }, [urlQuery])

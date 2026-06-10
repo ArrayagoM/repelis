@@ -14,13 +14,13 @@ export default function Footer({ onDonateClick }) {
                 <FilmSlate size={16} weight="fill" className="text-void" />
               </div>
               <span className="font-display font-800 text-[1.1rem] tracking-tight text-chalk">
-                Repe<span className="text-gold">lis</span>
+                Life<span className="text-gold"> High</span>
               </span>
             </Link>
             <p className="text-muted text-xs leading-relaxed max-w-sm mb-4">
               Catálogo y reproductor agregador. Los metadatos son de TMDB,
               el video lo sirven servidores de terceros independientes.
-              Repelis no aloja ningún contenido.
+              Life High no aloja ningún contenido.
             </p>
             <p className="text-muted/60 text-[11px] flex items-center gap-1.5">
               <Code size={11} weight="bold" className="text-gold" />
@@ -48,7 +48,7 @@ export default function Footer({ onDonateClick }) {
           <div>
             <p className="text-chalk/80 font-display font-semibold text-sm mb-3">Legal</p>
             <ul className="space-y-2 text-muted text-xs">
-              <li><Link to="/about"   className="hover:text-gold transition-colors">Sobre Repelis</Link></li>
+              <li><Link to="/about"   className="hover:text-gold transition-colors">Sobre Life High</Link></li>
               <li><Link to="/terms"   className="hover:text-gold transition-colors">Términos y condiciones</Link></li>
               <li><Link to="/privacy" className="hover:text-gold transition-colors">Política de privacidad</Link></li>
               <li><Link to="/dmca"    className="hover:text-gold transition-colors">DMCA / Reclamos</Link></li>
@@ -62,7 +62,7 @@ export default function Footer({ onDonateClick }) {
 
         <div className="mt-10 pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-muted/50 text-[11px] font-mono">
-            © {new Date().getFullYear()} Repelis by TinTech · Todos los derechos sobre el contenido pertenecen a sus respectivos dueños
+            © {new Date().getFullYear()} Life High by TinTech · Todos los derechos sobre el contenido pertenecen a sus respectivos dueños
           </p>
           <p className="text-muted/40 text-[10px] font-mono">
             Powered by <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">TMDB</a>

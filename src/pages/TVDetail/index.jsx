@@ -14,6 +14,7 @@ import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
+import { useSEO, useTVSchema } from '../../lib/useSEO'
 
 export default function TVDetail() {
   const { id }     = useParams()
@@ -63,6 +64,16 @@ export default function TVDetail() {
       totalSeasons: data.number_of_seasons || 1,
     }))
   }
+
+  // SEO dinámico
+  useSEO(data ? {
+    title: `Ver ${data.name} (${data.first_air_date?.slice(0, 4) || ''}) online`,
+    description: data.overview?.slice(0, 160) || `${data.name} — Serie completa: temporadas, episodios, reparto. Catálogo de Life High.`,
+    image: data.poster_path ? `https://image.tmdb.org/t/p/w780${data.poster_path}` : null,
+    type: 'video.tv_show',
+    keywords: `${data.name}, ver ${data.name} online, ${data.name} serie completa, ${data.name} español latino`,
+  } : { title: 'Cargando serie' })
+  useTVSchema(data)
 
   if (loading || (!data && !error)) return <DetailSkeleton />
   if (error)  return <ErrorState error={error} onBack={() => navigate(-1)} />

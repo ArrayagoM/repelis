@@ -54,12 +54,12 @@ export default function DonateModal({ open, onClose }) {
                   <Coffee size={18} weight="fill" className="text-void" />
                 </div>
                 <div>
-                  <p className="font-display font-bold text-chalk text-lg">Apoyá Repelis</p>
+                  <p className="font-display font-bold text-chalk text-lg">Apoyá Life High</p>
                   <p className="text-muted text-xs">Hecho por TinTech</p>
                 </div>
               </div>
               <p className="text-muted/80 text-sm leading-relaxed mt-3">
-                Repelis es 100% gratis y sin publicidad propia. Si te gusta y querés ayudar a
+                Life High es 100% gratis y sin publicidad propia. Si te gusta y querés ayudar a
                 mantenerlo, cualquier aporte cuenta. ¡Gracias!
               </p>
             </div>

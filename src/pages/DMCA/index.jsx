@@ -27,7 +27,7 @@ export default function DMCA() {
         <article className="space-y-7 text-muted text-sm leading-relaxed">
           <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
             <p className="text-amber-200 text-sm leading-relaxed">
-              <strong>Importante:</strong> Repelis es un agregador. <strong>No alojamos ningún archivo de video</strong>.
+              <strong>Importante:</strong> Life High es un agregador. <strong>No alojamos ningún archivo de video</strong>.
               Los reproductores embebidos pertenecen a terceros independientes que no operamos.
               Si querés que un video específico baje del internet, la solicitud DMCA tiene que ir
               dirigida a esos terceros, no a nosotros.
@@ -46,8 +46,8 @@ export default function DMCA() {
             </ul>
           </Section>
 
-          <Section title="Si igual querés que Repelis no liste un título">
-            <p className="mb-3">Si sos titular de derechos y preferís que Repelis directamente <strong className="text-chalk/85">no muestre</strong> un título en su catálogo, escribinos con:</p>
+          <Section title="Si igual querés que Life High no liste un título">
+            <p className="mb-3">Si sos titular de derechos y preferís que Life High directamente <strong className="text-chalk/85">no muestre</strong> un título en su catálogo, escribinos con:</p>
             <ol className="list-decimal list-inside space-y-1 marker:text-gold/60">
               <li>Nombre completo de la obra y año de estreno.</li>
               <li>ID de TMDB (lo encontrás en themoviedb.org).</li>
@@ -58,8 +58,8 @@ export default function DMCA() {
           </Section>
 
           <Section title="Canal de contacto">
-            <p>Escribí a TinTech a través del perfil de GitHub listado en <Link to="/about" className="text-gold hover:underline">la página Sobre Repelis</Link>.
-            Asunto sugerido: <code className="px-1.5 py-0.5 rounded bg-surface text-chalk/80 text-xs font-mono">[DMCA] Repelis - &lt;Título&gt;</code></p>
+            <p>Escribí a TinTech a través del perfil de GitHub listado en <Link to="/about" className="text-gold hover:underline">la página Sobre Life High</Link>.
+            Asunto sugerido: <code className="px-1.5 py-0.5 rounded bg-surface text-chalk/80 text-xs font-mono">[DMCA] Life High - &lt;Título&gt;</code></p>
           </Section>
 
           <Section title="Reclamos abusivos">

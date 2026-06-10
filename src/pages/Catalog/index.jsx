@@ -17,6 +17,7 @@ import {
 import MovieCard, { MovieCardSkeleton } from '../../components/MovieCard'
 import { useLanguageFilter, useCurrentLanguageMode } from '../../lib/useLanguageFilter'
 import { MODE_LABELS } from '../../lib/languageMode'
+import { useSEO } from '../../lib/useSEO'
 
 // ─── Categorías "clásicas" con su propio slot en el state ────────────────
 const LEGACY_CONFIG = {
@@ -201,6 +202,12 @@ export default function Catalog({ type }) {
   const badgeClass = BADGE_COLORS[config.color] || BADGE_COLORS.gold
   const filteredResults = useLanguageFilter(data.results)
   const langMode = useCurrentLanguageMode()
+
+  useSEO({
+    title: `${config.title} — Catálogo`,
+    description: `${config.title}: el listado completo en Life High. Películas y series con metadatos verificados. Encontrá dónde ver cada título.`,
+    keywords: `${config.title}, ${config.badge}, ver online, catálogo Life High, ${config.mediaType === 'tv' ? 'series' : 'peliculas'}`,
+  })
 
   return (
     <motion.main

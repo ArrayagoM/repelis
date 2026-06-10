@@ -204,7 +204,7 @@ export default function Navbar({ onDonateClick }) {
               <FilmSlate size={16} weight="fill" className="text-void" />
             </div>
             <span className="font-display font-800 text-[1.1rem] tracking-tight text-chalk hidden sm:block">
-              Repe<span className="text-gold">lis</span>
+              Life<span className="text-gold"> High</span>
             </span>
           </Link>
 
@@ -337,7 +337,7 @@ export default function Navbar({ onDonateClick }) {
                 <FilmSlate size={20} weight="fill" className="text-void" />
               </div>
               <span className="font-display font-800 text-2xl tracking-tight text-chalk">
-                Repe<span className="text-gold">lis</span>
+                Life<span className="text-gold"> High</span>
               </span>
             </Link>
 
@@ -383,7 +383,7 @@ export default function Navbar({ onDonateClick }) {
                 <Link to="/privacy" className="hover:text-gold">Privacidad</Link>
                 <Link to="/dmca"    className="hover:text-gold">DMCA</Link>
               </div>
-              <p className="text-muted/40">© Repelis by TinTech {new Date().getFullYear()}</p>
+              <p className="text-muted/40">© Life High by TinTech {new Date().getFullYear()}</p>
             </div>
           </motion.div>
         )}

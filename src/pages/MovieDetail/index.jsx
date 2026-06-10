@@ -15,6 +15,7 @@ import ShareButtons from '../../components/ShareButtons'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
+import { useSEO, useMovieSchema } from '../../lib/useSEO'
 
 export default function MovieDetail() {
   const { id }     = useParams()
@@ -27,6 +28,16 @@ export default function MovieDetail() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     return () => dispatch(clearDetail())
   }, [id, dispatch])
+
+  // SEO dinámico — los hooks deben llamarse SIEMPRE en mismo orden
+  useSEO(data ? {
+    title: `Ver ${data.title} (${data.release_date?.slice(0, 4) || ''}) online`,
+    description: data.overview?.slice(0, 160) || `${data.title} — Ficha completa, reparto, dónde verla online. Catálogo de Life High.`,
+    image: data.poster_path ? `https://image.tmdb.org/t/p/w780${data.poster_path}` : null,
+    type: 'video.movie',
+    keywords: `${data.title}, ver ${data.title} online, ${data.title} español latino, ${data.title} pelicula completa`,
+  } : { title: 'Cargando película' })
+  useMovieSchema(data)
 
   if (loading) return <DetailSkeleton />
   if (error)   return <ErrorState error={error} onBack={() => navigate(-1)} />

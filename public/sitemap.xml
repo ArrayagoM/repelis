@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Páginas principales -->
+  <url><loc>https://repelis.vercel.app/</loc><priority>1.0</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/search</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/about</loc><priority>0.5</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Películas - Principal -->
+  <url><loc>https://repelis.vercel.app/populares</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/tendencias</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/tendencias-hoy</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/estrenos</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/proximos</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://repelis.vercel.app/top-valoradas</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://repelis.vercel.app/clasicos</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Películas - Géneros -->
+  <url><loc>https://repelis.vercel.app/genero-accion</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-aventura</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-animacion</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-comedia</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-crimen</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-documental</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-drama</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-familia</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-fantasia</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-historia</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-terror</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-musica</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-misterio</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-romance</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-sci-fi</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-thriller</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-belica</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/genero-western</loc><priority>0.6</priority></url>
+
+  <!-- Series -->
+  <url><loc>https://repelis.vercel.app/series</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/series-trending</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/series-top</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/en-emision</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/en-antena</loc><priority>0.8</priority></url>
+
+  <!-- Anime y K-Drama -->
+  <url><loc>https://repelis.vercel.app/anime</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://repelis.vercel.app/anime-peliculas</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/kdrama</loc><priority>0.9</priority></url>
+
+  <!-- Plataformas -->
+  <url><loc>https://repelis.vercel.app/netflix</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://repelis.vercel.app/prime</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/disney</loc><priority>0.9</priority></url>
+  <url><loc>https://repelis.vercel.app/hbo</loc><priority>0.9</priority></url>
+  <url><loc>https://repelis.vercel.app/apple-tv</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/paramount</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/netflix-series</loc><priority>0.9</priority></url>
+  <url><loc>https://repelis.vercel.app/disney-series</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/hbo-series</loc><priority>0.8</priority></url>
+
+  <!-- Franquicias -->
+  <url><loc>https://repelis.vercel.app/marvel</loc><priority>0.9</priority></url>
+  <url><loc>https://repelis.vercel.app/dc</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/pixar</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/ghibli</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/disney-clasicas</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/lucasfilm</loc><priority>0.7</priority></url>
+
+  <!-- Países -->
+  <url><loc>https://repelis.vercel.app/pais-latam</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/pais-espana</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/pais-usa</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/pais-japon</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/pais-corea</loc><priority>0.7</priority></url>
+
+  <!-- Décadas -->
+  <url><loc>https://repelis.vercel.app/decada-2020</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/decada-2010</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/decada-2000</loc><priority>0.6</priority></url>
+  <url><loc>https://repelis.vercel.app/decada-1990</loc><priority>0.6</priority></url>
+
+  <!-- Keywords populares -->
+  <url><loc>https://repelis.vercel.app/mcu</loc><priority>0.8</priority></url>
+  <url><loc>https://repelis.vercel.app/zombies</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/vampiros</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/espacio</loc><priority>0.7</priority></url>
+  <url><loc>https://repelis.vercel.app/heists</loc><priority>0.7</priority></url>
+
+</urlset>

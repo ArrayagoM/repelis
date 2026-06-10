@@ -1,7 +1,7 @@
 {
-  "name": "Repelis — Cinema sin límites",
-  "short_name": "Repelis",
-  "description": "Películas, series, anime y K-dramas en un solo lugar. Hecho por TinTech.",
+  "name": "Life High — Cinema sin límites",
+  "short_name": "Life High",
+  "description": "El catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM.",
   "lang": "es-AR",
   "dir": "ltr",
   "start_url": "/",
@@ -18,8 +18,13 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["entertainment", "video"],
+  "categories": ["entertainment", "video", "movies"],
   "shortcuts": [
+    {
+      "name": "Buscar",
+      "url": "/search",
+      "description": "Encontrá lo que buscás"
+    },
     {
       "name": "Películas populares",
       "url": "/populares",
@@ -33,12 +38,12 @@
     {
       "name": "Anime",
       "url": "/anime",
-      "description": "Anime ordenado por popularidad"
+      "description": "Anime por popularidad"
     },
     {
-      "name": "Buscar",
-      "url": "/search",
-      "description": "Encontrá lo que buscás"
+      "name": "Estrenos",
+      "url": "/estrenos",
+      "description": "Lo que está en cartelera"
     }
   ]
 }

@@ -17,13 +17,13 @@ export default function About() {
 
         <header className="mb-10">
           <span className="inline-block px-2.5 py-0.5 rounded-full border border-gold/20 bg-gold/10 text-gold text-[10px] uppercase tracking-widest font-semibold">
-            Sobre Repelis
+            Sobre Life High
           </span>
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-chalk tracking-tight mt-2">
             Hecho por <span className="text-gold">TinTech</span>
           </h1>
           <p className="text-muted text-base mt-3 leading-relaxed">
-            Repelis es un proyecto independiente que reúne en un solo lugar películas, series, anime y K-dramas, indexando metadatos de TMDB y reproduciendo desde servidores agregadores públicos.
+            Life High es un proyecto independiente que reúne en un solo lugar películas, series, anime y K-dramas, indexando metadatos de TMDB y reproduciendo desde servidores agregadores públicos.
           </p>
         </header>
 
@@ -32,7 +32,7 @@ export default function About() {
           <div className="p-6 rounded-2xl bg-card border border-white/[0.06]">
             <div className="flex items-start gap-3 mb-3">
               <Lightning size={20} weight="fill" className="text-gold flex-shrink-0 mt-0.5" />
-              <h2 className="font-display font-bold text-xl text-chalk">¿Qué es Repelis?</h2>
+              <h2 className="font-display font-bold text-xl text-chalk">¿Qué es Life High?</h2>
             </div>
             <p className="text-muted text-sm leading-relaxed">
               Un <strong className="text-chalk/90">agregador</strong>: no alojamos archivos de video,
@@ -79,7 +79,7 @@ export default function About() {
               <h2 className="font-display font-bold text-xl text-chalk">Apoyar el proyecto</h2>
             </div>
             <p className="text-muted text-sm leading-relaxed mb-4">
-              Repelis se banca con horas de mi tiempo y un hosting humilde.
+              Life High se banca con horas de mi tiempo y un hosting humilde.
               Si te gusta y querés ayudar a mantenerlo vivo, podés invitarme un café en Cafecito.
             </p>
             <CafecitoButton />

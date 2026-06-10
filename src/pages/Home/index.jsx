@@ -10,12 +10,20 @@ import {
 } from '../../store/slices/moviesSlice'
 import { fetchGenres } from '../../store/slices/genresSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
+import { useSEO, useOrgSchema } from '../../lib/useSEO'
 
 const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 
 export default function Home() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+
+  useSEO({
+    title: null, // usa el título base "Life High — Cinema sin límites"
+    description: 'Life High: el catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM. Sin engaños, sin paywalls falsos.',
+    keywords: 'life high, ver peliculas online, series online, anime, kdrama, estrenos 2026, peliculas latino, streaming Argentina',
+  })
+  useOrgSchema()
 
   const {
     trending, popular, topRated, nowPlaying, upcoming, classics, animeMovies,

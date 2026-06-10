@@ -1,54 +1,75 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-AR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes" />
-    <title>Repelis — Cinema sin límites</title>
-    <meta name="description" content="Películas, series, anime y K-dramas en un solo lugar. Hecho por TinTech." />
+
+    <title>Life High — Cinema sin límites · Películas, Series y Estrenos</title>
+    <meta name="description" content="Life High: el catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM. Sin engaños, sin paywalls falsos." />
+    <meta name="keywords" content="life high, ver peliculas online, series online, anime online, kdrama, estrenos 2026, peliculas latino, dónde ver, catálogo cine, streaming Argentina, streaming LATAM" />
     <meta name="author" content="TinTech" />
     <meta name="theme-color" content="#0E0E18" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://repelis.vercel.app/" />
 
-    <!-- PWA / instalable como app en Android y iOS -->
+    <!-- PWA / instalable -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="application-name" content="Repelis" />
+    <meta name="application-name" content="Life High" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Repelis" />
+    <meta name="apple-mobile-web-app-title" content="Life High" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Open Graph / redes sociales -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Repelis" />
-    <meta property="og:title" content="Repelis — Cinema sin límites" />
-    <meta property="og:description" content="Películas, series, anime y K-dramas en un solo lugar. Hecho por TinTech." />
+    <meta property="og:site_name" content="Life High" />
+    <meta property="og:title" content="Life High — Cinema sin límites" />
+    <meta property="og:description" content="El catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM." />
+    <meta property="og:url" content="https://repelis.vercel.app/" />
+    <meta property="og:locale" content="es_AR" />
     <meta property="og:image" content="/favicon.svg" />
 
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Repelis — Cinema sin límites" />
-    <meta name="twitter:description" content="Películas, series, anime y K-dramas en un solo lugar. Hecho por TinTech." />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TinTech" />
     <meta name="twitter:creator" content="@TinTech" />
+    <meta name="twitter:title" content="Life High — Cinema sin límites" />
+    <meta name="twitter:description" content="El catálogo más completo de películas, series, anime y K-drama." />
+    <meta name="twitter:image" content="/favicon.svg" />
 
-    <!-- Preconnect crítico: TMDB (metadatos + imágenes) -->
+    <!-- Schema.org base (organización) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Life High",
+      "alternateName": "LifeHigh",
+      "url": "https://repelis.vercel.app/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://repelis.vercel.app/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "description": "Life High: el catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM.",
+      "inLanguage": "es-AR"
+    }
+    </script>
+
+    <!-- Preconnect crítico: TMDB -->
     <link rel="preconnect" href="https://api.themoviedb.org" crossorigin />
     <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
 
-    <!-- Preconnect a top 5 servidores de streaming (handshake DNS+TCP+TLS antes del clic) -->
+    <!-- Preconnect a top 5 servidores -->
     <link rel="preconnect" href="https://embedmaster.link" crossorigin />
     <link rel="preconnect" href="https://vidsrc.to" crossorigin />
     <link rel="preconnect" href="https://vidsrc.icu" crossorigin />
     <link rel="preconnect" href="https://vidlink.pro" crossorigin />
     <link rel="preconnect" href="https://embed.su" crossorigin />
 
-    <!-- Preconnect a nuevos servidores LATAM (RiveStream, MoviesAPI, 111Movies, MappleTV) -->
-    <link rel="preconnect" href="https://rivestream.live" crossorigin />
-    <link rel="preconnect" href="https://moviesapi.club" crossorigin />
-    <link rel="preconnect" href="https://111movies.com" crossorigin />
-    <link rel="preconnect" href="https://mappletv.uk" crossorigin />
-
-    <!-- DNS prefetch para el resto (más liviano que preconnect) -->
+    <!-- DNS prefetch para el resto -->
     <link rel="dns-prefetch" href="https://vidsrc.pm" />
     <link rel="dns-prefetch" href="https://vidsrc.xyz" />
     <link rel="dns-prefetch" href="https://player.smashy.stream" />
@@ -57,6 +78,10 @@
     <link rel="dns-prefetch" href="https://www.2embed.cc" />
     <link rel="dns-prefetch" href="https://2embed.skin" />
     <link rel="dns-prefetch" href="https://vidfast.pro" />
+    <link rel="dns-prefetch" href="https://rivestream.live" />
+    <link rel="dns-prefetch" href="https://moviesapi.club" />
+    <link rel="dns-prefetch" href="https://111movies.com" />
+    <link rel="dns-prefetch" href="https://mappletv.uk" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -67,7 +92,13 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Contenido SEO básico que los crawlers ven incluso sin JS -->
+      <noscript>
+        <h1>Life High — Cinema sin límites</h1>
+        <p>Catálogo completo de películas, series, anime y K-dramas. Activá JavaScript para usar la plataforma.</p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

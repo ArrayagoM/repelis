@@ -36,7 +36,7 @@ export default function Privacy() {
           </Section>
 
           <Section title="1. Qué datos recolectamos">
-            <strong className="text-chalk/85">Ninguno desde nuestros servidores.</strong> Repelis es una app
+            <strong className="text-chalk/85">Ninguno desde nuestros servidores.</strong> Life High es una app
             estática: corre 100% en tu navegador. No tenemos base de datos de usuarios.
           </Section>
 
@@ -64,7 +64,7 @@ export default function Privacy() {
           </Section>
 
           <Section title="4. Servicios de terceros">
-            <p className="mb-2">Repelis usa tres tipos de terceros:</p>
+            <p className="mb-2">Life High usa tres tipos de terceros:</p>
             <ul className="list-disc list-inside space-y-1.5 marker:text-gold/60">
               <li><strong className="text-chalk/85">TMDB</strong> — provee metadatos (títulos, sinopsis, pósters). Su <a href="https://www.themoviedb.org/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">política de privacidad acá</a>.</li>
               <li><strong className="text-chalk/85">Servidores de streaming</strong> (vidsrc, embed.su, etc.) — cuando reproducís un video, tu navegador se conecta directo a ellos. Tienen sus propias políticas de privacidad y publicidad. No los controlamos.</li>
@@ -73,29 +73,29 @@ export default function Privacy() {
           </Section>
 
           <Section title="5. Cookies">
-            Repelis no setea cookies propias. Los terceros embebidos sí pueden setear cookies en su
+            Life High no setea cookies propias. Los terceros embebidos sí pueden setear cookies en su
             dominio, fuera de nuestro control.
           </Section>
 
           <Section title="6. Niños y menores">
-            Repelis indexa contenido de TMDB que puede no ser adecuado para menores. No hay un filtro
+            Life High indexa contenido de TMDB que puede no ser adecuado para menores. No hay un filtro
             de edad. Si sos padre/madre/tutor, te recomendamos usar las opciones de control parental de
             tu navegador o sistema operativo.
           </Section>
 
           <Section title="7. Cambios en esta política">
             Si actualizamos esta política, vas a ver una nueva fecha en la parte superior. Cambios
-            sustanciales se anuncian en la página Sobre Repelis.
+            sustanciales se anuncian en la página Sobre Life High.
           </Section>
 
           <Section title="8. Tus derechos">
             Como no recolectamos datos, no tenemos información tuya para corregir, exportar o eliminar.
-            Si querés borrar todo lo que hay en tu navegador relacionado con Repelis, limpiá los datos
+            Si querés borrar todo lo que hay en tu navegador relacionado con Life High, limpiá los datos
             del sitio desde la configuración de privacidad de tu browser.
           </Section>
 
           <Section title="9. Contacto">
-            Para consultas sobre privacidad, escribí a TinTech a través de los canales listados en <Link to="/about" className="text-gold hover:underline">la página Sobre Repelis</Link>.
+            Para consultas sobre privacidad, escribí a TinTech a través de los canales listados en <Link to="/about" className="text-gold hover:underline">la página Sobre Life High</Link>.
           </Section>
         </article>
       </div>
