@@ -1,0 +1,92 @@
+name: Build Android APK
+
+# Se dispara con:
+#   - Push a main que toque android/ o el código de la web
+#   - Manual desde la pestaña Actions (botón "Run workflow")
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'src/**'
+      - 'public/**'
+      - 'capacitor.config.*'
+      - 'package.json'
+      - '.github/workflows/build-android-apk.yml'
+
+jobs:
+  build:
+    name: Build Capacitor Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build web (Vite)
+        env:
+          VITE_TMDB_TOKEN: ${{ secrets.VITE_TMDB_TOKEN }}
+        run: npm run build
+
+      - name: Sync Capacitor con Android
+        run: npx cap sync android
+
+      - name: Build APK Debug (Gradle)
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Renombrar APK con fecha + commit
+        run: |
+          mkdir -p out
+          DATE=$(date +%Y%m%d-%H%M)
+          SHA=$(git rev-parse --short HEAD)
+          cp android/app/build/outputs/apk/debug/app-debug.apk "out/lifehigh-${DATE}-${SHA}.apk"
+          ls -lh out/
+
+      - name: Subir APK como artifact descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifehigh-apk
+          path: out/*.apk
+          retention-days: 30
+
+      - name: Crear Release automático (en push a main)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: 'Life High APK · build ${{ github.run_number }}'
+          body: |
+            APK compilado automáticamente desde el commit `${{ github.sha }}`.
+
+            **Instalación en proyector / TV Android:**
+            1. Descargá el .apk de "Assets" abajo
+            2. Copialo al proyector vía USB
+            3. Tap en el .apk → Instalar
+            4. Si pide "fuentes desconocidas" → habilitar
+
+            Diferencia con PWA Builder: este APK usa **WebView nativo de Android**
+            (no depende de Chrome del sistema). Funciona en Android 5.0+.
+          files: out/*.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
