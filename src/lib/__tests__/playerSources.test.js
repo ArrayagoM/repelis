@@ -12,8 +12,8 @@ describe('playerSources', () => {
   })
 
   describe('SOURCES catalog', () => {
-    it('debe tener al menos 12 servidores', () => {
-      expect(SOURCES.length).toBeGreaterThanOrEqual(12)
+    it('debe tener al menos 10 servidores (los caídos están comentados, no listados)', () => {
+      expect(SOURCES.length).toBeGreaterThanOrEqual(10)
     })
 
     it('cada source tiene id, label, movieUrl, tvUrl', () => {
