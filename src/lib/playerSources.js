@@ -53,7 +53,9 @@ export const SOURCES = [
     id: '2embed-skin', label: '2Embed+', esLat: true,
     movieUrl: (id)       => `https://2embed.skin/embed/${id}`,
     tvUrl:    (id, s, e) => `https://2embed.skin/embedtv/${id}&s=${s}&e=${e}`,
-    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+    // 2Embed+ rechaza explícitamente el sandbox attribute en el iframe
+    // ("Sandbox not allowed" en la pantalla del player). Igual que EmbedMaster.
+    sandbox: null,
   },
   // ─── Backup: rápidos pero sin garantía de LATAM ───────────────────────
   {
