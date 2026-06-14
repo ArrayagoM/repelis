@@ -23,6 +23,7 @@ const Privacy     = lazy(() => import('./pages/Privacy'))
 const DMCA        = lazy(() => import('./pages/DMCA'))
 const Admin       = lazy(() => import('./pages/Admin'))
 const Mundial     = lazy(() => import('./pages/Mundial'))
+const Download    = lazy(() => import('./pages/Download'))
 
 function RouteFallback() {
   return (
@@ -85,6 +86,10 @@ export default function App() {
 
             {/* Deportes */}
             <Route path="/mundial" element={<Mundial />} />
+
+            {/* APK Android */}
+            <Route path="/descargar" element={<Download />} />
+            <Route path="/apk"       element={<Download />} />
 
             {/* Movies clásicos */}
             <Route path="/populares"      element={<Catalog type="populares" />} />

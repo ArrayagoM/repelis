@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile } from '@phosphor-icons/react'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
@@ -241,6 +241,12 @@ export default function Navbar({ onDonateClick }) {
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all"
               title="Mundial 2026 en vivo">
               <SoccerBall size={14} weight="fill" />
+            </Link>
+
+            <Link to="/descargar"
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 hover:bg-blue-500/25 transition-all"
+              title="Descargar APK para Android">
+              <DeviceMobile size={14} weight="fill" />
             </Link>
 
             <div className="hidden lg:block">

@@ -49,6 +49,7 @@ export default function Footer({ onDonateClick }) {
             <p className="text-chalk/80 font-display font-semibold text-sm mb-3">Legal</p>
             <ul className="space-y-2 text-muted text-xs">
               <li><Link to="/about"   className="hover:text-gold transition-colors">Sobre Life High</Link></li>
+              <li><Link to="/descargar" className="hover:text-emerald-400 transition-colors font-semibold">📱 Descargar APK Android</Link></li>
               <li><Link to="/terms"   className="hover:text-gold transition-colors">Términos y condiciones</Link></li>
               <li><Link to="/privacy" className="hover:text-gold transition-colors">Política de privacidad</Link></li>
               <li><Link to="/dmca"    className="hover:text-gold transition-colors">DMCA / Reclamos</Link></li>

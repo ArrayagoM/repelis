@@ -4,12 +4,10 @@ import { getDiscoverParamsForMode } from '../lib/languageMode'
 
 const BASE_URL = 'https://api.themoviedb.org/3'
 
-// Token desde env (.env / VITE_TMDB_TOKEN). Sin fallback hardcodeado:
-// si falta el token, lo decimos fuerte en consola para no debuggar a ciegas.
-const ACCESS_TOKEN = import.meta.env.VITE_TMDB_TOKEN
-if (!ACCESS_TOKEN && typeof console !== 'undefined') {
-  console.error('[Repelis] Falta VITE_TMDB_TOKEN en .env — la app no podrá pedir metadatos a TMDB.')
-}
+// Token TMDB. Prioridad: env var → fallback hardcodeado para builds CI sin secret.
+// Es un token read-only de API pública (no de cuenta), riesgo bajo en repo privado.
+const FALLBACK_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM2RjYjQ5MDgwODc2YjMzNWQ4Njg0NDIzOTE1OGQ5NCIsIm5iZiI6MTc3NzIyOTc1MS4wODksInN1YiI6IjY5ZWU1ZmI3ODgzM2EyZDk5YjE3ZDljMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.pO_Pt4O7iHbcnkvF84DqdLKvBLtdv7EKFJ-2OsTFqpY'
+const ACCESS_TOKEN = import.meta.env.VITE_TMDB_TOKEN || FALLBACK_TOKEN
 
 export const IMG_BASE     = 'https://image.tmdb.org/t/p'
 export const IMG_W342     = IMG_BASE + '/w342'   // poster más liviano para red lenta
