@@ -128,19 +128,16 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
             <span className="text-[10px] font-mono font-medium text-chalk">{rating}</span>
           </div>
 
-          {/* Banderita LATAM / Español — visible desde el catálogo */}
-          <div
-            className={`absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full backdrop-blur-sm border
-              ${isOrigSpanish
-                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
-                : 'bg-void/70 border-white/15 text-chalk/85'}`}
-            title={isOrigSpanish ? 'Idioma original: español' : 'Doblaje latino disponible en servidores LATAM'}
-          >
-            <span className="text-[10px] leading-none">{isOrigSpanish ? '🇲🇽' : '🌎'}</span>
-            <span className="text-[9px] font-mono font-bold tracking-wide">
-              {isOrigSpanish ? 'ESP' : 'LAT'}
-            </span>
-          </div>
+          {/* Banderita: SOLO cuando hay garantía real (idioma original español) */}
+          {isOrigSpanish && (
+            <div
+              className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full backdrop-blur-sm border bg-emerald-500/20 border-emerald-400/40 text-emerald-200"
+              title="Idioma original: español — sin necesidad de doblaje"
+            >
+              <span className="text-[10px] leading-none">🇲🇽</span>
+              <span className="text-[9px] font-mono font-bold tracking-wide">ESP</span>
+            </div>
+          )}
         </div>
 
         {/* Metadata */}

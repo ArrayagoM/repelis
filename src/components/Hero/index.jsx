@@ -102,13 +102,13 @@ export default function Hero({ movies = [] }) {
               {year && (
                 <span className="text-muted text-sm font-mono">{year}</span>
               )}
-              {/* Banderita LATAM siempre visible — indica que tenemos servidores con audio latino */}
+              {/* Servidores con catálogo LATAM (no garantía por título — depende del server) */}
               <span
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-[11px] font-semibold uppercase tracking-wide"
-                title="Tenemos servidores con audio latino — buscá el ícono 🔊 en el player"
+                title="Tenemos servidores con buen catálogo en español latino. El audio final depende del título y del servidor — si arranca en inglés, cambialo desde el ícono Audio/CC dentro del player."
               >
                 <span className="text-sm leading-none">🇲🇽</span>
-                Audio Latino
+                LATAM-friendly
               </span>
             </div>
 

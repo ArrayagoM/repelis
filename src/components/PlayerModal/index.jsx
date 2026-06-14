@@ -163,10 +163,11 @@ export default function PlayerModal() {
       setSrcIdx(0)
       setKey((k) => k + 1)
       setPhase('loading')
-      // Mostramos el tip de audio español por 10s al abrir.
-      // El usuario lo puede cerrar con la X.
+      // Mostramos el tip de audio español por 15s al abrir.
+      // El usuario lo puede cerrar con la X. El texto es lo suficientemente
+      // largo como para que necesite ese tiempo para leerlo.
       setShowLang(true)
-      const t = setTimeout(() => setShowLang(false), 10_000)
+      const t = setTimeout(() => setShowLang(false), 15_000)
       return () => clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -379,14 +380,14 @@ export default function PlayerModal() {
                 )}
               </AnimatePresence>
 
-              {/* Badge LATAM cuando el servidor activo soporta español */}
+              {/* Badge: servidor con buen catálogo LATAM (NO garantía por título) */}
               {src?.esLat && (
                 <span
-                  className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wide flex-shrink-0"
-                  title="Este servidor suele tener audio en español latino"
+                  className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wide flex-shrink-0 cursor-help"
+                  title="Servidor con buen catálogo de doblaje LATAM. El audio del título específico depende de qué pistas tenga el server. Si arranca en otro idioma, cambialo desde el ícono Audio/CC del player."
                 >
                   <span className="text-sm leading-none">🇲🇽</span>
-                  LATAM
+                  LATAM probable
                 </span>
               )}
 
@@ -444,20 +445,25 @@ export default function PlayerModal() {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden bg-[#0d0d1a] border-b border-white/[0.04]"
                 >
-                  <div className="flex items-start gap-3 px-4 py-3">
-                    <Info size={14} className="text-gold flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-1.5">
-                      <p className="text-chalk/85 text-xs font-semibold">Audio en español — leé esto</p>
-                      <p className="text-muted/75 text-[11px] leading-relaxed">
-                        El idioma <strong className="text-chalk/85">se cambia dentro del player</strong>, no desde acá.
-                        Cuando arranque el video, buscá en sus controles el ícono <strong className="text-gold/90">🔊 Audio</strong> o <strong className="text-gold/90">CC</strong> y elegí "Español" o "Latino".
+                  <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/[0.07] border-l-2 border-amber-400/40">
+                    <Info size={16} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-2">
+                      <p className="text-amber-200 text-sm font-bold">⚠️ ¿Arrancó en inglés? Es normal — leé esto</p>
+                      <p className="text-chalk/85 text-[12px] leading-relaxed">
+                        El badge <strong>"LATAM probable"</strong> significa que el servidor tiene buen catálogo de doblajes, pero <strong className="text-amber-200">cada peli es distinta</strong>. Si arrancó en otro idioma:
                       </p>
-                      <p className="text-muted/55 text-[10px] leading-relaxed">
-                        Si este servidor no tiene doblaje, probá el siguiente con los números de arriba (1, 2, 3…). EmbedMaster y VidLink suelen tener LATAM.
+                      <ol className="text-muted/85 text-[11px] leading-relaxed list-decimal list-inside space-y-0.5 marker:text-amber-400/70">
+                        <li>Mové el mouse sobre el video → aparecen los controles del player</li>
+                        <li>Buscá el ícono <strong className="text-amber-200">🔊 Audio</strong> o <strong className="text-amber-200">CC</strong> (a veces dice "ES" o un engranaje ⚙️)</li>
+                        <li>Elegí <strong className="text-emerald-300">"Español"</strong>, <strong className="text-emerald-300">"Latino"</strong> o <strong className="text-emerald-300">"Spanish"</strong></li>
+                        <li>Si NO aparece la opción → este servidor no tiene doblaje. Tocá los números <strong>1, 2, 3…</strong> arriba para probar otro.</li>
+                      </ol>
+                      <p className="text-muted/60 text-[10px] leading-relaxed pt-1 border-t border-amber-400/20">
+                        💡 <strong>EmbedMaster</strong>, <strong>VidLink</strong> y <strong>111Movies</strong> son los que con más frecuencia traen pista latina.
                       </p>
                     </div>
-                    <button onClick={() => setShowLang(false)} className="text-muted/30 hover:text-chalk transition-colors">
-                      <X size={11} weight="bold" />
+                    <button onClick={() => setShowLang(false)} className="text-muted/40 hover:text-chalk transition-colors flex-shrink-0">
+                      <X size={12} weight="bold" />
                     </button>
                   </div>
                 </motion.div>
