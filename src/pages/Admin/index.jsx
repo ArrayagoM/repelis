@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, ShieldCheck, ChartBar, Pulse, Bug, Database, Cloud,
   Terminal, ArrowClockwise, CheckCircle, XCircle, ArrowSquareOut,
-  Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users,
+  Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users, Info,
 } from '@phosphor-icons/react'
+import WorldMap, { MOCK_LATAM_CITIES } from '../../components/WorldMap'
 import {
   adminConfigured, adminIsAuthed, adminLogin, adminLogout,
 } from '../../lib/adminAuth'
@@ -429,6 +430,23 @@ function AnalyticsTab() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Mapa mundial con burbujas por ciudad */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
+            <MapTrifold size={11} weight="fill" /> Mapa de visitas por ciudad
+          </p>
+          <span className="text-amber-300/70 text-[10px] font-mono flex items-center gap-1">
+            <Info size={10} weight="fill" /> Datos DEMO (real cuando conectemos backend o Vercel Pro)
+          </span>
+        </div>
+        <WorldMap cities={MOCK_LATAM_CITIES} height={460} focus="latam" />
+        <p className="text-muted/50 text-[10px] leading-relaxed">
+          Cada burbuja dorada es una ciudad. El tamaño es proporcional a la cantidad de visitas.
+          Hover para ver detalle, scroll para zoom in/out, arrastrá para moverte por el mapa.
+        </p>
       </div>
 
       {/* Botones a los dashboards */}
