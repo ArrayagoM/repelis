@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft, ShieldCheck, ChartBar, Pulse, Bug, Database, Cloud,
-  Terminal, ArrowClockwise, CheckCircle, XCircle,
-  Lock, TrashSimple,
+  Terminal, ArrowClockwise, CheckCircle, XCircle, ArrowSquareOut,
+  Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users,
 } from '@phosphor-icons/react'
 import {
   adminConfigured, adminIsAuthed, adminLogin, adminLogout,
@@ -14,7 +14,8 @@ import { pingAll, getServerHistory, clearServerHistory } from '../../lib/serverH
 import { SOURCES } from '../../lib/playerSources'
 
 const TABS = [
-  { id: 'overview',  label: 'Resumen',   Icon: ChartBar },
+  { id: 'overview',  label: 'Resumen',    Icon: ChartBar },
+  { id: 'analytics', label: 'Analytics',  Icon: MapTrifold },
   { id: 'servers',   label: 'Servidores', Icon: Pulse },
   { id: 'errors',    label: 'Errores',    Icon: Bug },
   { id: 'storage',   label: 'Storage',    Icon: Database },
@@ -63,8 +64,9 @@ export default function Admin() {
           ))}
         </div>
 
-        {tab === 'overview' && <OverviewTab />}
-        {tab === 'servers'  && <ServersTab />}
+        {tab === 'overview'  && <OverviewTab />}
+        {tab === 'analytics' && <AnalyticsTab />}
+        {tab === 'servers'   && <ServersTab />}
         {tab === 'errors'   && <ErrorsTab />}
         {tab === 'storage'  && <StorageTab />}
         {tab === 'cache'    && <CacheTab />}
@@ -399,6 +401,130 @@ function CacheTab() {
         </div>
       ))}
       {caches_.length === 0 && <p className="text-muted text-sm">Service Worker no activo o sin caches.</p>}
+    </div>
+  )
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────
+function AnalyticsTab() {
+  const VERCEL_PROJECT = 'repelis'
+  const VERCEL_USER    = 'arrayagom'
+  const ANALYTICS_URL = `https://vercel.com/${VERCEL_USER}/${VERCEL_PROJECT}/analytics`
+  const SPEED_URL     = `https://vercel.com/${VERCEL_USER}/${VERCEL_PROJECT}/speed-insights`
+
+  return (
+    <div className="space-y-5">
+      {/* Hero — info honesta de qué tenés */}
+      <div className="p-5 rounded-2xl bg-gradient-to-br from-sky-500/10 to-emerald-500/10 border border-sky-500/20">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center flex-shrink-0">
+            <MapTrifold size={20} weight="fill" className="text-sky-300" />
+          </div>
+          <div className="flex-1">
+            <p className="text-chalk font-display font-bold text-base">Analytics activado</p>
+            <p className="text-muted text-xs mt-1 leading-relaxed">
+              Vercel Analytics está corriendo en el sitio. Cada visita se cuenta automáticamente
+              sin cookies y sin pedir consentimiento (cumple GDPR y Ley 25.326 argentina).
+              El dashboard completo con mapas, ciudades, dispositivos y top pages vive en vercel.com.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Botones a los dashboards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a href={ANALYTICS_URL} target="_blank" rel="noopener noreferrer"
+          className="group p-5 rounded-2xl bg-surface border border-white/10 hover:border-sky-500/40 transition-all">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-lg bg-sky-500/15 flex items-center justify-center">
+              <Users size={18} weight="fill" className="text-sky-300" />
+            </div>
+            <p className="text-chalk font-bold text-sm flex items-center gap-1.5">
+              Visitas & Audiencia
+              <ArrowSquareOut size={11} className="text-muted/40 group-hover:text-sky-300 transition-colors" />
+            </p>
+          </div>
+          <p className="text-muted/70 text-xs leading-relaxed">
+            Visitas, vistas únicas, países, <strong className="text-chalk/80">ciudades</strong>,
+            top pages, referrers, dispositivos (mobile / desktop / tablet), navegadores y sistemas operativos.
+          </p>
+          <p className="text-sky-400/60 text-[10px] mt-3 font-mono break-all">
+            {ANALYTICS_URL}
+          </p>
+        </a>
+
+        <a href={SPEED_URL} target="_blank" rel="noopener noreferrer"
+          className="group p-5 rounded-2xl bg-surface border border-white/10 hover:border-emerald-500/40 transition-all">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <Pulse size={18} weight="fill" className="text-emerald-300" />
+            </div>
+            <p className="text-chalk font-bold text-sm flex items-center gap-1.5">
+              Performance Real (Core Web Vitals)
+              <ArrowSquareOut size={11} className="text-muted/40 group-hover:text-emerald-300 transition-colors" />
+            </p>
+          </div>
+          <p className="text-muted/70 text-xs leading-relaxed">
+            Tiempos reales que ven los usuarios — <strong className="text-chalk/80">LCP, FID, CLS, TTFB</strong> por país y dispositivo.
+            Te dice si la app se ve rápida desde Argentina o si hay que optimizar para mobile.
+          </p>
+          <p className="text-emerald-400/60 text-[10px] mt-3 font-mono break-all">
+            {SPEED_URL}
+          </p>
+        </a>
+      </div>
+
+      {/* Qué ves en el dashboard externo */}
+      <div className="p-4 rounded-2xl bg-surface border border-white/[0.06]">
+        <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold mb-3">
+          Lo que vas a encontrar en vercel.com/analytics
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+          {[
+            { Icon: Users, label: 'Visitantes únicos' },
+            { Icon: Globe, label: 'Países (top 10)' },
+            { Icon: MapTrifold, label: 'Ciudades (top 20)' },
+            { Icon: DeviceMobile, label: 'Mobile / Desktop / Tablet' },
+            { Icon: ChartBar, label: 'Páginas más visitadas' },
+            { Icon: ArrowSquareOut, label: 'Referrers (de dónde vienen)' },
+          ].map(({ Icon, label }) => (
+            <div key={label} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/5">
+              <Icon size={14} weight="fill" className="text-gold flex-shrink-0" />
+              <span className="text-chalk/80">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Activar la feature en Vercel */}
+      <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+        <p className="text-amber-300 text-sm font-bold mb-2 flex items-center gap-2">
+          <CheckCircle size={14} weight="fill" /> Una vez: activar la feature en Vercel
+        </p>
+        <ol className="text-muted/80 text-xs leading-relaxed list-decimal list-inside space-y-1 marker:text-amber-400/70">
+          <li>Andá a <a href={`https://vercel.com/${VERCEL_USER}/${VERCEL_PROJECT}/analytics`} target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">tu proyecto en vercel.com</a></li>
+          <li>Tab <strong>Analytics</strong> → click en <strong>"Enable Analytics"</strong> (gratis hasta 100k visitas/mes)</li>
+          <li>Tab <strong>Speed Insights</strong> → idem (gratis hasta 10k data points/mes)</li>
+          <li>Esperá 5-10 min y vas a ver los primeros datos llegar</li>
+        </ol>
+      </div>
+
+      {/* Honestidad sobre embed propio */}
+      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+        <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2">
+          ¿Por qué los gráficos no están acá adentro?
+        </p>
+        <p className="text-muted text-xs leading-relaxed">
+          La API de Vercel Analytics para consumir los datos desde tu propia app
+          requiere <strong className="text-chalk/80">plan Pro (USD $20/mes)</strong>. En el plan
+          Hobby (gratis) solo se ve desde el dashboard de Vercel. Si querés gráficos embebidos
+          acá adentro tenemos 2 caminos:
+        </p>
+        <ul className="text-muted/70 text-xs leading-relaxed mt-2 list-disc list-inside space-y-0.5 marker:text-gold/50">
+          <li>Pagar Vercel Pro (USD $20/mes) y embebemos via API oficial</li>
+          <li>O armar mini-backend propio con Vercel KV (gratis) + edge function que cuenta visitas. Tiempo: 2-3 horas. Decime si querés.</li>
+        </ul>
+      </div>
     </div>
   )
 }

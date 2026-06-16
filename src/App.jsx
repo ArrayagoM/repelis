@@ -1,6 +1,8 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { getDeviceCaps } from './lib/deviceCaps'
 import Navbar       from './components/Navbar'
 import Footer       from './components/Footer'
@@ -65,6 +67,12 @@ export default function App() {
           en el Footer y en cada detalle de peli. */}
       {!lowEnd && <FloatingCafecito />}
       <UpdateAvailable />
+
+      {/* Vercel Analytics — visitas, países, ciudades, dispositivos, top pages
+          Sin cookies. Cumple GDPR/LGPD/Ley 25.326. Dashboard en vercel.com */}
+      <Analytics />
+      {/* Speed Insights — métricas de performance reales de los usuarios */}
+      <SpeedInsights />
 
       <Suspense fallback={<RouteFallback />}>
         <RouteWrapper enabled={!lowEnd}>
