@@ -17,6 +17,9 @@ jobs:
   build:
     name: Build Capacitor Android APK
     runs-on: ubuntu-latest
+    # Permissions críticos: sin esto el step "Release" da 403 al GITHUB_TOKEN
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout código
@@ -33,37 +36,45 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # setup-android@v3 sin "packages" instala lo que el proyecto necesite
+      # automáticamente leyendo build.gradle. Más confiable que pinear versiones.
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: 'platforms;android-36 build-tools;36.0.0 platform-tools'
 
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
+      # Fallback del token TMDB si el secret no está configurado.
+      # No es realmente "secret" porque viaja en el bundle del cliente igual.
       - name: Build web (Vite)
         env:
-          VITE_TMDB_TOKEN: ${{ secrets.VITE_TMDB_TOKEN }}
-        run: npm run build
+          VITE_TMDB_TOKEN: ${{ secrets.VITE_TMDB_TOKEN || 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM2RjYjQ5MDgwODc2YjMzNWQ4Njg0NDIzOTE1OGQ5NCIsIm5iZiI6MTc3NzIyOTc1MS4wODksInN1YiI6IjY5ZWU1ZmI3ODgzM2EyZDk5YjE3ZDljMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.pO_Pt4O7iHbcnkvF84DqdLKvBLtdv7EKFJ-2OsTFqpY' }}
+        run: |
+          npm run build
+          ls -la dist/ | head -10
 
       - name: Sync Capacitor con Android
-        run: npx cap sync android
+        run: |
+          npx cap sync android
+          ls -la android/app/src/main/assets/public/ | head -5
 
-      - name: Hacer gradlew ejecutable
-        working-directory: android
-        run: chmod +x ./gradlew
-
-      - name: Verificar entorno (debug)
+      - name: Verificar entorno
         working-directory: android
         run: |
           echo "JAVA_HOME=$JAVA_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME"
           java -version
+          chmod +x ./gradlew
           ./gradlew --version
 
       - name: Build APK Debug (Gradle)
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode=all
+
+      - name: Listar outputs de Gradle
+        run: |
+          echo "=== APK generado ==="
+          find android/app/build/outputs -name "*.apk" -exec ls -lh {} \;
 
       - name: Preparar APK con nombre fijo + versionado
         run: |
@@ -74,15 +85,15 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk "out/lifehigh-${DATE}-${SHA}.apk"
           ls -lh out/
 
-      - name: Subir APK como artifact descargable
+      - name: Subir APK como artifact descargable (siempre)
         uses: actions/upload-artifact@v4
         with:
           name: lifehigh-apk
           path: out/*.apk
           retention-days: 30
 
-      - name: Crear/actualizar Release "latest" (en push a main)
-        if: github.event_name == 'push'
+      - name: Crear/actualizar Release "latest"
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
