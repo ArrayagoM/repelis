@@ -17,7 +17,7 @@ const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
  * Cuando tengamos data real (Vercel Pro API o backend KV) pasamos el array
  * real. Mientras tanto se llama con MOCK_LATAM_CITIES de abajo.
  */
-function WorldMap({ cities = [], height = 460, focus = 'latam' }) {
+function WorldMap({ cities = [], height = 460, focus = 'latam', currentLocation = null }) {
   const [hovered, setHovered] = useState(null)
 
   const maxVisits = Math.max(1, ...cities.map((c) => c.visits))
@@ -55,6 +55,34 @@ function WorldMap({ cities = [], height = 460, focus = 'latam' }) {
               ))
             }
           </Geographies>
+
+          {/* Marker especial: tu ubicación actual (emerald, pulse) */}
+          {currentLocation?.lat != null && currentLocation?.lng != null && (
+            <Marker coordinates={[currentLocation.lng, currentLocation.lat]}>
+              <circle r={18} fill="#10B981" fillOpacity={0.15}>
+                <animate attributeName="r" from="14" to="26" dur="1.6s" repeatCount="indefinite" />
+                <animate attributeName="fill-opacity" from="0.35" to="0" dur="1.6s" repeatCount="indefinite" />
+              </circle>
+              <circle r={7} fill="#10B981" stroke="#fff" strokeWidth={1.5} />
+              <text
+                textAnchor="middle"
+                y={-14}
+                style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fill: '#10B981',
+                  pointerEvents: 'none',
+                  paintOrder: 'stroke',
+                  stroke: '#08080E',
+                  strokeWidth: 3,
+                  strokeLinejoin: 'round',
+                }}
+              >
+                Vos · {currentLocation.city || currentLocation.country}
+              </text>
+            </Marker>
+          )}
 
           {cities.map((c) => {
             const r = radiusScale(c.visits)

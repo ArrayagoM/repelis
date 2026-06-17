@@ -49,14 +49,16 @@ const scheduleSpeedTest = (cb) => {
 // SOURCES (LATAM-first) es suficiente.
 if (!_CAPS.lowEnd) {
   scheduleSpeedTest(() => {
-    // Import dinámico para no inflar el initial bundle
     import('./lib/speedTest').then(({ measureSources }) => {
       measureSources().catch(() => {})
     })
-    // Health check de servidores en paralelo — rellena el historial de
-    // uptime para que el PlayerModal pueda decidir cuáles saltar fast.
     import('./lib/serverHealth').then(({ pingAll }) => {
       pingAll().catch(() => {})
+    })
+    // Geolocalización IP del cliente (sin permisos, cacheado 24h).
+    // El usuario admin ve su propia ciudad real en el mapa del admin.
+    import('./lib/clientGeo').then(({ getClientGeo }) => {
+      getClientGeo().catch(() => {})
     })
   })
 }

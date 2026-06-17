@@ -7,6 +7,7 @@ import {
   Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users, Info,
 } from '@phosphor-icons/react'
 import WorldMap, { MOCK_LATAM_CITIES } from '../../components/WorldMap'
+import { getCachedGeo, getClientGeo } from '../../lib/clientGeo'
 import {
   adminConfigured, adminIsAuthed, adminLogin, adminLogout,
 } from '../../lib/adminAuth'
@@ -413,6 +414,15 @@ function AnalyticsTab() {
   const ANALYTICS_URL = `https://vercel.com/${VERCEL_USER}/${VERCEL_PROJECT}/analytics`
   const SPEED_URL     = `https://vercel.com/${VERCEL_USER}/${VERCEL_PROJECT}/speed-insights`
 
+  // Geo del admin (client-side puro, vía ipapi.co)
+  const [myGeo, setMyGeo] = useState(getCachedGeo())
+  useEffect(() => {
+    if (!myGeo) {
+      getClientGeo().then((g) => g && setMyGeo(g))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="space-y-5">
       {/* Hero — info honesta de qué tenés */}
@@ -442,11 +452,19 @@ function AnalyticsTab() {
             <Info size={10} weight="fill" /> Datos DEMO (real cuando conectemos backend o Vercel Pro)
           </span>
         </div>
-        <WorldMap cities={MOCK_LATAM_CITIES} height={460} focus="latam" />
-        <p className="text-muted/50 text-[10px] leading-relaxed">
-          Cada burbuja dorada es una ciudad. El tamaño es proporcional a la cantidad de visitas.
-          Hover para ver detalle, scroll para zoom in/out, arrastrá para moverte por el mapa.
-        </p>
+        <WorldMap cities={MOCK_LATAM_CITIES} height={460} focus="latam" currentLocation={myGeo} />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-muted/50 text-[10px] leading-relaxed">
+            Burbuja dorada = ciudad. Tamaño = visitas. <strong className="text-emerald-400/80">Punto verde pulsante = vos (real, vía IP)</strong>.
+            Scroll para zoom, drag para mover.
+          </p>
+          {myGeo?.city && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Tu ubicación detectada: <strong>{myGeo.city}, {myGeo.country}</strong>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Botones a los dashboards */}
