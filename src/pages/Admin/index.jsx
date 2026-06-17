@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react'
 import WorldMap, { MOCK_LATAM_CITIES } from '../../components/WorldMap'
 import { getCachedGeo, getClientGeo } from '../../lib/clientGeo'
+import { fetchVisits } from '../../lib/visitsClient'
 import {
   adminConfigured, adminIsAuthed, adminLogin, adminLogout,
 } from '../../lib/adminAuth'
@@ -423,6 +424,27 @@ function AnalyticsTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Visitas reales del backend (Vercel KV via /api/visits)
+  const [visitsData, setVisitsData] = useState(null)
+  const [loadingVisits, setLoadingVisits] = useState(false)
+  const reloadVisits = async () => {
+    setLoadingVisits(true)
+    try {
+      // El PIN que el usuario tipeó al loguear lo recuperamos del prompt si hace falta
+      const pin = window.prompt('Re-confirmá tu PIN admin para leer las visitas:')
+      if (!pin) { setLoadingVisits(false); return }
+      const data = await fetchVisits(pin)
+      setVisitsData(data)
+    } finally {
+      setLoadingVisits(false)
+    }
+  }
+  useEffect(() => { /* lazy: el usuario clickea "Cargar visitas reales" */ }, [])
+
+  // Lista que se muestra en el mapa: si hay reales, las uso; sino, las mock.
+  const citiesForMap = (visitsData?.cities?.length > 0) ? visitsData.cities : MOCK_LATAM_CITIES
+  const usingReal = !!(visitsData?.ok && visitsData?.cities?.length > 0)
+
   return (
     <div className="space-y-5">
       {/* Hero — info honesta de qué tenés */}
@@ -442,17 +464,43 @@ function AnalyticsTab() {
         </div>
       </div>
 
+      {/* Stats reales del backend (cuando hay datos) */}
+      {visitsData?.ok && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Kpi label="Visitas hoy"        value={visitsData.stats.today}        color="gold" />
+          <Kpi label="Visitas 7 días"     value={visitsData.stats.last7Days}    color="blue" />
+          <Kpi label="Usuarios únicos hoy" value={visitsData.stats.uniquesToday} color="emerald" />
+          <Kpi label="Ciudades total"     value={visitsData.stats.totalCities}  color="purple" />
+        </div>
+      )}
+
       {/* Mapa mundial con burbujas por ciudad */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
             <MapTrifold size={11} weight="fill" /> Mapa de visitas por ciudad
           </p>
-          <span className="text-amber-300/70 text-[10px] font-mono flex items-center gap-1">
-            <Info size={10} weight="fill" /> Datos DEMO (real cuando conectemos backend o Vercel Pro)
-          </span>
+          <div className="flex items-center gap-2">
+            {usingReal ? (
+              <span className="text-emerald-400 text-[10px] font-mono flex items-center gap-1">
+                <CheckCircle size={11} weight="fill" /> Datos REALES del backend
+              </span>
+            ) : visitsData?.kvConfigured === false ? (
+              <span className="text-amber-300/70 text-[10px] font-mono flex items-center gap-1">
+                <Info size={10} weight="fill" /> KV no configurado todavía — mostrando demo
+              </span>
+            ) : (
+              <span className="text-amber-300/70 text-[10px] font-mono flex items-center gap-1">
+                <Info size={10} weight="fill" /> Datos demo
+              </span>
+            )}
+            <button onClick={reloadVisits} disabled={loadingVisits}
+              className="px-2.5 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-[10px] font-bold hover:bg-gold/20 disabled:opacity-50 transition-colors">
+              {loadingVisits ? 'Cargando…' : (usingReal ? '↻ Refrescar' : 'Cargar visitas reales')}
+            </button>
+          </div>
         </div>
-        <WorldMap cities={MOCK_LATAM_CITIES} height={460} focus="latam" currentLocation={myGeo} />
+        <WorldMap cities={citiesForMap} height={460} focus="latam" currentLocation={myGeo} />
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <p className="text-muted/50 text-[10px] leading-relaxed">
             Burbuja dorada = ciudad. Tamaño = visitas. <strong className="text-emerald-400/80">Punto verde pulsante = vos (real, vía IP)</strong>.

@@ -60,5 +60,10 @@ if (!_CAPS.lowEnd) {
     import('./lib/clientGeo').then(({ getClientGeo }) => {
       getClientGeo().catch(() => {})
     })
+    // Backend tracking: 1 vez por sesión, registra país/ciudad anónimo
+    // usando geo headers de Vercel. Persiste en Vercel KV.
+    import('./lib/visitTracker').then(({ trackVisitOnce }) => {
+      trackVisitOnce().catch(() => {})
+    })
   })
 }
