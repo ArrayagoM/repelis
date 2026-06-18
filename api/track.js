@@ -32,8 +32,22 @@ export default async function handler(req) {
   const country = req.headers.get('x-vercel-ip-country') || null
   const city    = req.headers.get('x-vercel-ip-city')    || null
   const region  = req.headers.get('x-vercel-ip-country-region') || null
-  const lat     = parseFloat(req.headers.get('x-vercel-ip-latitude'))  || null
-  const lng     = parseFloat(req.headers.get('x-vercel-ip-longitude')) || null
+  let   lat     = parseFloat(req.headers.get('x-vercel-ip-latitude'))  || null
+  let   lng     = parseFloat(req.headers.get('x-vercel-ip-longitude')) || null
+  let   source  = 'vercel-ip'
+
+  // Opt-in: el cliente puede mandar coords precisas (geolocation API del browser)
+  // si el usuario aceptó el permiso. Sobreescribimos la geo de IP con la precisa.
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json().catch(() => null)
+      if (body?.lat != null && body?.lng != null && body?.source === 'geolocation') {
+        lat = Number(body.lat)
+        lng = Number(body.lng)
+        source = 'geolocation'
+      }
+    } catch {}
+  }
 
   // Si no hay geo (dev local o región sin datos) no registramos
   if (!country || !city || lat == null || lng == null) {
@@ -67,7 +81,12 @@ export default async function handler(req) {
       lat,
       lng,
       lastSeen: Date.now(),
+      source,
     })
+    if (source === 'geolocation') {
+      // contador específico de visitantes que dieron permiso explícito
+      await kv.hincrby(cityKey, 'geolocConsents', 1)
+    }
     // Set "all cities" para que el GET pueda iterar
     await kv.sadd('cities:all', cityKey)
     // Contador global diario

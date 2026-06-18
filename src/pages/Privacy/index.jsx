@@ -36,8 +36,29 @@ export default function Privacy() {
           </Section>
 
           <Section title="1. Qué datos recolectamos">
-            <strong className="text-chalk/85">Ninguno desde nuestros servidores.</strong> Life High es una app
-            estática: corre 100% en tu navegador. No tenemos base de datos de usuarios.
+            Recolectamos lo mínimo indispensable, todo agregado y anónimo:
+            <ul className="list-disc list-inside mt-2 space-y-1 marker:text-gold/60">
+              <li>
+                <strong className="text-chalk/85">Geolocalización aproximada por IP</strong> (país, ciudad)
+                de cada visita. Esto NO es dato personal según Ley 25.326 art. 2 — es metadato de transporte de red.
+                Lo usamos para entender desde dónde se usa el sitio.
+              </li>
+              <li>
+                <strong className="text-chalk/85">Geolocalización precisa (GPS) — sólo con consentimiento explícito.</strong>
+                Cuando entrás a <Link to="/cines-cerca" className="text-gold underline">/cines-cerca</Link> y
+                aceptás el popup del navegador, tu ubicación exacta se usa para calcular los cines más
+                cercanos y se registra también en nuestras analytics agregadas. Si rechazás el permiso,
+                no se registra nada.
+              </li>
+              <li>
+                <strong className="text-chalk/85">Hash anónimo de sesión</strong> (UA + idioma + día) para contar
+                visitantes únicos sin guardar ningún identificador persistente. Expira a los 7 días.
+              </li>
+            </ul>
+            <p className="mt-3 text-chalk/80">
+              <strong>Lo que NUNCA guardamos:</strong> tu IP cruda, tu nombre, tu email, tus contraseñas,
+              ni nada que pueda re-identificarte personalmente.
+            </p>
           </Section>
 
           <Section title="2. Qué guardamos en TU dispositivo (localStorage)">
