@@ -506,12 +506,24 @@ function AnalyticsTab() {
         </div>
 
         {kvNotConfigured ? (
-          <div className="flex flex-col items-center justify-center bg-[#08080E] border border-amber-500/20 rounded-2xl text-center px-6 py-16 gap-3">
+          <div className="flex flex-col items-center justify-center bg-[#08080E] border border-amber-500/20 rounded-2xl text-center px-6 py-12 gap-3">
             <Info size={32} weight="fill" className="text-amber-400/70" />
-            <p className="text-chalk font-display font-bold">Falta configurar Vercel KV</p>
-            <p className="text-muted text-sm max-w-md">
-              Activá el storage KV en tu proyecto Vercel y agregá la env <code className="text-amber-200">ADMIN_PIN</code>.
-              Ver instrucciones en <code className="text-amber-200">api/README.md</code> del repo.
+            <p className="text-chalk font-display font-bold text-lg">Falta configurar el storage</p>
+            <p className="text-muted text-sm max-w-lg leading-relaxed">
+              Setup en <strong className="text-amber-200">1 minuto</strong> sin Vercel marketplace.
+              Creá una DB Redis gratis en Upstash y pegá 3 env vars en Vercel.
+            </p>
+            <ol className="text-muted/80 text-xs text-left max-w-md leading-relaxed list-decimal list-inside space-y-1 marker:text-amber-400">
+              <li>Andá a <a href="https://console.upstash.com" target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">console.upstash.com</a> → Create Database → Redis</li>
+              <li>Copiá <code className="text-amber-200">REST URL</code> y <code className="text-amber-200">REST TOKEN</code></li>
+              <li>En <a href="https://vercel.com/arrayagom/repelis/settings/environment-variables" target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">Vercel env vars</a> agregá 3:
+                <code className="text-amber-200"> UPSTASH_REDIS_REST_URL</code>,
+                <code className="text-amber-200"> UPSTASH_REDIS_REST_TOKEN</code>,
+                <code className="text-amber-200"> ADMIN_PIN</code></li>
+              <li>Redeploy</li>
+            </ol>
+            <p className="text-muted/50 text-[10px] mt-2 font-mono">
+              Free tier: 10k comandos/día (~300k visits/mes). Ver <code>api/README.md</code> para más.
             </p>
           </div>
         ) : !hasRealData ? (
