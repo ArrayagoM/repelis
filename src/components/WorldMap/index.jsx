@@ -24,10 +24,10 @@ function WorldMap({ cities = [], height = 460, focus = 'latam', currentLocation 
   const radiusScale = scaleSqrt().domain([0, maxVisits]).range([4, 22])
 
   // Centro y zoom inicial según foco
-  const centerLatam = [-65, -10]
+  const centerLatam = [-65, -25]   // baja más a Argentina
   const centerWorld = [0, 20]
   const center = focus === 'latam' ? centerLatam : centerWorld
-  const zoom    = focus === 'latam' ? 2.2 : 1
+  const zoom    = focus === 'latam' ? 4 : 1   // 4 = se distingue Buenos Aires vs Córdoba
 
   return (
     <div className="relative rounded-2xl overflow-hidden bg-[#08080E] border border-white/10" style={{ height }}>
@@ -36,7 +36,7 @@ function WorldMap({ cities = [], height = 460, focus = 'latam', currentLocation 
         projectionConfig={{ scale: 130 }}
         style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at 50% 30%, #0E0E18 0%, #08080E 70%)' }}
       >
-        <ZoomableGroup center={center} zoom={zoom} maxZoom={6} minZoom={1}>
+        <ZoomableGroup center={center} zoom={zoom} maxZoom={32} minZoom={1}>
           <Geographies geography={GEO_URL}>
             {({ geographies }) =>
               geographies.map((geo) => (
@@ -108,26 +108,25 @@ function WorldMap({ cities = [], height = 460, focus = 'latam', currentLocation 
                   strokeWidth={isHovered ? 1.5 : 0.5}
                   style={{ transition: 'all 0.2s' }}
                 />
-                {/* Label sólo si está hovered o burbuja grande */}
-                {(isHovered || r > 14) && (
-                  <text
-                    textAnchor="middle"
-                    y={-r - 6}
-                    style={{
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      fill: '#F0EDE8',
-                      pointerEvents: 'none',
-                      paintOrder: 'stroke',
-                      stroke: '#08080E',
-                      strokeWidth: 3,
-                      strokeLinejoin: 'round',
-                    }}
-                  >
-                    {c.name} · {c.visits.toLocaleString('es-AR')}
-                  </text>
-                )}
+                {/* Label SIEMPRE visible para identificar cada ciudad */}
+                <text
+                  textAnchor="middle"
+                  y={-r - 5}
+                  style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    fill: isHovered ? '#FFD877' : '#F0EDE8',
+                    pointerEvents: 'none',
+                    paintOrder: 'stroke',
+                    stroke: '#08080E',
+                    strokeWidth: 3,
+                    strokeLinejoin: 'round',
+                    transition: 'fill 0.2s',
+                  }}
+                >
+                  {c.name}{isHovered ? ` · ${c.visits.toLocaleString('es-AR')}` : ''}
+                </text>
               </Marker>
             )
           })}

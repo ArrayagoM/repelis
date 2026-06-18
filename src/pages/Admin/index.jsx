@@ -6,9 +6,10 @@ import {
   Terminal, ArrowClockwise, CheckCircle, XCircle, ArrowSquareOut,
   Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users, Info,
 } from '@phosphor-icons/react'
-import WorldMap, { MOCK_LATAM_CITIES } from '../../components/WorldMap'
+import WorldMap from '../../components/WorldMap'
 import { getCachedGeo, getClientGeo } from '../../lib/clientGeo'
 import { fetchVisits } from '../../lib/visitsClient'
+import { getSessionPin } from '../../lib/adminAuth'
 import {
   adminConfigured, adminIsAuthed, adminLogin, adminLogout,
 } from '../../lib/adminAuth'
@@ -424,26 +425,31 @@ function AnalyticsTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Visitas reales del backend (Vercel KV via /api/visits)
+  // Visitas reales del backend (Vercel KV via /api/visits) — auto-load
   const [visitsData, setVisitsData] = useState(null)
   const [loadingVisits, setLoadingVisits] = useState(false)
   const reloadVisits = async () => {
     setLoadingVisits(true)
     try {
-      // El PIN que el usuario tipeó al loguear lo recuperamos del prompt si hace falta
-      const pin = window.prompt('Re-confirmá tu PIN admin para leer las visitas:')
-      if (!pin) { setLoadingVisits(false); return }
+      const pin = getSessionPin()
       const data = await fetchVisits(pin)
       setVisitsData(data)
     } finally {
       setLoadingVisits(false)
     }
   }
-  useEffect(() => { /* lazy: el usuario clickea "Cargar visitas reales" */ }, [])
+  // Auto-load al montar la tab + auto-refresh cada 30s
+  useEffect(() => {
+    reloadVisits()
+    const t = setInterval(reloadVisits, 30_000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Lista que se muestra en el mapa: si hay reales, las uso; sino, las mock.
-  const citiesForMap = (visitsData?.cities?.length > 0) ? visitsData.cities : MOCK_LATAM_CITIES
-  const usingReal = !!(visitsData?.ok && visitsData?.cities?.length > 0)
+  // Solo mostramos reales. Si no hay todavía, mostramos pantalla "esperando".
+  const citiesForMap = visitsData?.cities || []
+  const hasRealData = !!(visitsData?.ok && visitsData?.cities?.length > 0)
+  const kvNotConfigured = visitsData?.kvConfigured === false
 
   return (
     <div className="space-y-5">
@@ -481,38 +487,59 @@ function AnalyticsTab() {
             <MapTrifold size={11} weight="fill" /> Mapa de visitas por ciudad
           </p>
           <div className="flex items-center gap-2">
-            {usingReal ? (
+            {hasRealData && (
               <span className="text-emerald-400 text-[10px] font-mono flex items-center gap-1">
-                <CheckCircle size={11} weight="fill" /> Datos REALES del backend
+                <CheckCircle size={11} weight="fill" /> Datos REALES · auto-refresh 30s
               </span>
-            ) : visitsData?.kvConfigured === false ? (
-              <span className="text-amber-300/70 text-[10px] font-mono flex items-center gap-1">
-                <Info size={10} weight="fill" /> KV no configurado todavía — mostrando demo
-              </span>
-            ) : (
-              <span className="text-amber-300/70 text-[10px] font-mono flex items-center gap-1">
-                <Info size={10} weight="fill" /> Datos demo
+            )}
+            {kvNotConfigured && (
+              <span className="text-amber-300 text-[10px] font-mono flex items-center gap-1">
+                <Info size={10} weight="fill" /> KV no configurado en Vercel
               </span>
             )}
             <button onClick={reloadVisits} disabled={loadingVisits}
-              className="px-2.5 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-[10px] font-bold hover:bg-gold/20 disabled:opacity-50 transition-colors">
-              {loadingVisits ? 'Cargando…' : (usingReal ? '↻ Refrescar' : 'Cargar visitas reales')}
+              className="px-2.5 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-[10px] font-bold hover:bg-gold/20 disabled:opacity-50 transition-colors flex items-center gap-1">
+              <ArrowClockwise size={10} weight="bold" className={loadingVisits ? 'animate-spin' : ''} />
+              {loadingVisits ? 'Cargando…' : 'Refrescar'}
             </button>
           </div>
         </div>
-        <WorldMap cities={citiesForMap} height={460} focus="latam" currentLocation={myGeo} />
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-muted/50 text-[10px] leading-relaxed">
-            Burbuja dorada = ciudad. Tamaño = visitas. <strong className="text-emerald-400/80">Punto verde pulsante = vos (real, vía IP)</strong>.
-            Scroll para zoom, drag para mover.
-          </p>
-          {myGeo?.city && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Tu ubicación detectada: <strong>{myGeo.city}, {myGeo.country}</strong>
-            </div>
-          )}
-        </div>
+
+        {kvNotConfigured ? (
+          <div className="flex flex-col items-center justify-center bg-[#08080E] border border-amber-500/20 rounded-2xl text-center px-6 py-16 gap-3">
+            <Info size={32} weight="fill" className="text-amber-400/70" />
+            <p className="text-chalk font-display font-bold">Falta configurar Vercel KV</p>
+            <p className="text-muted text-sm max-w-md">
+              Activá el storage KV en tu proyecto Vercel y agregá la env <code className="text-amber-200">ADMIN_PIN</code>.
+              Ver instrucciones en <code className="text-amber-200">api/README.md</code> del repo.
+            </p>
+          </div>
+        ) : !hasRealData ? (
+          <div className="flex flex-col items-center justify-center bg-[#08080E] border border-white/5 rounded-2xl text-center px-6 py-16 gap-3">
+            <MapTrifold size={32} weight="fill" className="text-muted/40" />
+            <p className="text-chalk font-display font-bold">Esperando primera visita</p>
+            <p className="text-muted text-sm max-w-md">
+              Cuando alguien entre a <code className="text-gold">repelis.vercel.app</code> desde cualquier
+              ciudad va a aparecer acá. Abrí el sitio en otra pestaña para que cuente tu visita.
+            </p>
+          </div>
+        ) : (
+          <WorldMap cities={citiesForMap} height={520} focus="latam" currentLocation={myGeo} />
+        )}
+        {hasRealData && (
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-muted/50 text-[10px] leading-relaxed">
+              Burbuja dorada = ciudad real. Tamaño = visitas. <strong className="text-emerald-400/80">Punto verde = vos</strong>.
+              <strong> Scroll = zoom (hasta x32), drag = mover.</strong> Las labels son visibles en todo zoom.
+            </p>
+            {myGeo?.city && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Vos: <strong>{myGeo.city}, {myGeo.country}</strong>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Botones a los dashboards */}

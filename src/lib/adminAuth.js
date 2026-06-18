@@ -11,6 +11,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 const SESSION_KEY = 'repelis:adminSession:v1'
+const PIN_KEY = 'repelis:adminPin:v1'         // sessionStorage solo (vive en la pestaña)
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000   // 8 horas
 
 const configuredPin = () => {
@@ -38,8 +39,15 @@ export const adminLogin = (pin) => {
       ts: Date.now(),
       h: hash(pin),
     }))
+    // Guardamos el PIN crudo en sessionStorage (vive sólo en esta pestaña)
+    // para poder enviarlo al backend /api/visits sin volver a pedirlo.
+    sessionStorage.setItem(PIN_KEY, pin)
   } catch {}
   return true
+}
+
+export const getSessionPin = () => {
+  try { return sessionStorage.getItem(PIN_KEY) || configuredPin() } catch { return configuredPin() }
 }
 
 export const adminIsAuthed = () => {
@@ -56,7 +64,10 @@ export const adminIsAuthed = () => {
 }
 
 export const adminLogout = () => {
-  try { localStorage.removeItem(SESSION_KEY) } catch {}
+  try {
+    localStorage.removeItem(SESSION_KEY)
+    sessionStorage.removeItem(PIN_KEY)
+  } catch {}
 }
 
 // Flag de "admin tiene acceso a features premium aún cuando esté gateado"
