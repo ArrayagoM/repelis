@@ -69,11 +69,28 @@ export default function App() {
       {!lowEnd && <FloatingCafecito />}
       <UpdateAvailable />
 
-      {/* Vercel Analytics — visitas, países, ciudades, dispositivos, top pages
-          Sin cookies. Cumple GDPR/LGPD/Ley 25.326. Dashboard en vercel.com */}
-      <Analytics />
-      {/* Speed Insights — métricas de performance reales de los usuarios */}
-      <SpeedInsights />
+      {/* Vercel Analytics — visitas, países, ciudades, dispositivos, top pages.
+          Sin cookies. Cumple GDPR/LGPD/Ley 25.326. Dashboard en vercel.com.
+          beforeSend filtra rutas que no aportan métricas útiles. */}
+      <Analytics
+        beforeSend={(event) => {
+          // No trackear admin (contamina datos) ni queries con tokens
+          if (event.url.includes('/admin')) return null
+          // Limpiar query strings sensibles
+          const url = new URL(event.url)
+          if (url.searchParams.has('pin')) url.searchParams.delete('pin')
+          return { ...event, url: url.toString() }
+        }}
+      />
+      {/* Speed Insights — Core Web Vitals reales (LCP, FID, CLS, TTFB, INP).
+          Excluye admin para no ensuciar el promedio con visitas internas. */}
+      <SpeedInsights
+        beforeSend={(event) => {
+          if (event.url.includes('/admin')) return null
+          return event
+        }}
+        sampleRate={1}
+      />
 
       <Suspense fallback={<RouteFallback />}>
         <RouteWrapper enabled={!lowEnd}>
