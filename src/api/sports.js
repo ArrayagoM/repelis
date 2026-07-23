@@ -24,9 +24,28 @@ const sportsApi = axios.create({
   timeout: 8000,
 })
 
-// Retry con backoff (1 retry, lo justo)
+// La key gratis '3' es compartida y a veces devuelve una página HTML de error
+// (rate-limit) en vez de JSON. axios no rechaza eso (status 200), así que lo
+// detectamos: si data es string (HTML) o no tiene forma de objeto, es error.
+const looksLikeHtml = (data) =>
+  typeof data === 'string' && data.trim().startsWith('<')
+
+// Retry con backoff. Reintenta ante error de red O ante respuesta HTML basura.
 sportsApi.interceptors.response.use(
-  (r) => r,
+  async (res) => {
+    if (looksLikeHtml(res.data)) {
+      const cfg = res.config || {}
+      if (!cfg.__retried) {
+        cfg.__retried = true
+        await new Promise((r) => setTimeout(r, 800))
+        return sportsApi(cfg)
+      }
+      // Segundo intento también falló → devolvemos data vacía manejable
+      track('sportsdb-html', new Error('HTML response'), { url: cfg.url })
+      return { ...res, data: { events: null } }
+    }
+    return res
+  },
   async (err) => {
     const cfg = err.config || {}
     if (cfg.__retried) {
@@ -55,11 +74,40 @@ export const getEventLineups = (eventId) =>
 export const getEventStats = (eventId) =>
   sportsApi.get(`/lookupeventstats.php`, { params: { id: eventId } })
 
-// ─── Live: próximos y en vivo ─────────────────────────────────────────────
-// TheSportsDB tiene endpoint v2 con livescore. Acá usamos eventsnext + filter.
-export const getLiveEvents = () =>
-  sportsApi.get(`/livescore.php`, { params: { s: 'Soccer' } })
-    .catch(() => ({ data: { events: [] } }))   // fallback silencioso
+// ─── Estado de un partido derivado de sus datos ───────────────────────────
+// El endpoint /livescore.php NO funciona con la key gratis (devuelve HTML).
+// En vez de depender de él, calculamos el estado desde el fixture:
+//   - 'finished' : strStatus === 'FT'/'AET'/'PEN' o timestamp + 2.5h pasado
+//   - 'live'     : ahora está entre kickoff y kickoff + 2.5h
+//   - 'upcoming' : kickoff en el futuro
+const MATCH_DURATION_MS = 2.5 * 60 * 60 * 1000
+
+// TheSportsDB entrega timestamps en UTC pero SIN sufijo 'Z'. new Date() los
+// parsearía como hora local → error de varias horas. Forzamos UTC.
+const toUtcMs = (ts) => {
+  if (!ts) return NaN
+  const hasTz = /[zZ]|[+-]\d{2}:?\d{2}$/.test(ts)
+  return new Date(hasTz ? ts : `${ts}Z`).getTime()
+}
+
+export const getMatchStatus = (ev) => {
+  const status = (ev.strStatus || '').toUpperCase()
+  if (['FT', 'AET', 'PEN', 'MATCH FINISHED'].includes(status)) return 'finished'
+
+  const ts = ev.strTimestamp || (ev.dateEvent ? `${ev.dateEvent}T${ev.strTime || '00:00:00'}` : null)
+  if (!ts) return 'upcoming'
+  const kickoff = toUtcMs(ts)
+  if (Number.isNaN(kickoff)) return 'upcoming'
+
+  const now = Date.now()
+  if (now < kickoff) return 'upcoming'
+  if (now < kickoff + MATCH_DURATION_MS) return 'live'
+  return 'finished'
+}
+
+// Filtra los partidos EN VIVO de un fixture ya cargado (sin llamada extra).
+export const getLiveFromFixture = (fixture = []) =>
+  fixture.filter((ev) => getMatchStatus(ev) === 'live')
 
 export const getNextEvents = (leagueId) =>
   sportsApi.get(`/eventsnextleague.php`, { params: { id: leagueId } })

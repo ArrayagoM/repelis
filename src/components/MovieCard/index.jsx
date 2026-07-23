@@ -6,6 +6,7 @@ import { Play, Star, CalendarBlank, TelevisionSimple } from '@phosphor-icons/rea
 import { IMG_W342, IMG_W500 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
+import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
 
 // Capacidades detectadas UNA vez (cacheado). En low-end:
 //   - poster más chico (w342 vs w500)
@@ -38,6 +39,10 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   const year      = (movie.release_date || movie.first_air_date)?.slice(0, 4) ?? ''
   const title     = movie.title ?? movie.name ?? 'Sin título'
 
+  // Películas sin estrenar NO están en ningún servidor. Lo marcamos.
+  const upcoming  = !isTV && isUpcoming(movie)
+  const daysLeft  = upcoming ? daysUntilRelease(movie) : null
+
   const handleMouseMove = (e) => {
     if (LOW_END) return                       // sin tilt en red lenta — ahorra paint
     const rect = cardRef.current?.getBoundingClientRect()
@@ -51,7 +56,10 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
 
   const handlePlay = (e) => {
     e.stopPropagation()
-    if (isTV) {
+    // Sin estrenar → no abrimos el player (fallaría). Vamos al detalle.
+    if (upcoming) {
+      navigate(`/movie/${movie.id}`)
+    } else if (isTV) {
       navigate(`/tv/${movie.id}`)
     } else {
       dispatch(openPlayer({ movieId: movie.id, title, mediaType: 'movie' }))
@@ -100,26 +108,46 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
           <div className="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-400" />
 
           {/* Badge TV */}
-          {isTV && (
+          {isTV && !upcoming && (
             <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/80 backdrop-blur-sm">
               <TelevisionSimple size={9} weight="fill" className="text-white" />
               <span className="text-white text-[9px] font-bold">SERIE</span>
             </div>
           )}
 
-          {/* Botón play */}
+          {/* Badge Próximamente — la peli NO está en servers todavía */}
+          {upcoming && (
+            <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/80 backdrop-blur-sm">
+              <CalendarBlank size={9} weight="fill" className="text-white" />
+              <span className="text-white text-[9px] font-bold uppercase">
+                {daysLeft != null ? `En ${daysLeft}d` : 'Próximamente'}
+              </span>
+            </div>
+          )}
+
+          {/* Botón play / próximamente */}
           <motion.div
             animate={{ opacity: hovered ? 1 : 0, scale: hovered ? 1 : 0.7 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <button onClick={handlePlay}
-              className="w-[52px] h-[52px] rounded-full bg-gold shadow-[0_0_24px_rgba(232,160,32,0.5)]
-                flex items-center justify-center hover:bg-gold-hi hover:scale-110 transition-all duration-200"
-              aria-label={`${isTV ? 'Ver' : 'Reproducir'} ${title}`}
-            >
-              <Play size={20} weight="fill" className="text-void ml-0.5" />
-            </button>
+            {upcoming ? (
+              <button onClick={handlePlay}
+                className="flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-void/80 backdrop-blur-sm border border-blue-400/40 hover:border-blue-400/70 transition-all"
+                aria-label={`${title} — próximamente`}
+              >
+                <CalendarBlank size={20} weight="fill" className="text-blue-300" />
+                <span className="text-blue-200 text-[10px] font-bold uppercase tracking-wide">Aún no disponible</span>
+              </button>
+            ) : (
+              <button onClick={handlePlay}
+                className="w-[52px] h-[52px] rounded-full bg-gold shadow-[0_0_24px_rgba(232,160,32,0.5)]
+                  flex items-center justify-center hover:bg-gold-hi hover:scale-110 transition-all duration-200"
+                aria-label={`${isTV ? 'Ver' : 'Reproducir'} ${title}`}
+              >
+                <Play size={20} weight="fill" className="text-void ml-0.5" />
+              </button>
+            )}
           </motion.div>
 
           {/* Rating */}

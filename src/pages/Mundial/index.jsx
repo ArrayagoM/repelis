@@ -6,8 +6,8 @@ import {
   PlayCircle, ArrowSquareOut, CheckCircle, Warning, ArrowClockwise,
   TextAa,
 } from '@phosphor-icons/react'
-import { getWorldCupFixture, getLiveEvents } from '../../api/sports'
-import { LEGAL_BROADCASTERS_AR, getLiveMatches as getStreamedLive, getMatchSources, buildStreamUrl } from '../../api/sportsStreams'
+import { getWorldCupFixture, getMatchStatus, getLiveFromFixture } from '../../api/sports'
+import { LEGAL_BROADCASTERS_AR, getMatchSources, buildStreamUrl } from '../../api/sportsStreams'
 import { getNetworkInfo } from '../../lib/network'
 import { track } from '../../lib/errorMonitor'
 import { useSEO } from '../../lib/useSEO'
@@ -16,17 +16,20 @@ import { useSEO } from '../../lib/useSEO'
 const REFRESH_LIVE_GOOD = 30_000   // 30s en red buena
 const REFRESH_LIVE_SLOW = 90_000   // 90s en red lenta
 
-const formatDate = (iso) => {
-  try {
-    return new Date(iso).toLocaleString('es-AR', {
-      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-    })
-  } catch { return iso }
+// TheSportsDB entrega UTC sin 'Z' → forzamos UTC para mostrar bien en hora AR.
+const toUtcDate = (ts) => {
+  if (!ts) return null
+  const hasTz = /[zZ]|[+-]\d{2}:?\d{2}$/.test(ts)
+  const d = new Date(hasTz ? ts : `${ts}Z`)
+  return Number.isNaN(d.getTime()) ? null : d
 }
 
-const formatJustTime = (iso) => {
-  try { return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) }
-  catch { return '' }
+const formatDate = (ts) => {
+  const d = toUtcDate(ts)
+  if (!d) return ts || ''
+  return d.toLocaleString('es-AR', {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  })
 }
 
 export default function Mundial() {
@@ -57,31 +60,25 @@ export default function Mundial() {
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const [fixRes, liveRes] = await Promise.allSettled([
-        getWorldCupFixture('2026'),
-        getLiveEvents(),
-      ])
+      // Solo usamos el endpoint de fixture (el único que funciona con key gratis).
+      // El estado en vivo lo derivamos de los datos, sin llamada extra rota.
+      const res = await getWorldCupFixture('2026')
+      const events = res.data?.events || []
 
-      if (fixRes.status === 'fulfilled') {
-        const events = fixRes.value.data?.events || []
-        setFixture(events.sort((a, b) =>
-          new Date(a.strTimestamp || a.dateEvent) - new Date(b.strTimestamp || b.dateEvent)
-        ))
-      } else {
-        track('mundial-fixture', fixRes.reason)
+      if (events.length === 0) {
+        setFixture([]); setLive([])
+        setError('No pudimos cargar el fixture ahora. La API deportiva gratuita está saturada — probá refrescar en unos segundos.')
+        return
       }
 
-      if (liveRes.status === 'fulfilled') {
-        const events = liveRes.value.data?.events || []
-        // Filtrar solo Mundial si TheSportsDB lo identifica
-        const wc = events.filter((e) =>
-          (e.strLeague || '').toLowerCase().includes('world cup') ||
-          (e.strLeague || '').toLowerCase().includes('mundial')
-        )
-        setLive(wc.length ? wc : events.slice(0, 5))
-      }
+      const sorted = [...events].sort((a, b) =>
+        new Date(a.strTimestamp || a.dateEvent) - new Date(b.strTimestamp || b.dateEvent)
+      )
+      setFixture(sorted)
+      setLive(getLiveFromFixture(sorted))
     } catch (e) {
-      setError(e.message || 'No se pudo cargar el fixture')
+      track('mundial-fixture', e)
+      setError('No se pudo conectar con la API deportiva. Probá de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -240,16 +237,46 @@ function FixtureTab({ fixture, loading, scoreOnlyMode }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
         <SoccerBall size={32} className="text-muted/40" />
-        <p className="text-chalk font-semibold">Fixture aún no disponible</p>
+        <p className="text-chalk font-semibold">Fixture no disponible ahora</p>
         <p className="text-muted text-sm max-w-md">
-          El Mundial 2026 arranca el 11 de junio. TheSportsDB cargará el fixture completo apenas FIFA lo publique.
+          La API deportiva gratuita está saturada en este momento. Tocá "Refrescar" en unos segundos.
         </p>
       </div>
     )
   }
+
+  // Agrupar: próximos primero, después en vivo, después resultados
+  const upcoming = fixture.filter((e) => getMatchStatus(e) === 'upcoming')
+  const liveNow  = fixture.filter((e) => getMatchStatus(e) === 'live')
+  const finished = fixture.filter((e) => getMatchStatus(e) === 'finished')
+
+  return (
+    <div className="space-y-6">
+      {liveNow.length > 0 && (
+        <Group title="En vivo ahora" accent="red">
+          {liveNow.map((ev) => <MatchRow key={ev.idEvent} ev={ev} status="live" scoreOnlyMode={scoreOnlyMode} />)}
+        </Group>
+      )}
+      {upcoming.length > 0 && (
+        <Group title="Próximos partidos" accent="gold">
+          {upcoming.map((ev) => <MatchRow key={ev.idEvent} ev={ev} status="upcoming" scoreOnlyMode={scoreOnlyMode} />)}
+        </Group>
+      )}
+      {finished.length > 0 && (
+        <Group title="Resultados" accent="muted">
+          {finished.map((ev) => <MatchRow key={ev.idEvent} ev={ev} status="finished" scoreOnlyMode={scoreOnlyMode} />)}
+        </Group>
+      )}
+    </div>
+  )
+}
+
+function Group({ title, accent, children }) {
+  const color = accent === 'red' ? 'text-red-300' : accent === 'gold' ? 'text-gold' : 'text-muted'
   return (
     <div className="space-y-2">
-      {fixture.map((ev) => <MatchRow key={ev.idEvent} ev={ev} scoreOnlyMode={scoreOnlyMode} />)}
+      <p className={`text-[11px] font-mono uppercase tracking-widest font-bold ${color}`}>{title}</p>
+      {children}
     </div>
   )
 }
@@ -322,15 +349,16 @@ function WhereTab() {
 }
 
 // ─── Match Row ────────────────────────────────────────────────────────────
-function MatchRow({ ev, live = false, scoreOnlyMode = false }) {
+function MatchRow({ ev, status = 'upcoming', live: liveProp, scoreOnlyMode = false }) {
   const [showStream, setShowStream] = useState(false)
   const [streamSources, setStreamSources] = useState(null)
   const [activeStreamIdx, setActiveStreamIdx] = useState(0)
   const [loadingStream, setLoadingStream] = useState(false)
 
+  const live = liveProp ?? (status === 'live')
   const home  = ev.strHomeTeam || ev.homeTeam || '—'
   const away  = ev.strAwayTeam || ev.awayTeam || '—'
-  const score = (ev.intHomeScore != null && ev.intAwayScore != null)
+  const score = (ev.intHomeScore != null && ev.intHomeScore !== '' && ev.intAwayScore != null && ev.intAwayScore !== '')
     ? `${ev.intHomeScore} - ${ev.intAwayScore}`
     : null
   const date  = ev.strTimestamp || ev.dateEvent
@@ -368,7 +396,9 @@ function MatchRow({ ev, live = false, scoreOnlyMode = false }) {
           <div className="flex items-center gap-2 text-muted text-[10px] font-mono uppercase tracking-widest mb-2">
             <Calendar size={10} /> {formatDate(date)}
             {venue && <span className="text-muted/40 truncate">· {venue}</span>}
-            {live && <span className="ml-auto px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold">LIVE</span>}
+            {live && <span className="ml-auto px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-400 animate-pulse" />LIVE</span>}
+            {status === 'finished' && <span className="ml-auto px-1.5 py-0.5 rounded-full bg-white/5 text-muted/60 font-bold">FINALIZADO</span>}
+            {status === 'upcoming' && <span className="ml-auto px-1.5 py-0.5 rounded-full bg-gold/10 text-gold/80 font-bold">PRÓXIMO</span>}
           </div>
           <div className="flex items-center gap-3">
             <p className="text-chalk font-semibold text-base flex-1 truncate">{home}</p>

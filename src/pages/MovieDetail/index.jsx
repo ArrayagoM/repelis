@@ -16,6 +16,7 @@ import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
 import WatchProviders from '../../components/WatchProviders'
+import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
 import { useSEO, useMovieSchema } from '../../lib/useSEO'
 
 export default function MovieDetail() {
@@ -59,6 +60,8 @@ export default function MovieDetail() {
 
   const rating = data.vote_average?.toFixed(1) ?? '–'
   const year   = data.release_date?.slice(0, 4) ?? ''
+  const movieUpcoming = isUpcoming(data)
+  const movieDaysLeft = daysUntilRelease(data)
 
   return (
     <motion.main
@@ -185,23 +188,36 @@ export default function MovieDetail() {
               </p>
             )}
 
+            {/* Aviso si la peli aún no se estrenó */}
+            {movieUpcoming && (
+              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-start gap-2.5 max-w-xl">
+                <CalendarBlank size={16} weight="fill" className="text-blue-300 flex-shrink-0 mt-0.5" />
+                <p className="text-blue-100/85 text-xs leading-relaxed">
+                  <strong className="text-blue-200">Aún no disponible.</strong> Esta película se estrena
+                  {movieDaysLeft != null ? ` en ${movieDaysLeft} día${movieDaysLeft !== 1 ? 's' : ''}` : ' próximamente'}.
+                  Todavía no está en los servidores de streaming. Podés ver el tráiler mientras tanto.
+                </p>
+              </div>
+            )}
+
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-3">
               <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => dispatch(openPlayer({ movieId: data.id, title: data.title }))}
-                className="
-                  group flex items-center gap-3 px-7 py-3.5 rounded-full
-                  bg-gold hover:bg-gold-hi text-void font-bold text-sm
-                  shadow-[0_4px_24px_rgba(232,160,32,0.35)] hover:shadow-[0_4px_36px_rgba(232,160,32,0.55)]
-                  transition-all duration-300
-                "
+                whileHover={{ scale: movieUpcoming ? 1 : 1.03 }}
+                whileTap={{ scale: movieUpcoming ? 1 : 0.97 }}
+                onClick={() => { if (!movieUpcoming) dispatch(openPlayer({ movieId: data.id, title: data.title })) }}
+                disabled={movieUpcoming}
+                className={`
+                  group flex items-center gap-3 px-7 py-3.5 rounded-full font-bold text-sm transition-all duration-300
+                  ${movieUpcoming
+                    ? 'bg-white/5 border border-white/10 text-muted cursor-not-allowed'
+                    : 'bg-gold hover:bg-gold-hi text-void shadow-[0_4px_24px_rgba(232,160,32,0.35)] hover:shadow-[0_4px_36px_rgba(232,160,32,0.55)]'}
+                `}
               >
-                <span className="w-7 h-7 rounded-full bg-void/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Play size={14} weight="fill" />
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-300 ${movieUpcoming ? 'bg-white/5' : 'bg-void/20 group-hover:scale-110'}`}>
+                  {movieUpcoming ? <CalendarBlank size={14} weight="fill" /> : <Play size={14} weight="fill" />}
                 </span>
-                Reproducir ahora
+                {movieUpcoming ? 'Próximamente' : 'Reproducir ahora'}
               </motion.button>
 
               {trailer && (

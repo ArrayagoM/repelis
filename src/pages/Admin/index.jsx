@@ -505,53 +505,38 @@ function AnalyticsTab() {
           </div>
         </div>
 
-        {kvNotConfigured ? (
-          <div className="flex flex-col items-center justify-center bg-[#08080E] border border-amber-500/20 rounded-2xl text-center px-6 py-12 gap-3">
-            <Info size={32} weight="fill" className="text-amber-400/70" />
-            <p className="text-chalk font-display font-bold text-lg">Falta configurar el storage</p>
-            <p className="text-muted text-sm max-w-lg leading-relaxed">
-              Setup en <strong className="text-amber-200">1 minuto</strong> sin Vercel marketplace.
-              Creá una DB Redis gratis en Upstash y pegá 3 env vars en Vercel.
+        {/* Banner de setup cuando el backend no está configurado — NO reemplaza el mapa */}
+        {kvNotConfigured && (
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs leading-relaxed">
+            <p className="text-amber-200 font-semibold mb-1 flex items-center gap-1.5">
+              <Info size={12} weight="fill" /> Para ver visitas de TODOS los usuarios, configurá el storage (1 min)
             </p>
-            <ol className="text-muted/80 text-xs text-left max-w-md leading-relaxed list-decimal list-inside space-y-1 marker:text-amber-400">
-              <li>Andá a <a href="https://console.upstash.com" target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">console.upstash.com</a> → Create Database → Redis</li>
-              <li>Copiá <code className="text-amber-200">REST URL</code> y <code className="text-amber-200">REST TOKEN</code></li>
-              <li>En <a href="https://vercel.com/arrayagom/repelis/settings/environment-variables" target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">Vercel env vars</a> agregá 3:
-                <code className="text-amber-200"> UPSTASH_REDIS_REST_URL</code>,
-                <code className="text-amber-200"> UPSTASH_REDIS_REST_TOKEN</code>,
-                <code className="text-amber-200"> ADMIN_PIN</code></li>
-              <li>Redeploy</li>
-            </ol>
-            <p className="text-muted/50 text-[10px] mt-2 font-mono">
-              Free tier: 10k comandos/día (~300k visits/mes). Ver <code>api/README.md</code> para más.
-            </p>
-          </div>
-        ) : !hasRealData ? (
-          <div className="flex flex-col items-center justify-center bg-[#08080E] border border-white/5 rounded-2xl text-center px-6 py-16 gap-3">
-            <MapTrifold size={32} weight="fill" className="text-muted/40" />
-            <p className="text-chalk font-display font-bold">Esperando primera visita</p>
-            <p className="text-muted text-sm max-w-md">
-              Cuando alguien entre a <code className="text-gold">repelis.vercel.app</code> desde cualquier
-              ciudad va a aparecer acá. Abrí el sitio en otra pestaña para que cuente tu visita.
-            </p>
-          </div>
-        ) : (
-          <WorldMap cities={citiesForMap} height={520} focus="latam" currentLocation={myGeo} />
-        )}
-        {hasRealData && (
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-muted/50 text-[10px] leading-relaxed">
-              Burbuja dorada = ciudad real. Tamaño = visitas. <strong className="text-emerald-400/80">Punto verde = vos</strong>.
-              <strong> Scroll = zoom (hasta x32), drag = mover.</strong> Las labels son visibles en todo zoom.
-            </p>
-            {myGeo?.city && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Vos: <strong>{myGeo.city}, {myGeo.country}</strong>
-              </div>
-            )}
+            <span className="text-muted/80">
+              Creá DB Redis en <a href="https://console.upstash.com" target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">Upstash</a> →
+              pegá <code className="text-amber-200">UPSTASH_REDIS_REST_URL</code>, <code className="text-amber-200">UPSTASH_REDIS_REST_TOKEN</code> y <code className="text-amber-200">ADMIN_PIN</code> en
+              <a href="https://vercel.com/arrayagom/repelis/settings/environment-variables" target="_blank" rel="noopener noreferrer" className="text-amber-200 underline"> Vercel</a> → Redeploy.
+              Mientras tanto el mapa muestra tu ubicación.
+            </span>
           </div>
         )}
+
+        {/* El mapa SIEMPRE se muestra: tu ubicación + ciudades reales si las hay */}
+        <WorldMap cities={citiesForMap} height={520} focus="latam" currentLocation={myGeo} />
+
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-muted/50 text-[10px] leading-relaxed">
+            Burbuja dorada = ciudad con visitas. Tamaño = cantidad. <strong className="text-emerald-400/80">Punto verde = vos</strong>.
+            <strong> Scroll = zoom (hasta x32), drag = mover.</strong>
+          </p>
+          {myGeo?.city ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Vos: <strong>{myGeo.city}, {myGeo.country}</strong>
+            </div>
+          ) : (
+            <span className="text-muted/40 text-[10px] font-mono">Detectando tu ubicación…</span>
+          )}
+        </div>
       </div>
 
       {/* Botones a los dashboards */}
