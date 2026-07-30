@@ -1,100 +1,59 @@
-import { useEffect, useState } from 'react'
-import { Globe, CheckCircle, Question } from '@phosphor-icons/react'
-import { getMovieReleaseDates } from '../../api/tmdb'
-import { track } from '../../lib/errorMonitor'
+import { CheckCircle, SpeakerHigh, Warning } from '@phosphor-icons/react'
 
-// Países LATAM más relevantes (orden = importancia)
-const LATAM_COUNTRIES = [
-  { iso: 'MX', name: 'México',     flag: '🇲🇽' },
-  { iso: 'AR', name: 'Argentina',  flag: '🇦🇷' },
-  { iso: 'CO', name: 'Colombia',   flag: '🇨🇴' },
-  { iso: 'CL', name: 'Chile',      flag: '🇨🇱' },
-  { iso: 'PE', name: 'Perú',       flag: '🇵🇪' },
-  { iso: 'VE', name: 'Venezuela',  flag: '🇻🇪' },
-  { iso: 'UY', name: 'Uruguay',    flag: '🇺🇾' },
-  { iso: 'BO', name: 'Bolivia',    flag: '🇧🇴' },
-  { iso: 'EC', name: 'Ecuador',    flag: '🇪🇨' },
-  { iso: 'ES', name: 'España',     flag: '🇪🇸' },
-]
+// Nombre + bandera del idioma original (ISO 639-1)
+const LANG = {
+  en: { name: 'Inglés',    flag: '🇺🇸' },
+  es: { name: 'Español',   flag: '🇲🇽' },
+  ja: { name: 'Japonés',   flag: '🇯🇵' },
+  ko: { name: 'Coreano',   flag: '🇰🇷' },
+  fr: { name: 'Francés',   flag: '🇫🇷' },
+  it: { name: 'Italiano',  flag: '🇮🇹' },
+  de: { name: 'Alemán',    flag: '🇩🇪' },
+  pt: { name: 'Portugués', flag: '🇧🇷' },
+  zh: { name: 'Chino',     flag: '🇨🇳' },
+  hi: { name: 'Hindi',     flag: '🇮🇳' },
+  ru: { name: 'Ruso',      flag: '🇷🇺' },
+}
 
 /**
- * Muestra disponibilidad real de doblaje basada en release_dates de TMDB.
+ * Panel de audio HONESTO y PRECISO.
  *
- * Heurística: si una peli tiene release oficial en México, Argentina, Colombia,
- * etc., es MUY probable que esté doblada al español (por contrato de
- * distribución). No es 100% garantía pero es la señal más confiable disponible
- * sin scrapear sitios de doblaje.
+ * No prometemos doblaje que no podemos verificar. Solo afirmamos lo que TMDB
+ * sí sabe con certeza: el idioma ORIGINAL de la obra. El doblaje al español
+ * depende 100% del servidor de reproducción — y lo decimos claramente.
  */
-export default function DubInfo({ movieId, originalLanguage }) {
-  const [releases, setReleases] = useState(null)
-  const [loading, setLoading]   = useState(true)
+export default function DubInfo({ originalLanguage }) {
+  const isSpanish = originalLanguage === 'es'
+  const lang = LANG[originalLanguage] || { name: originalLanguage || 'desconocido', flag: '🌐' }
 
-  useEffect(() => {
-    if (!movieId) return
-    setLoading(true)
-    let cancelled = false
-    getMovieReleaseDates(movieId)
-      .then((res) => {
-        if (cancelled) return
-        const all = res.data?.results || []
-        const found = all
-          .filter((r) => LATAM_COUNTRIES.some((c) => c.iso === r.iso_3166_1))
-          .map((r) => LATAM_COUNTRIES.find((c) => c.iso === r.iso_3166_1))
-          .filter(Boolean)
-        setReleases(found)
-      })
-      .catch((err) => {
-        track('dub-info', err, { movieId })
-        if (!cancelled) setReleases([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [movieId])
-
-  if (loading) {
+  if (isSpanish) {
     return (
-      <div className="flex items-center gap-2 text-muted/50 text-xs">
-        <Globe size={12} />
-        Verificando estrenos LATAM...
-      </div>
-    )
-  }
-
-  if (!releases || releases.length === 0) {
-    // Sin estrenos LATAM confirmados — honesto
-    return (
-      <div className="flex items-start gap-2 text-muted/60 text-xs leading-relaxed max-w-[58ch]">
-        <Question size={12} weight="bold" className="text-amber-400/70 flex-shrink-0 mt-0.5" />
-        <span>
-          Sin estreno oficial confirmado en países LATAM por TMDB.
-          {originalLanguage === 'es'
-            ? ' Es una producción en español originalmente.'
-            : ' El doblaje al español puede o no estar disponible — depende del servidor.'}
-        </span>
+      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-500/8 border border-emerald-500/20 max-w-xl">
+        <CheckCircle size={16} weight="fill" className="text-emerald-400 flex-shrink-0 mt-0.5" />
+        <p className="text-emerald-100/90 text-xs leading-relaxed">
+          <strong className="text-emerald-200">Audio original en español 🇲🇽</strong> — esta producción
+          se hizo en español, así que la escuchás en tu idioma sin depender de doblaje.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
-        <CheckCircle size={14} weight="fill" />
-        Estrenada oficialmente en {releases.length} país{releases.length !== 1 ? 'es' : ''} LATAM
-        <span className="text-muted/50 font-mono text-[10px]">(alto chance de doblaje)</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {releases.slice(0, 10).map((c) => (
-          <span
-            key={c.iso}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/8 border border-emerald-500/20 text-emerald-300/90 text-[10px] font-mono"
-            title={c.name}
-          >
-            <span className="text-xs leading-none">{c.flag}</span>
-            {c.iso}
-          </span>
-        ))}
+    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/20 max-w-xl">
+      <SpeakerHigh size={16} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
+      <div className="text-xs leading-relaxed space-y-1.5">
+        <p className="text-chalk/90">
+          Idioma original: <strong className="text-amber-200">{lang.flag} {lang.name}</strong>.
+        </p>
+        <p className="text-muted/85">
+          El <strong className="text-chalk/85">doblaje al español NO está garantizado</strong> —
+          depende de qué pista tenga cada servidor. Para escucharla en español:
+        </p>
+        <ol className="text-muted/80 list-decimal list-inside space-y-0.5 marker:text-amber-400/70">
+          <li>Elegí un servidor marcado <span className="text-emerald-300 font-semibold">🇲🇽</span> (más probable que tenga latino).</li>
+          <li>Dentro del player, abrí <strong className="text-amber-200">🔊 Audio</strong> o <strong className="text-amber-200">CC</strong> y elegí "Español"/"Latino".</li>
+          <li>Si no aparece la opción, probá otro servidor. Si ninguno la tiene, <span className="text-muted">no está disponible doblada</span>.</li>
+        </ol>
       </div>
     </div>
   )

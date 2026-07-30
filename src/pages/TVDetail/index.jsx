@@ -16,6 +16,7 @@ import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import { useSEO, useTVSchema } from '../../lib/useSEO'
 import WatchProviders from '../../components/WatchProviders'
+import DubInfo from '../../components/DubInfo'
 
 export default function TVDetail() {
   const { id }     = useParams()
@@ -187,6 +188,9 @@ export default function TVDetail() {
               originalLanguage={data.original_language}
               spokenLanguages={data.spoken_languages}
             />
+
+            {/* Audio: honesto y preciso */}
+            <DubInfo originalLanguage={data.original_language} />
 
             {/* Plataformas legales donde está la serie */}
             <WatchProviders id={data.id} mediaType="tv" title={data.name} />

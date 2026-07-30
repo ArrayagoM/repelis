@@ -176,7 +176,7 @@ export default function MovieDetail() {
             />
 
             {/* Doblaje LATAM real (basado en release_dates de TMDB) */}
-            <DubInfo movieId={data.id} originalLanguage={data.original_language} />
+            <DubInfo originalLanguage={data.original_language} />
 
             {/* Plataformas legales donde está la peli */}
             <WatchProviders id={data.id} mediaType="movie" title={data.title} />

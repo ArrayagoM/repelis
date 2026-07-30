@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile } from '@phosphor-icons/react'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
@@ -243,11 +243,7 @@ export default function Navbar({ onDonateClick }) {
               <SoccerBall size={14} weight="fill" />
             </Link>
 
-            <Link to="/cines-cerca"
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-gold/15 border border-gold/30 text-gold hover:bg-gold/25 transition-all"
-              title="Cines cerca tuyo">
-              <MapPin size={14} weight="fill" />
-            </Link>
+            {/* Cines cerca: sección en construcción — botón oculto por ahora */}
 
             <Link to="/descargar"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 hover:bg-blue-500/25 transition-all"

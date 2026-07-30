@@ -13,6 +13,13 @@ const EM_ID = 'yw2gr95fzq5ta5k0'
 export const SOURCES = [
   // ─── Top tier: esLat + OK ─────────────────────────────────────────────
   {
+    // VidSrc.cc tiene selector de idioma/audio con opciones LATAM en su player.
+    id: 'vidsrccc', label: 'VidSrc.cc', esLat: true,
+    movieUrl: (id)       => `https://vidsrc.cc/v2/embed/movie/${id}?autoPlay=true`,
+    tvUrl:    (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}?autoPlay=true`,
+    sandbox: null,
+  },
+  {
     id: 'vidfast', label: 'VidFast', esLat: true,
     movieUrl: (id)       => `https://vidfast.pro/movie/${id}?autoplay=true`,
     tvUrl:    (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoplay=true`,
@@ -68,6 +75,12 @@ export const SOURCES = [
     id: 'vidsrc', label: 'VidSrc',
     movieUrl: (id)       => `https://vidsrc.to/embed/movie/${id}`,
     tvUrl:    (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+    sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
+  },
+  {
+    id: 'vidsrcnet', label: 'VidSrc.net',
+    movieUrl: (id)       => `https://vidsrc.net/embed/movie/?tmdb=${id}`,
+    tvUrl:    (id, s, e) => `https://vidsrc.net/embed/tv/?tmdb=${id}&season=${s}&episode=${e}`,
     sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation',
   },
   {
