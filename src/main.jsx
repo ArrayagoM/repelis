@@ -44,13 +44,9 @@ const scheduleSpeedTest = (cb) => {
   else setTimeout(cb, 2500)
 }
 
-// Backend tracking: 1 vez por sesión. DEBE correr para TODOS los usuarios,
-// incluidos low-end/proyectores (antes estaba dentro del guard !lowEnd y por
-// eso esos dispositivos nunca aparecían en el dashboard del admin).
-// Es un POST fire-and-forget minúsculo — no impacta memoria ni performance.
-import('./lib/visitTracker').then(({ trackVisitOnce }) => {
-  trackVisitOnce().catch(() => {})
-})
+// El tracking de visitas/páginas lo maneja <PageViewTracker/> montado en App
+// (dispara en cada cambio de ruta, incluida la carga inicial, para TODOS los
+// dispositivos incluidos low-end/proyectores).
 
 // En low-end: NO ejecutamos el speed test. Son 12 HTTP requests al startup
 // que tiran la memoria al techo en TVs/proyectores. El orden por defecto de

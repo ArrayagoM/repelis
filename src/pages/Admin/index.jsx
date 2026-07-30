@@ -7,6 +7,8 @@ import {
   Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users, Info, Warning,
 } from '@phosphor-icons/react'
 import WorldMap from '../../components/WorldMap'
+import AreaChart from '../../components/charts/AreaChart'
+import BarList from '../../components/charts/BarList'
 import { getCachedGeo, getClientGeo } from '../../lib/clientGeo'
 import { fetchVisits, getSavedBackendPin } from '../../lib/visitsClient'
 import { getSessionPin } from '../../lib/adminAuth'
@@ -182,6 +184,7 @@ function Kpi({ label, value, color = 'gold', wide = false, sub = null }) {
     gold:    'border-gold/20 text-gold',
     red:     'border-red-500/20 text-red-300',
     blue:    'border-sky-500/20 text-sky-300',
+    sky:     'border-sky-500/20 text-sky-300',
     purple:  'border-purple-500/20 text-purple-300',
     amber:   'border-amber-500/20 text-amber-300',
   }
@@ -444,7 +447,8 @@ function AnalyticsTab() {
   // Auto-load al montar la tab + auto-refresh cada 30s
   useEffect(() => {
     reloadVisits()
-    const t = setInterval(() => reloadVisits(), 30_000)
+    // 60s para no quemar el free-tier de Upstash (cada refresh = varios comandos)
+    const t = setInterval(() => reloadVisits(), 60_000)
     return () => clearInterval(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -480,14 +484,50 @@ function AnalyticsTab() {
         </div>
       </div>
 
-      {/* Stats reales del backend (cuando hay datos) */}
+      {/* KPIs principales */}
       {visitsData?.ok && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Kpi label="Visitas hoy"        value={visitsData.stats.today}        color="gold" />
-          <Kpi label="Visitas 7 días"     value={visitsData.stats.last7Days}    color="blue" />
-          <Kpi label="Usuarios únicos hoy" value={visitsData.stats.uniquesToday} color="emerald" />
-          <Kpi label="Ciudades total"     value={visitsData.stats.totalCities}  color="purple" />
-        </div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Kpi label="Visitantes (7 días)" value={visitsData.stats.visitors7d}   color="gold" />
+            <Kpi label="Páginas vistas (7d)" value={visitsData.stats.pageviews7d}  color="sky" />
+            <Kpi label="Visitantes hoy"      value={visitsData.stats.visitorsToday} color="emerald" />
+            <Kpi label="Únicos hoy"          value={visitsData.stats.uniquesToday}  color="purple" />
+          </div>
+
+          {/* Gráfico de evolución (7 días) */}
+          <div className="p-4 rounded-2xl bg-surface border border-white/[0.06]">
+            <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <ChartBar size={11} weight="fill" /> Evolución últimos 7 días
+            </p>
+            <AreaChart data={visitsData.series || []} height={220} />
+          </div>
+
+          {/* Grillas de rankings */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Panel title="Páginas más vistas" Icon={ChartBar}>
+              <BarList accent="gold" items={(visitsData.pages || []).map((p) => ({ label: p.path, value: p.count }))} />
+            </Panel>
+            <Panel title="De dónde vienen (referrers)" Icon={ArrowSquareOut}>
+              <BarList accent="sky" items={(visitsData.referrers || []).map((r) => ({ label: r.host, value: r.count }))} />
+            </Panel>
+            <Panel title="Países" Icon={Globe}>
+              <BarList accent="emerald" items={(visitsData.countries || []).map((c) => ({
+                label: countryName(c.code), value: c.count, icon: flagEmoji(c.code),
+              }))} />
+            </Panel>
+            <Panel title="Dispositivos" Icon={DeviceMobile}>
+              <BarList accent="purple" items={(visitsData.devices || []).map((d) => ({
+                label: cap(d.name), value: d.count, icon: deviceIcon(d.name),
+              }))} />
+            </Panel>
+            <Panel title="Sistemas operativos" Icon={DeviceMobile}>
+              <BarList accent="blue" items={(visitsData.os || []).map((o) => ({ label: o.name, value: o.count }))} />
+            </Panel>
+            <Panel title="Navegadores" Icon={Globe}>
+              <BarList accent="gold" items={(visitsData.browsers || []).map((b) => ({ label: b.name, value: b.count }))} />
+            </Panel>
+          </div>
+        </>
       )}
 
       {/* Diagnóstico: PIN incorrecto o faltante (por qué no ves las visitas) */}
@@ -636,60 +676,58 @@ function AnalyticsTab() {
         </a>
       </div>
 
-      {/* Qué ves en el dashboard externo */}
-      <div className="p-4 rounded-2xl bg-surface border border-white/[0.06]">
-        <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold mb-3">
-          Lo que vas a encontrar en vercel.com/analytics
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-          {[
-            { Icon: Users, label: 'Visitantes únicos' },
-            { Icon: Globe, label: 'Países (top 10)' },
-            { Icon: MapTrifold, label: 'Ciudades (top 20)' },
-            { Icon: DeviceMobile, label: 'Mobile / Desktop / Tablet' },
-            { Icon: ChartBar, label: 'Páginas más visitadas' },
-            { Icon: ArrowSquareOut, label: 'Referrers (de dónde vienen)' },
-          ].map(({ Icon, label }) => (
-            <div key={label} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/5">
-              <Icon size={14} weight="fill" className="text-gold flex-shrink-0" />
-              <span className="text-chalk/80">{label}</span>
-            </div>
-          ))}
-        </div>
+      {/* Footer: links a los dashboards oficiales de Vercel (extra: bounce rate, web vitals) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a href={ANALYTICS_URL} target="_blank" rel="noopener noreferrer"
+          className="group flex items-center gap-2 p-3 rounded-xl bg-surface border border-white/10 hover:border-sky-500/40 transition-all">
+          <Users size={16} weight="fill" className="text-sky-300 flex-shrink-0" />
+          <span className="text-chalk text-xs font-semibold flex-1">Vercel Analytics (bounce rate, top pages oficial)</span>
+          <ArrowSquareOut size={11} className="text-muted/40 group-hover:text-sky-300" />
+        </a>
+        <a href={SPEED_URL} target="_blank" rel="noopener noreferrer"
+          className="group flex items-center gap-2 p-3 rounded-xl bg-surface border border-white/10 hover:border-emerald-500/40 transition-all">
+          <Pulse size={16} weight="fill" className="text-emerald-300 flex-shrink-0" />
+          <span className="text-chalk text-xs font-semibold flex-1">Speed Insights (LCP, CLS, TTFB)</span>
+          <ArrowSquareOut size={11} className="text-muted/40 group-hover:text-emerald-300" />
+        </a>
       </div>
 
-      {/* Activar la feature en Vercel */}
-      <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-        <p className="text-amber-300 text-sm font-bold mb-2 flex items-center gap-2">
-          <CheckCircle size={14} weight="fill" /> Una vez: activar la feature en Vercel
-        </p>
-        <ol className="text-muted/80 text-xs leading-relaxed list-decimal list-inside space-y-1 marker:text-amber-400/70">
-          <li>Andá a <a href={`https://vercel.com/${VERCEL_USER}/${VERCEL_PROJECT}/analytics`} target="_blank" rel="noopener noreferrer" className="text-amber-200 underline">tu proyecto en vercel.com</a></li>
-          <li>Tab <strong>Analytics</strong> → click en <strong>"Enable Analytics"</strong> (gratis hasta 100k visitas/mes)</li>
-          <li>Tab <strong>Speed Insights</strong> → idem (gratis hasta 10k data points/mes)</li>
-          <li>Esperá 5-10 min y vas a ver los primeros datos llegar</li>
-        </ol>
-      </div>
-
-      {/* Honestidad sobre embed propio */}
-      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-        <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2">
-          ¿Por qué los gráficos no están acá adentro?
-        </p>
-        <p className="text-muted text-xs leading-relaxed">
-          La API de Vercel Analytics para consumir los datos desde tu propia app
-          requiere <strong className="text-chalk/80">plan Pro (USD $20/mes)</strong>. En el plan
-          Hobby (gratis) solo se ve desde el dashboard de Vercel. Si querés gráficos embebidos
-          acá adentro tenemos 2 caminos:
-        </p>
-        <ul className="text-muted/70 text-xs leading-relaxed mt-2 list-disc list-inside space-y-0.5 marker:text-gold/50">
-          <li>Pagar Vercel Pro (USD $20/mes) y embebemos via API oficial</li>
-          <li>O armar mini-backend propio con Vercel KV (gratis) + edge function que cuenta visitas. Tiempo: 2-3 horas. Decime si querés.</li>
-        </ul>
-      </div>
+      <p className="text-muted/40 text-[10px] text-center font-mono">
+        Datos propios (Upstash Redis) · anónimos · sin cookies · cumple Ley 25.326 + GDPR
+      </p>
     </div>
   )
 }
+
+// ─── Helpers de analytics ───────────────────────────────────────────────
+function Panel({ title, Icon, children }) {
+  return (
+    <div className="p-4 rounded-2xl bg-surface border border-white/[0.06]">
+      <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+        {Icon && <Icon size={11} weight="fill" />} {title}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
+
+const deviceIcon = (name) =>
+  name === 'mobile' ? '📱' : name === 'tablet' ? '💻' : name === 'desktop' ? '🖥️' : '❔'
+
+const flagEmoji = (cc) => {
+  if (!cc || cc.length !== 2) return '🌐'
+  return cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+}
+
+const COUNTRY_NAMES = {
+  AR: 'Argentina', MX: 'México', CO: 'Colombia', CL: 'Chile', PE: 'Perú',
+  VE: 'Venezuela', UY: 'Uruguay', BO: 'Bolivia', EC: 'Ecuador', PY: 'Paraguay',
+  ES: 'España', US: 'Estados Unidos', BR: 'Brasil', DE: 'Alemania', FR: 'Francia',
+  IT: 'Italia', GB: 'Reino Unido', CA: 'Canadá',
+}
+const countryName = (cc) => COUNTRY_NAMES[cc] || cc || '—'
 
 // ─── Consola ──────────────────────────────────────────────────────────────
 function ConsoleTab() {

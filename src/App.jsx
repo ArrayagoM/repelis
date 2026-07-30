@@ -10,6 +10,7 @@ import PlayerModal  from './components/PlayerModal'
 import DonateModal  from './components/DonateModal'
 import FloatingCafecito from './components/FloatingCafecito'
 import UpdateAvailable from './components/UpdateAvailable'
+import PageViewTracker from './components/PageViewTracker'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
 import Home         from './pages/Home'
@@ -68,6 +69,7 @@ export default function App() {
           en el Footer y en cada detalle de peli. */}
       {!lowEnd && <FloatingCafecito />}
       <UpdateAvailable />
+      <PageViewTracker />
 
       {/* Vercel Analytics — visitas, países, ciudades, dispositivos, top pages.
           Sin cookies. Cumple GDPR/LGPD/Ley 25.326. Dashboard en vercel.com.
