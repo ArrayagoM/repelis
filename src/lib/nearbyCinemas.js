@@ -5,7 +5,16 @@
 //   - Pedimos amenity=cinema en un radio configurable
 // ─────────────────────────────────────────────────────────────────────────
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
+// Varios mirrors de Overpass. Si el primero falla/tarda, probamos el siguiente.
+// Todos con CORS '*' verificados. Esto evita el "Failed to fetch" de antes
+// (cuando dependíamos de un solo endpoint que estaba saturado).
+const OVERPASS_MIRRORS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.osm.ch/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+]
+const PER_MIRROR_TIMEOUT = 12000
 
 const CACHE_KEY = 'repelis:nearbyCinemas:v1'
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000   // 24h
@@ -83,14 +92,36 @@ export const fetchNearbyCinemas = async (lat, lng, radiusKm = 30) => {
     out center tags;
   `.trim()
 
-  const res = await fetch(OVERPASS_URL, {
-    method: 'POST',
-    body: 'data=' + encodeURIComponent(query),
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  })
-  if (!res.ok) throw new Error(`overpass_${res.status}`)
+  // Probamos cada mirror en orden hasta que uno responda JSON válido.
+  const tryMirror = async (url) => {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), PER_MIRROR_TIMEOUT)
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        signal: ctrl.signal,
+      })
+      if (!res.ok) throw new Error(`overpass_${res.status}`)
+      return await res.json()
+    } finally {
+      clearTimeout(timer)
+    }
+  }
 
-  const data = await res.json()
+  let data = null
+  let lastErr = null
+  for (const url of OVERPASS_MIRRORS) {
+    try {
+      data = await tryMirror(url)
+      if (data && Array.isArray(data.elements)) break
+    } catch (e) {
+      lastErr = e
+      data = null
+    }
+  }
+  if (!data) throw lastErr || new Error('overpass_all_failed')
   const cinemas = (data.elements || [])
     .map((el) => {
       const cLat = el.lat ?? el.center?.lat
