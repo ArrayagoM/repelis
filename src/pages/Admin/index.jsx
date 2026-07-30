@@ -4,11 +4,11 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, ShieldCheck, ChartBar, Pulse, Bug, Database, Cloud,
   Terminal, ArrowClockwise, CheckCircle, XCircle, ArrowSquareOut,
-  Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users, Info,
+  Lock, TrashSimple, MapTrifold, Globe, DeviceMobile, Users, Info, Warning,
 } from '@phosphor-icons/react'
 import WorldMap from '../../components/WorldMap'
 import { getCachedGeo, getClientGeo } from '../../lib/clientGeo'
-import { fetchVisits } from '../../lib/visitsClient'
+import { fetchVisits, getSavedBackendPin } from '../../lib/visitsClient'
 import { getSessionPin } from '../../lib/adminAuth'
 import {
   adminConfigured, adminIsAuthed, adminLogin, adminLogout,
@@ -425,13 +425,16 @@ function AnalyticsTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Visitas reales del backend (Vercel KV via /api/visits) — auto-load
+  // Visitas reales del backend (Upstash Redis via /api/visits) — auto-load.
   const [visitsData, setVisitsData] = useState(null)
   const [loadingVisits, setLoadingVisits] = useState(false)
-  const reloadVisits = async () => {
+  const [manualPin, setManualPin]   = useState('')
+
+  const reloadVisits = async (pinOverride) => {
     setLoadingVisits(true)
     try {
-      const pin = getSessionPin()
+      // Orden de PIN: el que se pasó manual → el que ya funcionó → el de sesión.
+      const pin = pinOverride || getSavedBackendPin() || getSessionPin()
       const data = await fetchVisits(pin)
       setVisitsData(data)
     } finally {
@@ -441,15 +444,22 @@ function AnalyticsTab() {
   // Auto-load al montar la tab + auto-refresh cada 30s
   useEffect(() => {
     reloadVisits()
-    const t = setInterval(reloadVisits, 30_000)
+    const t = setInterval(() => reloadVisits(), 30_000)
     return () => clearInterval(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Solo mostramos reales. Si no hay todavía, mostramos pantalla "esperando".
+  const submitManualPin = async (e) => {
+    e?.preventDefault()
+    if (!manualPin.trim()) return
+    await reloadVisits(manualPin.trim())
+  }
+
   const citiesForMap = visitsData?.cities || []
   const hasRealData = !!(visitsData?.ok && visitsData?.cities?.length > 0)
   const kvNotConfigured = visitsData?.kvConfigured === false
+  const needsPin = visitsData?.unauthorized || visitsData?.noPin
+  const fetchError = visitsData?.error
 
   return (
     <div className="space-y-5">
@@ -477,6 +487,50 @@ function AnalyticsTab() {
           <Kpi label="Visitas 7 días"     value={visitsData.stats.last7Days}    color="blue" />
           <Kpi label="Usuarios únicos hoy" value={visitsData.stats.uniquesToday} color="emerald" />
           <Kpi label="Ciudades total"     value={visitsData.stats.totalCities}  color="purple" />
+        </div>
+      )}
+
+      {/* Diagnóstico: PIN incorrecto o faltante (por qué no ves las visitas) */}
+      {needsPin && (
+        <div className="p-4 rounded-2xl bg-red-500/8 border border-red-500/25 space-y-3">
+          <p className="text-red-200 text-sm font-bold flex items-center gap-2">
+            <Lock size={14} weight="fill" />
+            {visitsData?.unauthorized
+              ? 'El PIN no coincide con el backend'
+              : 'Falta el PIN del backend'}
+          </p>
+          <p className="text-muted/85 text-xs leading-relaxed">
+            El backend (variable <code className="text-red-200">ADMIN_PIN</code> en Vercel) y el
+            frontend (<code className="text-red-200">VITE_ADMIN_PIN</code>) deben tener el
+            <strong className="text-chalk/90"> mismo valor</strong>.
+            {visitsData?.unauthorized
+              ? ' Ahora mismo NO coinciden (o falta redeploy después de cambiar VITE_ADMIN_PIN).'
+              : ' No hay PIN configurado en el frontend.'}
+            {' '}Ingresá abajo el valor exacto de <code className="text-red-200">ADMIN_PIN</code> para ver las visitas ya mismo:
+          </p>
+          <form onSubmit={submitManualPin} className="flex items-center gap-2">
+            <input
+              type="password"
+              value={manualPin}
+              onChange={(e) => setManualPin(e.target.value)}
+              placeholder="ADMIN_PIN del backend"
+              className="flex-1 bg-void border border-white/10 rounded-lg px-3 py-2 text-sm text-chalk font-mono focus:outline-none focus:border-red-400/40"
+            />
+            <button type="submit" disabled={loadingVisits || !manualPin.trim()}
+              className="px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-sm font-bold hover:bg-red-500/30 disabled:opacity-50 transition-colors">
+              Ver visitas
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Diagnóstico: error de red / server */}
+      {fetchError && (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs">
+          <p className="text-amber-200 font-semibold flex items-center gap-1.5">
+            <Warning size={12} weight="fill" /> Error al leer visitas
+          </p>
+          <p className="text-muted/80 font-mono mt-1">{fetchError}</p>
         </div>
       )}
 
