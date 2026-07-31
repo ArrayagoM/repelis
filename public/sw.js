@@ -9,7 +9,7 @@
 
 // IMPORTANTE: bumpear esta versión en cada deploy de rebrand/cambio de UI
 // para forzar la purga del cache viejo y traer el nuevo bundle.
-const CACHE_VERSION = 'v7-cines-back'
+const CACHE_VERSION = 'v8-cines-maps'
 const SHELL_CACHE  = `repelis-shell-${CACHE_VERSION}`
 const IMG_CACHE    = `repelis-img-${CACHE_VERSION}`
 const API_CACHE    = `repelis-api-${CACHE_VERSION}`

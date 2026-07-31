@@ -14,7 +14,7 @@ const OVERPASS_MIRRORS = [
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ]
-const PER_MIRROR_TIMEOUT = 12000
+const PER_MIRROR_TIMEOUT = 20000   // queries de 100km en zona densa tardan
 
 const CACHE_KEY = 'repelis:nearbyCinemas:v1'
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000   // 24h

@@ -194,10 +194,25 @@ export default function CinesCerca() {
               <div className="p-6 rounded-2xl bg-surface border border-white/5 text-center">
                 <FilmSlate size={36} className="text-muted/50 mx-auto mb-3" />
                 <p className="text-chalk font-semibold mb-1">No hay cines registrados a {radius} km</p>
-                <p className="text-muted text-sm">
-                  Probá ampliar el radio. Los datos vienen de OpenStreetMap y puede que en tu zona
-                  no estén mapeados todos.
+                <p className="text-muted text-sm mb-4 max-w-md mx-auto">
+                  Los datos vienen de OpenStreetMap y puede que en tu zona no estén mapeados todos.
+                  Probá ampliar el radio, o buscá directo en Google Maps (siempre tiene más cobertura):
                 </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {coords && (
+                    <a
+                      href={`https://www.google.com/maps/search/cine/@${coords.lat},${coords.lng},11z`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold text-void text-sm font-bold hover:bg-gold-hi transition-colors"
+                    >
+                      <MapPin size={14} weight="fill" /> Buscar cines en Google Maps
+                    </a>
+                  )}
+                  <button onClick={() => setPhase('idle')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass border border-white/10 text-chalk text-sm font-semibold hover:border-gold/30 transition-all">
+                    Ampliar el radio
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
