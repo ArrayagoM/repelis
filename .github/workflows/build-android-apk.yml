@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, 'ci/**']
     paths:
       - 'android/**'
       - 'src/**'
@@ -16,7 +16,7 @@ on:
 jobs:
   build:
     name: Build Capacitor Android APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Permissions críticos: sin esto el step "Release" da 403 al GITHUB_TOKEN
     permissions:
       contents: write
@@ -31,15 +31,25 @@ jobs:
           node-version: '20'
 
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # setup-android@v3 sin "packages" instala lo que el proyecto necesite
-      # automáticamente leyendo build.gradle. Más confiable que pinear versiones.
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Preparar Android SDK (el runner ya lo trae instalado; solo aceptamos licencias)
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          sudo mkdir -p "$ANDROID_HOME/licenses"
+          for h in 24333f8a63b6825ea9c5514f83c2829b004d1fee 8933bad161af4178b1185d1a37fbf41ea5269c55 d56f5187479451eabf01fb78af6dfcb131a6481e; do
+            echo "$h" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-license" > /dev/null
+          done
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-preview-license" > /dev/null
+          sudo chmod a+rwx "$ANDROID_HOME"
+          for d in licenses platforms build-tools ndk cmake platform-tools; do
+            sudo mkdir -p "$ANDROID_HOME/$d"
+            sudo chmod a+rwx "$ANDROID_HOME/$d"
+          done
+          ls "$ANDROID_HOME"
 
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
