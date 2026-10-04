@@ -83,9 +83,9 @@ export default function InstallBanner() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [platform] = useState(currentPlatform)
 
-  // Esperamos un par de segundos: da tiempo a que Chrome ofrezca la instalación y no tapa la primera carga.
+  // Esperamos a que termine la intro y a que Chrome ofrezca la instalación.
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), 2500)
+    const t = setTimeout(() => setReady(true), 3800)
     return () => clearTimeout(t)
   }, [])
 

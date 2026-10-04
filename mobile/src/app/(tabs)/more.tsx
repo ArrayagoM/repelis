@@ -1,4 +1,5 @@
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Linking, ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Constants from 'expo-constants'
@@ -7,6 +8,7 @@ import { useLayout } from '@/lib/layout'
 import { useLanguageMode } from '@/lib/LanguageProvider'
 import { LANGUAGE_MODES, MODE_DESCRIPTIONS, MODE_LABELS } from '@/lib/languageMode'
 import { DOWNLOADS_PAGE, DOWNLOAD_OPTIONS } from '@/lib/downloads'
+import { loadIntroSoundEnabled, saveIntroSoundEnabled } from '@/lib/intro'
 import { colors, radius } from '@/theme'
 
 export default function MoreScreen() {
@@ -14,6 +16,10 @@ export default function MoreScreen() {
   const { gutter } = useLayout()
   const { mode, setMode } = useLanguageMode()
   const version = Constants.expoConfig?.version ?? '1.0.0'
+  const [introSound, setIntroSound] = useState(true)
+  useEffect(() => {
+    loadIntroSoundEnabled().then(setIntroSound)
+  }, [])
 
   return (
     <ScrollView
@@ -41,6 +47,25 @@ export default function MoreScreen() {
           </FocusPressable>
         )
       })}
+
+      <Text style={styles.section}>Sonido</Text>
+      <View style={styles.option}>
+        <Ionicons name="volume-high" size={22} color={colors.gold} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.optionTitle}>Sonido al abrir la app</Text>
+          <Text style={styles.optionText}>Suena la intro de Life High cada vez que abrís la app.</Text>
+        </View>
+        <Switch
+          value={introSound}
+          onValueChange={(v) => {
+            setIntroSound(v)
+            saveIntroSoundEnabled(v)
+          }}
+          trackColor={{ false: colors.dim, true: colors.goldLo }}
+          thumbColor={introSound ? colors.gold : colors.muted}
+          accessibilityLabel="Sonido al abrir la app"
+        />
+      </View>
 
       <Text style={styles.section}>Life High en otras plataformas</Text>
       {DOWNLOAD_OPTIONS.map((d) => (

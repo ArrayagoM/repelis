@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { IntroSplash } from '@/components/IntroSplash'
 import { LanguageProvider } from '@/lib/LanguageProvider'
 import { colors } from '@/theme'
 
@@ -14,6 +15,7 @@ export default function RootLayout() {
           <Stack.Screen name="title/[type]/[id]" />
           <Stack.Screen name="player/[type]/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         </Stack>
+        <IntroSplash />
       </LanguageProvider>
     </SafeAreaProvider>
   )

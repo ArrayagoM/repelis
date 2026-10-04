@@ -11,6 +11,7 @@ import DonateModal  from './components/DonateModal'
 import FloatingCafecito from './components/FloatingCafecito'
 import UpdateAvailable from './components/UpdateAvailable'
 import InstallBanner from './components/InstallBanner'
+import IntroSplash from './components/IntroSplash'
 import PageViewTracker from './components/PageViewTracker'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
@@ -60,6 +61,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <IntroSplash />
       <ErrorBar />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
