@@ -4,6 +4,7 @@ import {
   buildUrl,
   rememberSource,
   getOrderedSources,
+  LATAM_PRIORITY_IDS,
 } from '../playerSources'
 
 describe('playerSources', () => {
@@ -82,16 +83,27 @@ describe('playerSources', () => {
       expect(ordered[0].id).toBe(SOURCES[0].id)
     })
 
-    it('recordar source lo pone primero en la próxima lectura', () => {
-      // tomamos el 4to source (no el primero)
-      const target = SOURCES[3].id
+    it('recordar un source fuera de LATAM_PRIORITY_IDS lo pone primero DESPUÉS de esos tres', () => {
+      // 2embed-skin no está en el grupo de prioridad LATAM, así que
+      // "primero" acá significa primero dentro del resto, no de toda la lista.
+      const target = SOURCES.find((s) => s.id === '2embed-skin').id
       rememberSource(target)
       const ordered = getOrderedSources()
-      expect(ordered[0].id).toBe(target)
+      const rest = ordered.filter((s) => !LATAM_PRIORITY_IDS.includes(s.id))
+      expect(rest[0].id).toBe(target)
+    })
+
+    it('VidLink, EmbedMaster y 111Movies van SIEMPRE primero y en ese orden, incluso sobre el recordado', () => {
+      // Confiar en un solo servidor deja afuera títulos que tienen doblaje
+      // latino pero solo en otro de estos tres — por eso los tres van
+      // siempre adelante, en orden fijo, sin importar velocidad ni recordado.
+      rememberSource('2embed-skin')
+      const ordered = getOrderedSources()
+      expect(ordered.slice(0, 3).map((s) => s.id)).toEqual(LATAM_PRIORITY_IDS)
     })
 
     it('recordar source preserva los otros (sin duplicados)', () => {
-      rememberSource(SOURCES[5].id)
+      rememberSource(SOURCES.find((s) => s.id === '2embed-skin').id)
       const ordered = getOrderedSources()
       const ids = ordered.map((s) => s.id)
       expect(new Set(ids).size).toBe(ids.length)

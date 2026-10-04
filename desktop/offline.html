@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Life High</title>
+<style>
+  html,body{margin:0;height:100%;background:#08080E;color:#F0EDE8;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
+  .logo{width:64px;height:64px;border-radius:50%;background:#E8A020;display:flex;align-items:center;justify-content:center}
+  .logo i{display:block;margin-left:5px;border-left:22px solid #08080E;border-top:13px solid transparent;border-bottom:13px solid transparent}
+  h1{margin:0;font-size:22px}
+  p{margin:0;color:#7A7488;max-width:420px;line-height:1.5}
+  button{margin-top:8px;background:#E8A020;color:#08080E;border:0;border-radius:999px;padding:12px 28px;font-weight:800;font-size:15px;cursor:pointer}
+  button:focus-visible{outline:3px solid #F5B840;outline-offset:3px}
+</style>
+</head>
+<body>
+<main>
+  <div class="logo"><i></i></div>
+  <h1>Sin conexión</h1>
+  <p>No pudimos cargar Life High. Revisá tu conexión a internet y volvé a intentar.</p>
+  <button id="retry" autofocus>Reintentar</button>
+</main>
+<script>
+  const target = new URLSearchParams(location.search).get('url') || 'https://repelis.vercel.app'
+  document.getElementById('retry').addEventListener('click', () => { location.href = target })
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+name: Build Apps (Android, Android TV, iOS, Windows, macOS, Linux)
+
+# Compila todas las apps nativas y las publica en la release fija "app-latest".
+# URLs estables: https://github.com/ArrayagoM/repelis/releases/download/app-latest/<archivo>
+#   lifehigh-android.apk · lifehigh-android-tv.apk · lifehigh-ios.ipa
+#   LifeHigh-Setup-windows-x64.exe · LifeHigh-mac-arm64.dmg · LifeHigh-mac-x64.dmg · LifeHigh-linux-x86_64.AppImage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'desktop/**'
+      - '.github/workflows/build-apps.yml'
+
+concurrency:
+  group: build-apps-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: app-latest
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  release:
+    name: Preparar release app-latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Crear la release si no existe
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+          gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --title "Life High — Apps (última versión)" \
+            --notes "Instaladores más recientes de Life High. Guía de instalación: https://repelis.vercel.app/descargar" \
+            --latest=false
+
+  android:
+    name: Android ${{ matrix.name }}
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: celular y tablet
+            tv: false
+            file: lifehigh-android.apk
+          - name: TV / Fire TV / proyector
+            tv: true
+            file: lifehigh-android-tv.apk
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_TMDB_TOKEN: ${{ secrets.VITE_TMDB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias
+        working-directory: mobile
+        run: npm ci
+
+      - name: Generar proyecto Android (celular)
+        if: ${{ !matrix.tv }}
+        working-directory: mobile
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Generar proyecto Android (TV)
+        if: ${{ matrix.tv }}
+        working-directory: mobile
+        env:
+          EXPO_TV: '1'
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Compilar APK release
+        working-directory: mobile/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+
+      - name: Preparar APK
+        run: |
+          mkdir -p out
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk "out/${{ matrix.file }}"
+          ls -lh out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file }}
+          path: out/${{ matrix.file }}
+          retention-days: 30
+
+      - name: Subir a la release
+        run: gh release upload "$RELEASE_TAG" "out/${{ matrix.file }}" --clobber --repo "$GITHUB_REPOSITORY"
+
+  ios:
+    name: iOS / iPadOS (IPA sin firmar)
+    needs: release
+    runs-on: macos-latest
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_TMDB_TOKEN: ${{ secrets.VITE_TMDB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Usar el Xcode más reciente instalado
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Usando $XC"
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+
+      - name: Instalar dependencias
+        working-directory: mobile
+        run: npm ci
+
+      - name: Generar proyecto iOS
+        working-directory: mobile
+        run: |
+          npx expo prebuild --platform ios --no-install --clean
+          cd ios && pod install
+
+      - name: Archivar sin firmar
+        working-directory: mobile/ios
+        run: |
+          WORKSPACE=$(ls -d *.xcworkspace | head -1)
+          SCHEME="${WORKSPACE%.xcworkspace}"
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/App.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -quiet archive
+
+      - name: Empaquetar IPA
+        working-directory: mobile/ios/build
+        run: |
+          mkdir -p Payload
+          cp -R App.xcarchive/Products/Applications/*.app Payload/
+          zip -qry lifehigh-ios.ipa Payload
+          ls -lh lifehigh-ios.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lifehigh-ios.ipa
+          path: mobile/ios/build/lifehigh-ios.ipa
+          retention-days: 30
+
+      - name: Subir a la release
+        run: gh release upload "$RELEASE_TAG" mobile/ios/build/lifehigh-ios.ipa --clobber --repo "$GITHUB_REPOSITORY"
+
+  desktop:
+    name: Escritorio ${{ matrix.label }}
+    needs: release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            script: dist:win
+            glob: 'LifeHigh-Setup-windows-x64.exe'
+          - os: macos-latest
+            label: macOS
+            script: dist:mac
+            glob: 'LifeHigh-mac-*.dmg'
+          - os: ubuntu-latest
+            label: Linux
+            script: dist:linux
+            glob: 'LifeHigh-linux-x86_64.AppImage'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: desktop
+        run: npm ci
+
+      - name: Empaquetar
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run ${{ matrix.script }}
+
+      - name: Listar instaladores
+        shell: bash
+        working-directory: desktop/dist
+        run: ls -lh ${{ matrix.glob }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.label }}
+          path: desktop/dist/${{ matrix.glob }}
+          retention-days: 30
+
+      - name: Subir a la release
+        shell: bash
+        working-directory: desktop/dist
+        run: gh release upload "$RELEASE_TAG" ${{ matrix.glob }} --clobber --repo "$GITHUB_REPOSITORY"

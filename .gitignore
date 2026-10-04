@@ -10,3 +10,12 @@ vite.config.js.timestamp-*.mjs
 .vscode
 .idea
 .claude/
+
+# Apps nativas
+desktop/node_modules/
+desktop/dist/
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/android/
+mobile/ios/

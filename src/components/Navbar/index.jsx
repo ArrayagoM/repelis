@@ -251,7 +251,7 @@ export default function Navbar({ onDonateClick }) {
 
             <Link to="/descargar"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 hover:bg-blue-500/25 transition-all"
-              title="Descargar APK para Android">
+              title="Descargar la app (Android, iPhone, TV, Windows, Mac)">
               <DeviceMobile size={14} weight="fill" />
             </Link>
 
