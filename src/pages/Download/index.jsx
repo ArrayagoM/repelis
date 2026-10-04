@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
@@ -6,9 +6,11 @@ import {
   DownloadSimple, Globe, CheckCircle, Warning, GithubLogo, Lightning, DeviceMobile,
 } from '@phosphor-icons/react'
 import {
-  DOWNLOADS, RELEASES_PAGE, WEB_URL, detectPlatform, recommendedFor,
+  DOWNLOADS, RELEASES_PAGE, WEB_URL, recommendedFor,
 } from '../../lib/downloads'
 import { useSEO } from '../../lib/useSEO'
+import { currentPlatform, isStandalone, requestInstall, subscribeInstall } from '../../lib/install'
+import { IOSSteps } from '../../components/InstallBanner'
 
 const ICONS = {
   android: AndroidLogo, apple: AppleLogo, windows: WindowsLogo, mac: Desktop, linux: LinuxLogo, tv: Television,
@@ -36,12 +38,17 @@ export default function Download() {
     keywords: 'descargar life high, life high apk, life high android tv, life high ios, life high windows, life high mac, peliculas app',
   })
 
-  const detected = useMemo(() => {
-    if (typeof navigator === 'undefined') return 'other'
-    return detectPlatform(navigator.userAgent, navigator.maxTouchPoints)
-  }, [])
+  const detected = useMemo(() => currentPlatform(), [])
   const recommended = recommendedFor(detected)
   const [guide, setGuide] = useState(GUIDES.some((g) => g.id === detected) ? detected : 'android')
+  const [, refresh] = useState(0)
+  useEffect(() => subscribeInstall(() => refresh((n) => n + 1)), [])
+  const alreadyInstalled = typeof window !== 'undefined' && isStandalone()
+  const apk = DOWNLOADS.find((d) => d.id === 'android')
+  const installNow = async () => {
+    const result = await requestInstall()
+    if (result === 'unavailable') window.location.href = apk.url
+  }
 
   return (
     <motion.main
@@ -54,42 +61,82 @@ export default function Download() {
           <ArrowLeft size={14} /> Volver al inicio
         </Link>
 
-        {/* Hero con la descarga recomendada para este dispositivo */}
+        {/* Hero: lo primero que ve cada persona depende de su dispositivo */}
         <header className="mb-12 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-gold to-gold-lo shadow-[0_8px_32px_rgba(232,160,32,0.35)] mb-4">
             <DeviceMobile size={36} weight="fill" className="text-void" />
           </div>
-          <h1 className="font-display font-extrabold text-4xl text-chalk tracking-tight">
-            Life High en {PLATFORM_NAMES[detected] || PLATFORM_NAMES.other}
-          </h1>
-          <p className="text-muted text-base mt-3 max-w-lg mx-auto">
-            Celular, tablet, iPad, TV, proyector, Windows y Mac. Gratis, sin cuentas y con la misma app en todos lados.
-          </p>
 
-          <div className="mt-8 flex flex-col items-center gap-3">
-            {recommended ? (
-              <a
-                href={recommended.url}
-                className="group inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-emerald-500 text-void font-bold shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:bg-emerald-400 hover:scale-105 active:scale-95 transition-all duration-200"
-              >
-                <span className="w-10 h-10 rounded-full bg-void/20 flex items-center justify-center">
-                  <DownloadSimple size={20} weight="bold" />
-                </span>
-                <span className="text-left leading-tight">
-                  <span className="block text-lg font-extrabold">Descargar para {PLATFORM_NAMES[detected]}</span>
-                  <span className="block text-xs font-mono opacity-70">{recommended.file}</span>
-                </span>
-              </a>
-            ) : (
-              <a
-                href={WEB_URL}
-                className="inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-gold text-void font-bold hover:bg-gold-hi transition-colors"
-              >
-                <Globe size={20} weight="bold" /> Abrir Life High en el navegador
-              </a>
-            )}
-            <p className="text-muted/50 text-[11px] font-mono">Elegí otra plataforma más abajo</p>
-          </div>
+          {alreadyInstalled ? (
+            <>
+              <h1 className="font-display font-extrabold text-4xl text-chalk tracking-tight">Ya tenés la app instalada</h1>
+              <p className="text-muted text-base mt-3 max-w-lg mx-auto">Estás usando Life High como app. Si querés instalarla en otro dispositivo, elegí abajo.</p>
+              <Link to="/" className="inline-flex mt-6 px-7 py-3.5 rounded-2xl bg-gold text-void font-extrabold hover:bg-gold-hi transition-colors">Ir al inicio</Link>
+            </>
+          ) : detected === 'ios' ? (
+            <>
+              <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-chalk tracking-tight">Instalá Life High en tu iPhone o iPad</h1>
+              <p className="text-muted text-base mt-3 max-w-md mx-auto">
+                Son 3 toques y tarda 20 segundos. No necesitás la App Store ni bajar nada raro.
+              </p>
+              <div className="max-w-md mx-auto mt-6 text-left"><IOSSteps /></div>
+            </>
+          ) : detected === 'android' ? (
+            <>
+              <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-chalk tracking-tight">Instalá Life High en tu Android</h1>
+              <p className="text-muted text-base mt-3 max-w-md mx-auto">Gratis y con un solo toque. Queda el ícono en tu pantalla como cualquier otra app.</p>
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <button
+                  onClick={installNow}
+                  className="group inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-emerald-500 text-void font-bold shadow-[0_8px_32px_rgba(16,185,129,0.4)] active:scale-95 transition-all duration-200"
+                >
+                  <span className="w-11 h-11 rounded-full bg-void/20 flex items-center justify-center">
+                    <DownloadSimple size={22} weight="bold" />
+                  </span>
+                  <span className="text-left leading-tight">
+                    <span className="block text-xl font-extrabold">Instalar la app</span>
+                    <span className="block text-xs opacity-75">Gratis · Android 7 o superior</span>
+                  </span>
+                </button>
+                <p className="text-muted/70 text-xs max-w-xs">
+                  Si Android te pregunta por permisos, tocá <strong className="text-chalk/80">Permitir</strong> y después <strong className="text-chalk/80">Instalar</strong>.
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="font-display font-extrabold text-4xl text-chalk tracking-tight">
+                Life High en {PLATFORM_NAMES[detected] || PLATFORM_NAMES.other}
+              </h1>
+              <p className="text-muted text-base mt-3 max-w-lg mx-auto">
+                Celular, tablet, iPad, TV, proyector, Windows y Mac. Gratis, sin cuentas y con la misma app en todos lados.
+              </p>
+              <div className="mt-8 flex flex-col items-center gap-3">
+                {recommended ? (
+                  <a
+                    href={recommended.url}
+                    className="group inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-emerald-500 text-void font-bold shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:bg-emerald-400 hover:scale-105 active:scale-95 transition-all duration-200"
+                  >
+                    <span className="w-10 h-10 rounded-full bg-void/20 flex items-center justify-center">
+                      <DownloadSimple size={20} weight="bold" />
+                    </span>
+                    <span className="text-left leading-tight">
+                      <span className="block text-lg font-extrabold">Descargar para {PLATFORM_NAMES[detected]}</span>
+                      <span className="block text-xs font-mono opacity-70">{recommended.file}</span>
+                    </span>
+                  </a>
+                ) : (
+                  <a
+                    href={WEB_URL}
+                    className="inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-gold text-void font-bold hover:bg-gold-hi transition-colors"
+                  >
+                    <Globe size={20} weight="bold" /> Abrir Life High en el navegador
+                  </a>
+                )}
+                <p className="text-muted/50 text-[11px] font-mono">Elegí otra plataforma más abajo</p>
+              </div>
+            </>
+          )}
         </header>
 
         {/* Todas las descargas */}
@@ -196,6 +243,18 @@ export default function Download() {
 }
 
 function GuideBody({ id }) {
+  if (id === 'ios') {
+    return (
+      <div className="space-y-4">
+        <IOSSteps />
+        <p className="text-muted/60 text-xs leading-relaxed">
+          Apple no permite apps como esta en la App Store, por eso se instala desde Safari y funciona igual que una app.
+          Solo si sabés usar AltStore o Sideloadly existe también el archivo IPA en la lista de descargas.
+        </p>
+      </div>
+    )
+  }
+
   const content = {
     android: {
       steps: [

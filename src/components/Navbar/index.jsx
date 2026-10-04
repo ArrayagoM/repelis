@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple } from '@phosphor-icons/react'
+import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
@@ -350,6 +351,26 @@ export default function Navbar({ onDonateClick }) {
                 Life<span className="text-gold"> High</span>
               </span>
             </Link>
+
+            {/* Instalar la app — lo primero que ve quien abre el menú desde el celular */}
+            {!isStandalone() && (
+              <button
+                onClick={async () => {
+                  setMenuOpen(false)
+                  const r = await requestInstall()
+                  if (r === 'unavailable') navigate('/descargar')
+                }}
+                className="w-full flex items-center gap-4 p-4 mb-6 rounded-2xl bg-gold text-void text-left shadow-[0_8px_28px_rgba(232,160,32,0.35)] active:scale-[0.98] transition-transform"
+              >
+                <span className="w-12 h-12 rounded-full bg-void/15 flex items-center justify-center flex-shrink-0">
+                  <DownloadSimple size={24} weight="bold" />
+                </span>
+                <span className="flex-1">
+                  <span className="block font-display font-extrabold text-lg leading-tight">Instalar la app</span>
+                  <span className="block text-sm opacity-75 leading-tight mt-0.5">Gratis · Android, iPhone, TV, PC y Mac</span>
+                </span>
+              </button>
+            )}
 
             {/* Toggle idioma + Donar móvil */}
             <div className="flex flex-wrap items-center gap-2 mb-6">

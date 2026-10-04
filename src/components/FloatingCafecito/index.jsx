@@ -48,7 +48,7 @@ export default function FloatingCafecito() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.85, y: 20 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-4 right-4 z-40 group"
+          className="fixed bottom-4 right-4 z-40 group [.has-install-banner_&]:bottom-28"
         >
           <button
             onClick={dismiss}

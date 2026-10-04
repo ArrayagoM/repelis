@@ -28,9 +28,9 @@ export const DOWNLOADS = [
     file: 'lifehigh.apk', url: `${LEGACY_RELEASE_BASE}/lifehigh.apk`,
   },
   {
-    id: 'ios', platform: 'ios', icon: 'apple', primary: true,
-    label: 'iPhone y iPad',
-    detail: 'iOS / iPadOS 15.1+ · IPA para instalar con AltStore o Sideloadly (o usá la versión web instalable)',
+    id: 'ios', platform: 'ios', icon: 'apple', primary: false,
+    label: 'iPhone y iPad — archivo IPA (avanzado)',
+    detail: 'Solo si sabés usar AltStore o Sideloadly. Para la mayoría es mucho más fácil instalarla desde Safari (pasos arriba).',
     file: 'lifehigh-ios.ipa', url: `${RELEASE_BASE}/lifehigh-ios.ipa`,
   },
   {

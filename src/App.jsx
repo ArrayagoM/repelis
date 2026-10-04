@@ -10,6 +10,7 @@ import PlayerModal  from './components/PlayerModal'
 import DonateModal  from './components/DonateModal'
 import FloatingCafecito from './components/FloatingCafecito'
 import UpdateAvailable from './components/UpdateAvailable'
+import InstallBanner from './components/InstallBanner'
 import PageViewTracker from './components/PageViewTracker'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
@@ -69,6 +70,7 @@ export default function App() {
           en el Footer y en cada detalle de peli. */}
       {!lowEnd && <FloatingCafecito />}
       <UpdateAvailable />
+      <InstallBanner />
       <PageViewTracker />
 
       {/* Vercel Analytics — visitas, países, ciudades, dispositivos, top pages.
