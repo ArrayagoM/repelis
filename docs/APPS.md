@@ -15,6 +15,19 @@ Todos los archivos (menos el APK liviano) se publican en la release fija **`app-
 `https://github.com/ArrayagoM/repelis/releases/download/app-latest/<archivo>`.
 La página `/descargar` del sitio detecta el dispositivo y muestra la descarga correcta + guías de instalación.
 
+## Cómo se actualiza cada app (sin volver a descargar)
+
+| App | ¿Se actualiza sola al publicar la web? |
+|---|---|
+| Web / PWA instalada (Android, iPhone, PC, Smart TV) | **Sí.** El aviso "nueva versión" aparece solo y recarga. |
+| Windows / macOS / Linux (Electron) | **Sí.** Abre `repelis.vercel.app` en cada inicio: siempre muestra la última versión. |
+| Android liviano (Capacitor, `lifehigh.apk`) | **Sí**, desde esta versión: carga `repelis.vercel.app` (`server.url` en `capacitor.config.json`). La copia ya instalada **antes** de este cambio se reinstala una única vez. |
+| Android celular / TV / iPhone (React Native) | **No.** Llevan su propia interfaz dentro del instalador. Cada cambio de `mobile/` genera instaladores nuevos en `app-latest` y hay que reinstalar. |
+
+Para que la app React Native también se actualice sola hace falta **EAS Update** (`expo-updates`): requiere una cuenta
+de Expo, `eas init` y un `EXPO_TOKEN` como secret del repositorio. Con eso, los cambios de JavaScript llegan en el
+próximo arranque sin reinstalar (los cambios nativos siguen necesitando instalador nuevo).
+
 ## Cómo se compila (todo en GitHub Actions)
 
 `.github/workflows/build-apps.yml` corre en cada push a `main` que toque `mobile/**` o `desktop/**`, o a mano desde

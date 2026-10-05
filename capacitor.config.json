@@ -1,5 +1,9 @@
 {
   "appId": "app.lifehigh.tv",
   "appName": "Life High",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://repelis.vercel.app",
+    "cleartext": false
+  }
 }
