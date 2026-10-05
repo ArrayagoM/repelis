@@ -13,6 +13,7 @@ import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
+import ReminderButton from '../../components/ReminderButton'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
@@ -201,6 +202,7 @@ export default function MovieDetail() {
                 </p>
               </div>
             )}
+            {movieUpcoming && <ReminderButton item={toLibItem(data, 'movie')} />}
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-3">

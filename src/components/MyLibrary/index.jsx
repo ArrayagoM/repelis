@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import PosterStrip from '../PosterStrip'
 import { openPlayer } from '../../store/slices/playerSlice'
-import { useLibrary, continueWatching, progressOf, removeHistory, toggleList } from '../../lib/library'
+import { useLibrary, continueWatching, progressOf, removeHistory, toggleList, toggleReminder } from '../../lib/library'
+import { dateLabel } from '../../lib/reminders'
 
 const detailPath = (x) => `/${x.type === 'tv' ? 'tv' : 'movie'}/${x.id}`
 
@@ -57,4 +58,22 @@ export function MyListRow({ limit = 20, onViewAll }) {
     onRemove: () => toggleList(x),
   }))
   return <PosterStrip id="mi-lista" title="Mi lista" badge="Guardadas" items={items} onViewAll={onViewAll} />
+}
+
+/** "Te avisamos": estrenos que pediste recordar. */
+export function RemindersRow() {
+  const lib = useLibrary()
+  const items = [...lib.reminders]
+    .sort((a, b) => (a.date || '9').localeCompare(b.date || '9'))
+    .map((r) => ({
+      key: `${r.type}:${r.id}`,
+      poster: r.poster,
+      title: r.title,
+      sub: r.notified ? 'Ya se estrenó' : dateLabel(r.date),
+      chip: r.notified ? 'Ya salió' : 'Avisame',
+      chipTone: r.notified ? 'green' : 'blue',
+      to: detailPath(r),
+      onRemove: () => toggleReminder(r),
+    }))
+  return <PosterStrip id="avisos" title="Te avisamos cuando salgan" badge="Estrenos" badgeTone="blue" items={items} />
 }

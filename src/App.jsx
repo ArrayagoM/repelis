@@ -16,6 +16,7 @@ import PageViewTracker from './components/PageViewTracker'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
 import ToastHost    from './components/ToastHost'
+import ReminderWatcher from './components/ReminderWatcher'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -66,6 +67,7 @@ export default function App() {
       <IntroSplash />
       <ErrorBar />
       <ToastHost />
+      <ReminderWatcher />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />

@@ -13,6 +13,8 @@ import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
+import ReminderButton from '../../components/ReminderButton'
+import { isUpcoming } from '../../lib/releaseStatus'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import { useSEO, useTVSchema } from '../../lib/useSEO'
@@ -222,6 +224,7 @@ export default function TVDetail() {
                 </a>
               )}
 
+              {isUpcoming(data) && <ReminderButton item={toLibItem(data, 'tv')} />}
               <ListButton item={toLibItem(data, 'tv')} />
               <ShareButtons title={data.name} description={data.tagline || ''} />
             </div>

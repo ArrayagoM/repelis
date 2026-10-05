@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { BookmarkSimple } from '@phosphor-icons/react'
-import { ContinueRow, MyListRow } from '../../components/MyLibrary'
+import { ContinueRow, MyListRow, RemindersRow } from '../../components/MyLibrary'
 import { useLibrary, continueWatching } from '../../lib/library'
 import { useSEO } from '../../lib/useSEO'
 
@@ -10,6 +10,7 @@ export default function MiLista() {
   useSEO({ title: 'Mi lista', description: 'Tus películas y series guardadas y lo que estás viendo en Life High.' })
   const hasContinue = continueWatching(lib).length > 0
   const hasList = lib.list.length > 0
+  const hasReminders = lib.reminders.length > 0
 
   return (
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-28 pb-24">
@@ -22,9 +23,10 @@ export default function MiLista() {
 
       <div className="space-y-12">
         {hasContinue && <ContinueRow />}
+        {hasReminders && <RemindersRow />}
         {hasList && <MyListRow limit={200} />}
 
-        {!hasContinue && !hasList && (
+        {!hasContinue && !hasList && !hasReminders && (
           <div className="max-w-xl mx-auto px-6 text-center py-16">
             <div className="w-16 h-16 mx-auto rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center mb-5">
               <BookmarkSimple size={28} weight="fill" className="text-gold" />

@@ -9,6 +9,7 @@ import { getDeviceCaps } from '../../lib/deviceCaps'
 import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
 import { toLibItem } from '../../lib/library'
 import ListButton from '../ListButton'
+import ReminderButton from '../ReminderButton'
 
 // Capacidades detectadas UNA vez (cacheado). En low-end:
 //   - poster más chico (w342 vs w500)
@@ -107,8 +108,9 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
           }
 
           {/* Mi lista: siempre visible en touch, al hover en desktop */}
-          <div className="absolute top-2 left-2 z-20 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+          <div className="absolute top-2 left-2 z-20 flex gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
             <ListButton item={toLibItem(movie, isTV ? 'tv' : 'movie')} variant="compact" />
+            {(upcoming || (isTV && isUpcoming(movie))) && <ReminderButton item={toLibItem(movie, isTV ? 'tv' : 'movie')} variant="compact" />}
           </div>
 
           {/* Overlay */}
