@@ -17,6 +17,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
 import ToastHost    from './components/ToastHost'
 import ReminderWatcher from './components/ReminderWatcher'
+import { NewEpisodesWatcher } from './components/NewEpisodes'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -68,6 +69,7 @@ export default function App() {
       <ErrorBar />
       <ToastHost />
       <ReminderWatcher />
+      <NewEpisodesWatcher />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
