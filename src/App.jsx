@@ -34,6 +34,7 @@ const Mundial     = lazy(() => import('./pages/Mundial'))
 const CinesCerca  = lazy(() => import('./pages/CinesCerca'))
 const Download    = lazy(() => import('./pages/Download'))
 const MiLista     = lazy(() => import('./pages/MiLista'))
+const Calendario  = lazy(() => import('./pages/Calendario'))
 
 function RouteFallback() {
   return (
@@ -128,6 +129,7 @@ export default function App() {
 
             {/* Biblioteca personal */}
             <Route path="/mi-lista" element={<MiLista />} />
+            <Route path="/calendario" element={<Calendario />} />
 
             {/* Servicios al usuario */}
             <Route path="/cines-cerca" element={<CinesCerca />} />

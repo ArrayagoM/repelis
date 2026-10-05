@@ -17,6 +17,7 @@ const MEGA_MENU = {
       ['Tendencias de hoy', '/tendencias-hoy'],
       ['En cartelera',      '/estrenos'],
       ['Próximos estrenos', '/proximos'],
+      ['Calendario de estrenos', '/calendario'],
       ['Top valoradas',     '/top-valoradas'],
       ['Clásicos',          '/clasicos'],
     ],

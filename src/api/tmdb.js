@@ -70,6 +70,13 @@ export const getUpcoming      = (page = 1) => api.get('/discover/movie', {
 export const getUpcomingTV    = (page = 1) => api.get('/discover/tv', {
   params: { 'first_air_date.gte': isoDay(1), 'first_air_date.lte': isoDay(120), sort_by: 'popularity.desc', page },
 })
+// Calendario: estrenos de hoy a +N días, los más esperados primero (se agrupan por fecha en el cliente)
+export const getCalendarMovies = (page = 1, days = 45) => api.get('/discover/movie', {
+  params: { 'primary_release_date.gte': isoDay(0), 'primary_release_date.lte': isoDay(days), sort_by: 'popularity.desc', page },
+})
+export const getCalendarTV = (page = 1, days = 45) => api.get('/discover/tv', {
+  params: { 'first_air_date.gte': isoDay(0), 'first_air_date.lte': isoDay(days), sort_by: 'popularity.desc', page },
+})
 export const getMovieDetail   = (id)       => api.get('/movie/' + id)
 export const getMovieCredits  = (id)       => api.get('/movie/' + id + '/credits')
 export const getMovieVideos   = (id)       => api.get('/movie/' + id + '/videos', { params: { language: 'en-US' } })
