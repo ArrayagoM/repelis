@@ -81,7 +81,15 @@ jobs:
 
       - name: Build APK Debug (Gradle)
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode=all
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+
+      - name: Resumen del error de Gradle
+        if: failure()
+        run: |
+          { grep -n -B2 -A14 -E "What went wrong|FAILURE: Build failed|Execution failed|error:|^e: " "$RUNNER_TEMP/gradle.log" | head -80; } > "$RUNNER_TEMP/summary.txt" || true
+          echo "::error title=Gradle fallo::$(head -c 3500 "$RUNNER_TEMP/summary.txt" | tr '[:space:]' ' ')"
 
       - name: Listar outputs de Gradle
         run: |
