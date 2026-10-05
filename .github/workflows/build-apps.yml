@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
           sudo mkdir -p "$ANDROID_HOME/licenses"
-          for h in 24333f8a63b6825ea9c5514f83c2829b004d1fee 8933bad161af4178b1185d1a37fbf41ea5269c55 d56f5187479451eabf01fb78af6dfcb131a6481e; do
+          for h in 24333f8a63b6825ea9c5514f83c2829b004d1fee 8933bad161af4178b1185d1a37fbf41ea5269c55 d56f5187479451eabf01fb78af6dfcb131a6481e e9acab5b5fbb560a72cfaecce8946896ff6aab9d 601085b94cd77f0b54ff86406957099ebe79c4d6 859f317696f67ef3d7f30a50a5560e7834b43903; do
             echo "$h" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-license" > /dev/null
           done
           echo "84831b9409646a918e30573bab4c9c91346d8abd" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-preview-license" > /dev/null
@@ -103,8 +103,17 @@ jobs:
       - name: Compilar APK release
         working-directory: mobile/android
         run: |
+          set -o pipefail
           chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+          ./gradlew assembleRelease --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+
+      - name: Resumen del error de Gradle
+        if: failure()
+        run: |
+          { grep -n -B2 -A14 -E "What went wrong|FAILURE: Build failed|Execution failed|error:|^e: " "$RUNNER_TEMP/gradle.log" | head -80; } > "$RUNNER_TEMP/summary.txt" || true
+          echo "::error title=Gradle fallo::$(head -c 3500 "$RUNNER_TEMP/summary.txt" | tr '
+' '|')"
+          cat "$RUNNER_TEMP/summary.txt" >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Preparar APK
         run: |

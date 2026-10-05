@@ -40,7 +40,7 @@ jobs:
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
           sudo mkdir -p "$ANDROID_HOME/licenses"
-          for h in 24333f8a63b6825ea9c5514f83c2829b004d1fee 8933bad161af4178b1185d1a37fbf41ea5269c55 d56f5187479451eabf01fb78af6dfcb131a6481e; do
+          for h in 24333f8a63b6825ea9c5514f83c2829b004d1fee 8933bad161af4178b1185d1a37fbf41ea5269c55 d56f5187479451eabf01fb78af6dfcb131a6481e e9acab5b5fbb560a72cfaecce8946896ff6aab9d 601085b94cd77f0b54ff86406957099ebe79c4d6 859f317696f67ef3d7f30a50a5560e7834b43903; do
             echo "$h" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-license" > /dev/null
           done
           echo "84831b9409646a918e30573bab4c9c91346d8abd" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-preview-license" > /dev/null
@@ -61,12 +61,12 @@ jobs:
           VITE_TMDB_TOKEN: ${{ secrets.VITE_TMDB_TOKEN || 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM2RjYjQ5MDgwODc2YjMzNWQ4Njg0NDIzOTE1OGQ5NCIsIm5iZiI6MTc3NzIyOTc1MS4wODksInN1YiI6IjY5ZWU1ZmI3ODgzM2EyZDk5YjE3ZDljMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.pO_Pt4O7iHbcnkvF84DqdLKvBLtdv7EKFJ-2OsTFqpY' }}
         run: |
           npm run build
-          ls -la dist/ | head -10
+          ls -la dist/
 
       - name: Sync Capacitor con Android
         run: |
           npx cap sync android
-          ls -la android/app/src/main/assets/public/ | head -5
+          ls -la android/app/src/main/assets/public/
 
       - name: Verificar entorno
         working-directory: android
