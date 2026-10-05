@@ -34,6 +34,17 @@ export function useAsync<T>(fn: () => Promise<T>, deps: readonly unknown[]) {
   return { ...state, reload }
 }
 
+/** Top N: junta 2 páginas para que, después del filtro de idioma, sigan quedando N títulos. */
+export function useTop(fetcher: ListFetcher, limit = 10) {
+  const { mode } = useLanguageMode()
+  const { data, loading, error, reload } = useAsync(async () => {
+    const [a, b] = await Promise.all([fetcher(1), fetcher(2).catch(() => null)])
+    return [...a.results, ...(b?.results ?? [])]
+  }, [fetcher])
+  const items = useMemo<MediaItem[]>(() => (data ? filterResultsByMode(data, mode).slice(0, limit) : []), [data, mode, limit])
+  return { items, loading, error, reload }
+}
+
 /** Fila del catálogo con el filtro de idioma activo aplicado (primera página). */
 export function useRow(fetcher: ListFetcher) {
   const { mode } = useLanguageMode()

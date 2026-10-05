@@ -5,6 +5,7 @@ import { router } from 'expo-router'
 import { FocusPressable } from '@/components/FocusPressable'
 import { Hero } from '@/components/Hero'
 import { Row } from '@/components/Row'
+import { Top10Row } from '@/components/Top10Row'
 import { movies, tv } from '@/api/tmdb'
 import { useRow } from '@/hooks/useAsync'
 import { useLayout } from '@/lib/layout'
@@ -20,15 +21,20 @@ export default function Home() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         <Hero items={heroItems} />
         <View style={styles.rows}>
+          <Top10Row title="Top 10 películas hoy" fetcher={movies.trendingDay} mediaType="movie" />
           <Row title="En cartelera" badge="Ahora" fetcher={movies.nowPlaying} mediaType="movie" />
           <Row title="Tendencias" badge="Esta semana" fetcher={movies.trending} mediaType="movie" />
           <Row title="Más populares" fetcher={movies.popular} mediaType="movie" />
           <Row title="Mejor valoradas" badge="Top" fetcher={movies.topRated} mediaType="movie" />
+          <Top10Row title="Top 10 series hoy" badgeColor={colors.blue} fetcher={tv.trendingDay} mediaType="tv" />
           <Row title="Series en tendencia" badge="TV" badgeColor={colors.blue} fetcher={tv.trending} mediaType="tv" />
           <Row title="Series populares" fetcher={tv.popular} mediaType="tv" />
           <Row title="Al aire ahora" badge="En vivo" badgeColor={colors.blue} fetcher={tv.airingToday} mediaType="tv" />
+          <Row title="Series más recomendables" badge="Imperdibles" badgeColor={colors.blue} fetcher={tv.mostRecommended} mediaType="tv" />
           <Row title="Anime" badge="Anime" badgeColor={colors.purple} fetcher={tv.anime} mediaType="tv" />
           <Row title="K-Drama" badge="Korea" badgeColor={colors.red} fetcher={tv.kdrama} mediaType="tv" />
+          <Row title="Joyas ocultas" badge="Poco conocidas" fetcher={movies.hiddenGems} mediaType="movie" />
+          <Row title="Para ver en familia" badge="Todos" fetcher={movies.family} mediaType="movie" />
           <Row title="Clásicos del cine" badge="Leyendas" fetcher={movies.classics} mediaType="movie" />
         </View>
       </ScrollView>

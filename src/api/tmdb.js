@@ -75,6 +75,19 @@ export const getMovieExternalIds  = (id) => api.get('/movie/' + id + '/external_
 export const getMovieRecommendations = (id, page = 1) =>
   api.get('/movie/' + id + '/recommendations', { params: { page } })
 
+// Top 10 del día (series) y listas de "más recomendables"
+export const getTrendingTVDay = (page = 1) => api.get('/trending/tv/day', { params: { page } })
+
+// Series más recomendables: nota alta con muchos votos (evita series con 3 votos en 10/10)
+export const getMostRecommendedTV = (page = 1) =>
+  api.get('/discover/tv', { params: { sort_by: 'vote_average.desc', 'vote_count.gte': 1500, page } })
+
+// Joyas ocultas: muy bien valoradas pero poco conocidas (pocos votos = menos famosas)
+export const getHiddenGems = (page = 1) =>
+  api.get('/discover/movie', {
+    params: { sort_by: 'vote_average.desc', 'vote_average.gte': 7.4, 'vote_count.gte': 300, 'vote_count.lte': 2500, page },
+  })
+
 // Trending mezclado (películas + series)
 export const getTrendingAll = (page = 1) => api.get('/trending/all/week', { params: { page } })
 

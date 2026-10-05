@@ -4,10 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Hero     from '../../components/Hero'
 import MovieRow from '../../components/MovieRow'
+import Top10Row from '../../components/Top10Row'
 import {
   fetchTrending, fetchPopular, fetchTopRated, fetchNowPlaying, fetchUpcoming, fetchClassics, fetchAnimeMovies,
   fetchTrendingTV, fetchPopularTV, fetchTopRatedTV, fetchAiringTodayTV, fetchAnime, fetchKDrama,
 } from '../../store/slices/moviesSlice'
+import { fetchCategory } from '../../store/slices/moviesSlice'
+import * as TMDB from '../../api/tmdb'
 import { fetchGenres } from '../../store/slices/genresSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
 import { useSEO, useOrgSchema } from '../../lib/useSEO'
@@ -29,6 +32,12 @@ export default function Home() {
     trending, popular, topRated, nowPlaying, upcoming, classics, animeMovies,
     trendingTV, popularTV, topRatedTV, airingTodayTV, anime, kdrama,
   } = useSelector((s) => s.movies)
+  const byCategory = useSelector((s) => s.movies.byCategory)
+  const top10Movies = byCategory.top10Movies || { results: [], loading: false }
+  const top10TV     = byCategory.top10TV     || { results: [], loading: false }
+  const bestTV      = byCategory.bestTV      || { results: [], loading: false }
+  const gems        = byCategory.hiddenGems  || { results: [], loading: false }
+  const family      = byCategory.family      || { results: [], loading: false }
 
   useEffect(() => {
     // En low-end pedimos SOLO lo esencial (4 endpoints vs 13).
@@ -41,6 +50,14 @@ export default function Home() {
       dispatch(fetchGenres())
       return
     }
+    // Top 10 + recomendadas (2 páginas del Top: tras el filtro de idioma siguen quedando 10)
+    dispatch(fetchCategory({ key: 'top10Movies', fetcher: TMDB.getTrendingDay, page: 1 }))
+      .then(() => dispatch(fetchCategory({ key: 'top10Movies', fetcher: TMDB.getTrendingDay, page: 2 })))
+    dispatch(fetchCategory({ key: 'top10TV', fetcher: TMDB.getTrendingTVDay, page: 1 }))
+      .then(() => dispatch(fetchCategory({ key: 'top10TV', fetcher: TMDB.getTrendingTVDay, page: 2 })))
+    dispatch(fetchCategory({ key: 'bestTV', fetcher: TMDB.getMostRecommendedTV, page: 1 }))
+    dispatch(fetchCategory({ key: 'hiddenGems', fetcher: TMDB.getHiddenGems, page: 1 }))
+    dispatch(fetchCategory({ key: 'family', fetcher: TMDB.getKidsMovies, page: 1 }))
     // Películas
     if (!trending.results.length)    dispatch(fetchTrending())
     if (!popular.results.length)     dispatch(fetchPopular())
@@ -92,6 +109,10 @@ export default function Home() {
           <div className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
         </div>
 
+        {/* ── TOP 10 ── */}
+        <Top10Row title="Top 10 películas hoy" badge="Hoy" movies={top10Movies.results}
+          loading={top10Movies.loading && !top10Movies.results.length} mediaType="movie" />
+
         {/* ── PELÍCULAS ── */}
         <MovieRow title="En Cartelera" badge="Ahora" movies={nowPlaying.results}
           loading={nowPlaying.loading && !nowPlaying.results.length} onViewAll={() => navigate('/estrenos')} />
@@ -118,6 +139,9 @@ export default function Home() {
         </div>
 
         {/* ── SERIES ── */}
+        <Top10Row title="Top 10 series hoy" badge="Hoy" badgeColor="blue" movies={top10TV.results}
+          loading={top10TV.loading && !top10TV.results.length} mediaType="tv" />
+
         <MovieRow title="Series en Tendencia" badge="TV" badgeColor="blue"
           movies={trendingTV.results} loading={trendingTV.loading && !trendingTV.results.length}
           mediaType="tv" onViewAll={() => navigate('/series')} />
@@ -128,6 +152,10 @@ export default function Home() {
 
         <MovieRow title="Al Aire Ahora" badge="En vivo" badgeColor="blue"
           movies={airingTodayTV.results} loading={airingTodayTV.loading && !airingTodayTV.results.length}
+          mediaType="tv" />
+
+        <MovieRow title="Series más recomendables" badge="Imperdibles" badgeColor="blue"
+          movies={bestTV.results} loading={bestTV.loading && !bestTV.results.length}
           mediaType="tv" />
 
         <MovieRow title="Mejor Valoradas — Series" badge="Top" badgeColor="blue"
@@ -164,6 +192,12 @@ export default function Home() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
           </div>
         </div>
+
+        <MovieRow title="Joyas ocultas" badge="Poco conocidas"
+          movies={gems.results} loading={gems.loading && !gems.results.length} />
+
+        <MovieRow title="Para ver en familia" badge="Todos"
+          movies={family.results} loading={family.loading && !family.results.length} />
 
         <MovieRow title="Clásicos del Cine" badge="Leyendas"
           movies={classics.results} loading={classics.loading && !classics.results.length} />

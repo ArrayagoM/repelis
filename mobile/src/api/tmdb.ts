@@ -73,6 +73,7 @@ const list = (path: string, base: Params = {}): ListFetcher => (page, extra = {}
 
 export const movies = {
   trending: list('/trending/movie/week'),
+  trendingDay: list('/trending/movie/day'),
   popular: list('/movie/popular'),
   topRated: list('/movie/top_rated'),
   nowPlaying: list('/movie/now_playing'),
@@ -85,10 +86,20 @@ export const movies = {
   }),
   animeMovies: list('/discover/movie', { with_genres: 16, with_origin_country: 'JP', sort_by: 'popularity.desc' }),
   discover: list('/discover/movie', { sort_by: 'popularity.desc' }),
+  // Muy bien valoradas pero poco conocidas (pocos votos = menos famosas)
+  hiddenGems: list('/discover/movie', {
+    sort_by: 'vote_average.desc', 'vote_average.gte': 7.4, 'vote_count.gte': 300, 'vote_count.lte': 2500,
+  }),
+  family: list('/discover/movie', {
+    with_genres: '10751,16', certification_country: 'US', 'certification.lte': 'PG', sort_by: 'popularity.desc',
+  }),
 }
 
 export const tv = {
   trending: list('/trending/tv/week'),
+  trendingDay: list('/trending/tv/day'),
+  // Nota alta con muchos votos (evita series con 3 votos en 10/10)
+  mostRecommended: list('/discover/tv', { sort_by: 'vote_average.desc', 'vote_count.gte': 1500 }),
   popular: list('/tv/popular'),
   topRated: list('/tv/top_rated'),
   airingToday: list('/tv/airing_today'),
