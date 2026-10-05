@@ -9,7 +9,12 @@ import {
 import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
 import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
-import { getServerHistory } from '../../lib/serverHealth'
+import { getServerHistory, reportServerFailure } from '../../lib/serverHealth'
+import { getTVSeason } from '../../api/tmdb'
+import { useLibrary } from '../../lib/library'
+import { nextTarget, shouldOfferNext } from '../../lib/nextEpisode'
+import NextEpisodeCard from '../NextEpisodeCard'
+import { showToast } from '../../lib/toast'
 import WatchProviders from '../WatchProviders'
 import { useWatchTracker } from '../../lib/useWatchTracker'
 
@@ -106,6 +111,10 @@ export default function PlayerModal() {
   // TV local state
   const [localSeason,  setLocalSeason]  = useState(initSeason  || 1)
   const [localEpisode, setLocalEpisode] = useState(initEpisode || 1)
+  // Siguiente episodio: cuántos episodios tiene la temporada y si descartó el cartel
+  const [episodeCount, setEpisodeCount] = useState(0)
+  const [nextDismissed, setNextDismissed] = useState('')
+  const library = useLibrary()
 
   const timerRef    = useRef(null)
   const progressRef = useRef(null)
@@ -202,9 +211,31 @@ export default function PlayerModal() {
     setPhase('loading')
   }, [dispatch, stopTimers])
 
+  const target = useMemo(
+    () => nextTarget({ season: localSeason, episode: localEpisode, episodeCount, totalSeasons }),
+    [localSeason, localEpisode, episodeCount, totalSeasons],
+  )
+
   const nextEpisode = useCallback(() => {
-    changeEpisode(localSeason, localEpisode + 1)
-  }, [localSeason, localEpisode, changeEpisode])
+    if (target) changeEpisode(target.season, target.episode)
+  }, [target, changeEpisode])
+
+  // Cantidad de episodios de la temporada en curso (para saber si hay "siguiente")
+  useEffect(() => {
+    if (!isOpen || mediaType !== 'tv' || !movieId) return undefined
+    let cancelled = false
+    setEpisodeCount(0)
+    getTVSeason(movieId, localSeason)
+      .then(({ data }) => { if (!cancelled) setEpisodeCount(data?.episodes?.length || 0) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isOpen, mediaType, movieId, localSeason])
+
+  const histEntry = library.history.find((h) => h.type === 'tv' && h.id === movieId)
+  const offerNext = isOpen && phase === 'playing' && mediaType === 'tv' && !!target &&
+    nextDismissed !== `${localSeason}:${localEpisode}` &&
+    histEntry?.season === localSeason && histEntry?.episode === localEpisode &&
+    shouldOfferNext({ watchedSec: histEntry?.watchedSec || 0, runtimeMin: histEntry?.runtimeMin || runtimeMin, isTV: true, hasNext: !!target })
 
   const prevEpisode = useCallback(() => {
     if (localEpisode > 1) changeEpisode(localSeason, localEpisode - 1)
@@ -346,8 +377,8 @@ export default function PlayerModal() {
                   <span className="text-[10px] font-mono text-muted/50 px-1">
                     S{localSeason}E{localEpisode}
                   </span>
-                  <button onClick={nextEpisode}
-                    className="w-6 h-6 flex items-center justify-center rounded text-muted/50 hover:text-chalk transition-colors">
+                  <button onClick={nextEpisode} disabled={!target}
+                    className="w-6 h-6 flex items-center justify-center rounded text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors">
                     <SkipForward size={11} weight="fill" />
                   </button>
                 </div>
@@ -610,6 +641,17 @@ export default function PlayerModal() {
                 )}
               </AnimatePresence>
 
+              <AnimatePresence>
+                {offerNext && (
+                  <NextEpisodeCard
+                    key={`next-${localSeason}-${localEpisode}`}
+                    target={target}
+                    onPlay={nextEpisode}
+                    onDismiss={() => setNextDismissed(`${localSeason}:${localEpisode}`)}
+                  />
+                )}
+              </AnimatePresence>
+
               <iframe
                 key={`${movieId}-${mediaType}-${localSeason}-${localEpisode}-${srcIdx}-${key}`}
                 src={url}
@@ -681,8 +723,21 @@ export default function PlayerModal() {
             </AnimatePresence>
 
             {/* ── BARRA INFERIOR ── */}
-            <div className="flex items-center justify-between px-4 py-1.5 bg-[#0A0A14] border-t border-white/[0.03]">
+            <div className="flex flex-wrap items-center justify-between gap-y-1.5 px-4 py-1.5 bg-[#0A0A14] border-t border-white/[0.03]">
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    reportServerFailure(src?.id)
+                    const next = (srcIdx + 1) % sources.length
+                    goTo(next)
+                    showToast({ icon: '🔄', title: `Probando otro servidor (${next + 1} de ${sources.length})`, text: 'Gracias por avisar: lo tenemos en cuenta para ordenar los servidores.', ttl: 3500, tone: 'blue' })
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-[11px] font-semibold hover:bg-gold/20 active:scale-95 transition-all"
+                  title="Si no carga, se ve mal o no está en español, probá otro servidor"
+                >
+                  <ArrowClockwise size={12} weight="bold" />
+                  ¿No anda? Probar otro servidor
+                </button>
                 <span className="text-muted/25 text-[10px] font-mono hidden sm:block">ESC · cerrar</span>
                 {isTV && (
                   <div className="flex items-center gap-1.5 sm:hidden">
@@ -691,7 +746,7 @@ export default function PlayerModal() {
                       <SkipBack size={12} weight="fill" />
                     </button>
                     <span className="text-[10px] font-mono text-muted/50">S{localSeason}E{localEpisode}</span>
-                    <button onClick={nextEpisode} className="text-muted/50 hover:text-chalk transition-colors p-1">
+                    <button onClick={nextEpisode} disabled={!target} className="text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors p-1">
                       <SkipForward size={12} weight="fill" />
                     </button>
                   </div>

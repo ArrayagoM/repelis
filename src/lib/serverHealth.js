@@ -58,6 +58,11 @@ export const pingAll = async () => {
   return out
 }
 
+/** El usuario nos dice que este servidor no andaba: cuenta como una muestra fallida. */
+export const reportServerFailure = (sourceId) => {
+  if (sourceId) recordSample(sourceId, false, TIMEOUT_MS)
+}
+
 export const pingOne = (sourceId) => {
   const s = SOURCES.find((x) => x.id === sourceId)
   if (!s) return Promise.resolve(null)
