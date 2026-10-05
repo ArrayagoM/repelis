@@ -25,8 +25,8 @@ export const DOWNLOADS = [
   },
   {
     id: 'android-legacy', platform: 'android', icon: 'android', primary: false,
-    label: 'Android antiguo (5.0 y 6.0)',
-    detail: 'Versión liviana (~6 MB) para equipos viejos o proyectores con Android 5/6',
+    label: 'Android — versión liviana',
+    detail: 'Android 7.0+ · ~6 MB · para equipos con poca memoria o proyectores justos',
     file: 'lifehigh.apk', url: `${LEGACY_RELEASE_BASE}/lifehigh.apk`,
   },
   {

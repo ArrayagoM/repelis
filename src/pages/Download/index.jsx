@@ -293,7 +293,7 @@ function GuideBody({ id }) {
         ['Permití fuentes desconocidas', 'Android te avisa la primera vez: Configuración → activá “Permitir esta fuente” → volvé atrás.'],
         ['Instalá', 'Tocá Instalar. Queda el ícono en tu launcher.'],
       ],
-      note: 'Si tu Android es 5.0 o 6.0, usá la opción “Android antiguo”: es la versión liviana compatible con equipos viejos.',
+      note: 'La app necesita Android 7.0 o superior. Si tu equipo tiene poca memoria, probá la “versión liviana”. En Android 5 o 6 usá el sitio desde Chrome: menú ⋮ → “Agregar a pantalla de inicio”.',
     },
     tv: {
       steps: [

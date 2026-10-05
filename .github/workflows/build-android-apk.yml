@@ -126,13 +126,13 @@ jobs:
             https://github.com/ArrayagoM/repelis/releases/download/apk-latest/lifehigh.apk
             ```
 
-            **Instalación en proyector / TV Android (5.0+):**
+            **Instalación en proyector / TV Android (7.0+):**
             1. Descargá `lifehigh.apk` de Assets abajo
             2. Copialo al proyector vía USB o descargá directo desde Chrome del proyector
             3. Tap en el .apk → Instalar
             4. Si pide "fuentes desconocidas" → habilitar
 
-            WebView nativo, **compatible con Android 5.0+** (cubre 99% de dispositivos).
+            WebView nativo, **compatible con Android 7.0+**.
           files: out/*.apk
           make_latest: true
           token: ${{ secrets.GITHUB_TOKEN }}

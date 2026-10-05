@@ -17,7 +17,7 @@ export const isDesktop = () => {
 }
 
 export const APK_INFO = {
-  minAndroid: '5.0',          // Lollipop
+  minAndroid: '7.0',          // Nougat (mínimo de Capacitor 8)
   minApi: 21,
   targetAndroid: '14',
   size: '~6 MB',

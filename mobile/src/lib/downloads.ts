@@ -15,7 +15,7 @@ export const DOWNLOADS_PAGE = 'https://repelis.vercel.app/descargar'
 export const DOWNLOAD_OPTIONS: DownloadOption[] = [
   { id: 'android', label: 'Android (celular y tablet)', detail: 'Android 7.0+ · APK universal', url: `${RELEASE}/lifehigh-android.apk`, icon: 'logo-android' },
   { id: 'android-tv', label: 'Android TV / Fire TV / proyector', detail: 'Control remoto · Android TV 7.0+', url: `${RELEASE}/lifehigh-android-tv.apk`, icon: 'tv-outline' },
-  { id: 'android-legacy', label: 'Android antiguo (5.0 y 6.0)', detail: 'Versión liviana compatible con Android 5.0+', url: `${LEGACY_RELEASE}/lifehigh.apk`, icon: 'logo-android' },
+  { id: 'android-legacy', label: 'Android — versión liviana', detail: 'Android 7.0+ · ~6 MB, para equipos con poca memoria', url: `${LEGACY_RELEASE}/lifehigh.apk`, icon: 'logo-android' },
   { id: 'ios', label: 'iPhone y iPad', detail: 'IPA para instalar con AltStore / Sideloadly', url: `${RELEASE}/lifehigh-ios.ipa`, icon: 'logo-apple' },
   { id: 'windows', label: 'Windows 10 / 11', detail: 'Instalador .exe (64 bits)', url: `${RELEASE}/LifeHigh-Setup-windows-x64.exe`, icon: 'logo-windows' },
   { id: 'mac-arm', label: 'Mac (Apple Silicon M1–M4)', detail: 'Imagen .dmg', url: `${RELEASE}/LifeHigh-mac-arm64.dmg`, icon: 'desktop-outline' },

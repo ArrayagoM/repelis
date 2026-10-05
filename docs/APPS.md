@@ -4,7 +4,7 @@
 |---|---|---|---|
 | Android celular/tablet (7.0+) | React Native (Expo SDK 57) | `mobile/` | `lifehigh-android.apk` |
 | Android TV / Fire TV / proyector (7.0+) | React Native TV (`react-native-tvos`) | `mobile/` (`EXPO_TV=1`) | `lifehigh-android-tv.apk` |
-| Android 5.0 y 6.0 | Capacitor (WebView, versión liviana) | `android/` | `lifehigh.apk` (release `apk-latest`) |
+| Android 7.0+ versión liviana | Capacitor (WebView, ~6 MB) | `android/` | `lifehigh.apk` (release `apk-latest`) |
 | iPhone / iPad (15.1+) | React Native (Expo) | `mobile/` | `lifehigh-ios.ipa` (sin firmar) |
 | Windows 10/11 x64 | Electron | `desktop/` | `LifeHigh-Setup-windows-x64.exe` |
 | macOS Apple Silicon / Intel | Electron | `desktop/` | `LifeHigh-mac-arm64.dmg`, `LifeHigh-mac-x64.dmg` |
@@ -56,7 +56,7 @@ nativa vive en `mobile/app.json`, `mobile/app.config.js` y los config plugins.
 
 ## Limitaciones conocidas
 
-- **React Native exige Android 7.0+.** Para Android 5/6 se mantiene la app Capacitor liviana (`lifehigh.apk`).
+- **React Native y Capacitor 8 exigen Android 7.0+.** Android 5 y 6 no tienen app nativa: usan el sitio desde Chrome (*Agregar a pantalla de inicio*). `lifehigh.apk` es la versión liviana (WebView) para equipos con poca memoria.
 - **iOS**: Apple no admite esta app en la App Store, así que el IPA va sin firmar y se instala con AltStore/Sideloadly (con cuenta gratuita hay que renovarlo cada 7 días). Alternativa sin herramientas: Safari → Compartir → *Agregar a pantalla de inicio* (la web es una PWA). Para firmar con cuenta de pago hay que agregar certificado y perfil al workflow.
 - **Apple TV (tvOS)** no está incluido: `expo-router` no es compatible con tvOS. Android TV y Fire TV sí.
 - **Samsung (Tizen) y LG (webOS)** no admiten apps externas de forma simple: se usa la web, o un Fire TV Stick / TV box Android.

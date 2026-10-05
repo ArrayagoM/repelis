@@ -19,7 +19,7 @@ export default function DownloadAPK({ variant = 'compact', className = '' }) {
         </span>
         <div className="text-left leading-tight">
           <div className="text-lg font-extrabold">Descargar APK</div>
-          <div className="text-xs font-mono opacity-70">Android 5.0+ · ~6 MB</div>
+          <div className="text-xs font-mono opacity-70">Android 7.0+ · ~6 MB</div>
         </div>
       </a>
     )
