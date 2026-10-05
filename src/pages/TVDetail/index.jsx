@@ -12,9 +12,11 @@ import { IMG_ORIGINAL, IMG_W500 } from '../../api/tmdb'
 import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
+import ListButton from '../../components/ListButton'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import { useSEO, useTVSchema } from '../../lib/useSEO'
+import { toLibItem } from '../../lib/library'
 import WatchProviders from '../../components/WatchProviders'
 import DubInfo from '../../components/DubInfo'
 
@@ -53,6 +55,8 @@ export default function TVDetail() {
       season:       selectedSeason,
       episode:      episode.episode_number,
       totalSeasons: data.number_of_seasons || 1,
+      item:         toLibItem(data, 'tv'),
+      runtimeMin:   episode.runtime || data.episode_run_time?.[0] || 0,
     }))
   }
 
@@ -64,6 +68,8 @@ export default function TVDetail() {
       season:       1,
       episode:      1,
       totalSeasons: data.number_of_seasons || 1,
+      item:         toLibItem(data, 'tv'),
+      runtimeMin:   data.episode_run_time?.[0] || 0,
     }))
   }
 
@@ -216,6 +222,7 @@ export default function TVDetail() {
                 </a>
               )}
 
+              <ListButton item={toLibItem(data, 'tv')} />
               <ShareButtons title={data.name} description={data.tagline || ''} />
             </div>
           </motion.div>

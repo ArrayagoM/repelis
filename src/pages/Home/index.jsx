@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import Hero     from '../../components/Hero'
 import MovieRow from '../../components/MovieRow'
 import Top10Row from '../../components/Top10Row'
+import { ContinueRow, MyListRow } from '../../components/MyLibrary'
+import { useLibrary, continueWatching } from '../../lib/library'
 import {
   fetchTrending, fetchPopular, fetchTopRated, fetchNowPlaying, fetchUpcoming, fetchClassics, fetchAnimeMovies,
   fetchTrendingTV, fetchPopularTV, fetchTopRatedTV, fetchAiringTodayTV, fetchAnime, fetchKDrama,
@@ -21,6 +23,8 @@ const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 export default function Home() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const lib = useLibrary()
+  const hasContinue = useMemo(() => continueWatching(lib).length > 0, [lib])
 
   useSEO({
     title: null, // usa el título base "Life High — Cinema sin límites"
@@ -117,6 +121,10 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
         </div>
+
+        {/* ── TU ESPACIO ── */}
+        {hasContinue && <ContinueRow />}
+        {lib.list.length > 0 && <MyListRow limit={20} onViewAll={() => navigate('/mi-lista')} />}
 
         {/* ── TOP 10 ── */}
         <Top10Row title="Top 10 películas hoy" badge="Hoy" movies={top10Movies.results}

@@ -7,6 +7,8 @@ import { IMG_W342, IMG_W500 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
 import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
+import { toLibItem } from '../../lib/library'
+import ListButton from '../ListButton'
 
 // Capacidades detectadas UNA vez (cacheado). En low-end:
 //   - poster más chico (w342 vs w500)
@@ -62,7 +64,7 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
     } else if (isTV) {
       navigate(`/tv/${movie.id}`)
     } else {
-      dispatch(openPlayer({ movieId: movie.id, title, mediaType: 'movie' }))
+      dispatch(openPlayer({ movieId: movie.id, title, mediaType: 'movie', item: toLibItem(movie, 'movie') }))
     }
   }
 
@@ -103,6 +105,11 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
                 <Play size={32} className="text-dim" />
               </div>
           }
+
+          {/* Mi lista: siempre visible en touch, al hover en desktop */}
+          <div className="absolute top-2 left-2 z-20 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+            <ListButton item={toLibItem(movie, isTV ? 'tv' : 'movie')} variant="compact" />
+          </div>
 
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-400" />

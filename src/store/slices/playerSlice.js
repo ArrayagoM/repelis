@@ -10,6 +10,8 @@ const playerSlice = createSlice({
     season:       1,
     episode:      1,
     totalSeasons: 1,
+    item:         null,   // título normalizado (toLibItem) para Continuar viendo
+    runtimeMin:   0,
   },
   reducers: {
     openPlayer(state, action) {
@@ -20,6 +22,8 @@ const playerSlice = createSlice({
       state.season       = action.payload.season       || 1
       state.episode      = action.payload.episode      || 1
       state.totalSeasons = action.payload.totalSeasons || 1
+      state.item         = action.payload.item         || null
+      state.runtimeMin   = action.payload.runtimeMin   || 0
     },
     closePlayer(state) {
       state.isOpen       = false
@@ -29,10 +33,13 @@ const playerSlice = createSlice({
       state.season       = 1
       state.episode      = 1
       state.totalSeasons = 1
+      state.item         = null
+      state.runtimeMin   = 0
     },
     setEpisode(state, action) {
       state.season  = action.payload.season
       state.episode = action.payload.episode
+      if (action.payload.runtimeMin) state.runtimeMin = action.payload.runtimeMin
     },
   },
 })

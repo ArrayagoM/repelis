@@ -15,6 +15,7 @@ import IntroSplash from './components/IntroSplash'
 import PageViewTracker from './components/PageViewTracker'
 import ErrorBoundary from './components/ErrorBoundary'
 import ErrorBar     from './components/ErrorBar'
+import ToastHost    from './components/ToastHost'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -30,6 +31,7 @@ const Admin       = lazy(() => import('./pages/Admin'))
 const Mundial     = lazy(() => import('./pages/Mundial'))
 const CinesCerca  = lazy(() => import('./pages/CinesCerca'))
 const Download    = lazy(() => import('./pages/Download'))
+const MiLista     = lazy(() => import('./pages/MiLista'))
 
 function RouteFallback() {
   return (
@@ -63,6 +65,7 @@ export default function App() {
     <ErrorBoundary>
       <IntroSplash />
       <ErrorBar />
+      <ToastHost />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
@@ -118,6 +121,9 @@ export default function App() {
 
             {/* Deportes */}
             <Route path="/mundial" element={<Mundial />} />
+
+            {/* Biblioteca personal */}
+            <Route path="/mi-lista" element={<MiLista />} />
 
             {/* Servicios al usuario */}
             <Route path="/cines-cerca" element={<CinesCerca />} />

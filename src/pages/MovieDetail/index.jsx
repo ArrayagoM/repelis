@@ -12,11 +12,13 @@ import { IMG_ORIGINAL, IMG_W500 } from '../../api/tmdb'
 import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
+import ListButton from '../../components/ListButton'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
 import WatchProviders from '../../components/WatchProviders'
 import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
+import { toLibItem } from '../../lib/library'
 import { useSEO, useMovieSchema } from '../../lib/useSEO'
 
 export default function MovieDetail() {
@@ -205,7 +207,7 @@ export default function MovieDetail() {
               <motion.button
                 whileHover={{ scale: movieUpcoming ? 1 : 1.03 }}
                 whileTap={{ scale: movieUpcoming ? 1 : 0.97 }}
-                onClick={() => { if (!movieUpcoming) dispatch(openPlayer({ movieId: data.id, title: data.title })) }}
+                onClick={() => { if (!movieUpcoming) dispatch(openPlayer({ movieId: data.id, title: data.title, item: toLibItem(data, 'movie'), runtimeMin: data.runtime || 0 })) }}
                 disabled={movieUpcoming}
                 className={`
                   group flex items-center gap-3 px-7 py-3.5 rounded-full font-bold text-sm transition-all duration-300
@@ -236,6 +238,7 @@ export default function MovieDetail() {
                 </a>
               )}
 
+              <ListButton item={toLibItem(data, 'movie')} />
               <ShareButtons title={data.title} description={data.tagline || ''} />
             </div>
           </motion.div>

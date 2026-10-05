@@ -6,6 +6,7 @@ import { Play, Info, Star } from '@phosphor-icons/react'
 import { IMG_ORIGINAL, IMG_W500, IMG_W780 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
+import { toLibItem } from '../../lib/library'
 
 const _caps = typeof window !== 'undefined' ? getDeviceCaps() : { lowEnd: false }
 const LOW_END = _caps.lowEnd
@@ -127,7 +128,7 @@ export default function Hero({ movies = [] }) {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => dispatch(openPlayer({ movieId: movie.id, title: movie.title }))}
+                onClick={() => dispatch(openPlayer({ movieId: movie.id, title: movie.title, item: toLibItem(movie, 'movie') }))}
                 className="
                   group flex items-center gap-3 px-6 py-3.5 rounded-full
                   bg-gold hover:bg-gold-hi text-void font-semibold text-[0.95rem]

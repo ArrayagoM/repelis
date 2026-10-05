@@ -11,6 +11,7 @@ import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../.
 import { getNetworkInfo } from '../../lib/network'
 import { getServerHistory } from '../../lib/serverHealth'
 import WatchProviders from '../WatchProviders'
+import { useWatchTracker } from '../../lib/useWatchTracker'
 
 // ─── Timeouts (balance entre velocidad y NO interrumpir reproducción) ──
 // Lección: timeouts agresivos cortaban videos que tardaban en arrancar.
@@ -77,7 +78,7 @@ const usePreconnect = (active) => {
 // ─────────────────────────────────────────────────────────────────────────
 export default function PlayerModal() {
   const dispatch = useDispatch()
-  const { isOpen, movieId, title, mediaType, season: initSeason, episode: initEpisode, totalSeasons } =
+  const { isOpen, movieId, title, mediaType, season: initSeason, episode: initEpisode, totalSeasons, item: playerItem, runtimeMin } =
     useSelector((s) => s.player)
 
   // El orden de SOURCES se calcula UNA vez por apertura. Después aplicamos
@@ -119,6 +120,23 @@ export default function PlayerModal() {
     : NEXT_MS_GOOD
 
   usePreconnect(isOpen)
+
+  // Continuar viendo / rachas / logros: cuenta el tiempo realmente reproducido
+  const trackedItem = useMemo(
+    () => {
+      const base = playerItem || (movieId ? { id: movieId, type: mediaType === 'tv' ? 'tv' : 'movie', title, poster: null, backdrop: null, date: null, genres: [] } : null)
+      return base ? { ...base, totalSeasons } : null
+    },
+    [playerItem, movieId, mediaType, title, totalSeasons],
+  )
+  useWatchTracker({
+    active: isOpen,
+    playing: phase === 'playing',
+    item: trackedItem,
+    season: localSeason,
+    episode: localEpisode,
+    runtimeMin,
+  })
   useWindowFocusGuard(isOpen && sources[srcIdx]?.sandbox === null)
 
   const stopTimers = useCallback(() => {
