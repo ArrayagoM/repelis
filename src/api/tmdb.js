@@ -82,6 +82,8 @@ export const getMovieKeywords     = (id) => api.get('/movie/' + id + '/keywords'
 export const getMovieExternalIds  = (id) => api.get('/movie/' + id + '/external_ids')
 export const getMovieRecommendations = (id, page = 1) =>
   api.get('/movie/' + id + '/recommendations', { params: { page } })
+export const getTVRecommendations = (id, page = 1) =>
+  api.get('/tv/' + id + '/recommendations', { params: { page } })
 
 // Top 10 del día (series) y listas de "más recomendables"
 export const getTrendingTVDay = (page = 1) => api.get('/trending/tv/day', { params: { page } })

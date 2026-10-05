@@ -7,6 +7,7 @@ import MovieRow from '../../components/MovieRow'
 import Top10Row from '../../components/Top10Row'
 import { ContinueRow, MyListRow } from '../../components/MyLibrary'
 import { NewEpisodesRow } from '../../components/NewEpisodes'
+import ForYouRow from '../../components/ForYouRow'
 import { useLibrary, continueWatching } from '../../lib/library'
 import {
   fetchTrending, fetchPopular, fetchTopRated, fetchNowPlaying, fetchUpcoming, fetchClassics, fetchAnimeMovies,
@@ -126,6 +127,7 @@ export default function Home() {
         {/* ── TU ESPACIO ── */}
         {hasContinue && <ContinueRow />}
         <NewEpisodesRow />
+        <ForYouRow />
         {lib.list.length > 0 && <MyListRow limit={20} onViewAll={() => navigate('/mi-lista')} />}
 
         {/* ── TOP 10 ── */}
