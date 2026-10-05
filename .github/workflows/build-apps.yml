@@ -111,8 +111,7 @@ jobs:
         if: failure()
         run: |
           { grep -n -B2 -A14 -E "What went wrong|FAILURE: Build failed|Execution failed|error:|^e: " "$RUNNER_TEMP/gradle.log" | head -80; } > "$RUNNER_TEMP/summary.txt" || true
-          echo "::error title=Gradle fallo::$(head -c 3500 "$RUNNER_TEMP/summary.txt" | tr '
-' '|')"
+          echo "::error title=Gradle fallo::$(head -c 3500 "$RUNNER_TEMP/summary.txt" | tr '[:space:]' ' ')"
           cat "$RUNNER_TEMP/summary.txt" >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Preparar APK
