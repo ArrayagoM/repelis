@@ -1,11 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Coffee, Heart, ArrowSquareOut } from '@phosphor-icons/react'
 import CafecitoButton from '../CafecitoButton'
+import DonateGoal from '../DonateGoal'
+import { useDonations, isSupporter, markSupporter, unmarkSupporter } from '../../lib/donations'
+import { showToast } from '../../lib/toast'
 
 // 💡 Cambiá estos enlaces cuando crees tus cuentas reales.
 // Cafecito: https://cafecito.app/ → registrate y obtené tu URL
 // MercadoPago: cargá un Link de Pago en https://www.mercadopago.com.ar/herramientas/link
-const DONATE_OPTIONS = [
+export const DONATE_OPTIONS = [
   {
     id: 'cafecito',
     label: 'Cafecito',
@@ -27,6 +30,15 @@ const DONATE_OPTIONS = [
 ]
 
 export default function DonateModal({ open, onClose }) {
+  const donations = useDonations()
+  const supporter = isSupporter(donations)
+
+  const alreadyDonated = () => {
+    markSupporter()
+    showToast({ icon: '💛', title: '¡Gracias por apoyar Life High!', text: 'Te dejamos la insignia Supporter y no te pedimos más.', ttl: 7000 })
+    onClose()
+  }
+
   return (
     <AnimatePresence>
       {open && (
@@ -64,6 +76,9 @@ export default function DonateModal({ open, onClose }) {
               </p>
             </div>
 
+            {/* Meta del mes + en qué se gasta (solo si hay meta cargada) */}
+            <DonateGoal />
+
             {/* Botón oficial de Cafecito al frente */}
             <div className="flex justify-center pt-5 pb-2">
               <CafecitoButton />
@@ -100,7 +115,18 @@ export default function DonateModal({ open, onClose }) {
               })}
             </div>
 
-            <div className="px-5 pb-5 pt-2">
+            <div className="px-5 pb-5 pt-2 space-y-3">
+              {supporter ? (
+                <p className="text-center text-xs text-gold">
+                  💛 Sos Supporter. ¡Gracias!{' '}
+                  <button onClick={unmarkSupporter} className="text-muted/60 underline underline-offset-2 hover:text-chalk">quitar</button>
+                </p>
+              ) : (
+                <button onClick={alreadyDonated}
+                  className="w-full py-2.5 rounded-full border border-gold/30 text-gold text-sm font-semibold hover:bg-gold/10 transition-colors">
+                  Ya doné ❤ — no pedirme más
+                </button>
+              )}
               <p className="text-muted/40 text-[10px] text-center font-mono leading-relaxed">
                 100% del aporte va al desarrollador. Sin fees ocultos.
               </p>

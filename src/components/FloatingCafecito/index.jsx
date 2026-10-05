@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from '@phosphor-icons/react'
 import CafecitoButton from '../CafecitoButton'
+import { useDonations, isSupporter } from '../../lib/donations'
 
 const DISMISS_KEY = 'repelis:cafecitoDismiss:v1'
 const DISMISS_TTL_MS = 24 * 60 * 60 * 1000   // 24 horas
@@ -18,6 +19,7 @@ const DISMISS_TTL_MS = 24 * 60 * 60 * 1000   // 24 horas
  */
 export default function FloatingCafecito() {
   const isPlayerOpen = useSelector((s) => s.player.isOpen)
+  const supporter = isSupporter(useDonations())
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -38,7 +40,8 @@ export default function FloatingCafecito() {
     setVisible(false)
   }
 
-  if (isPlayerOpen) return null
+  // Quien ya apoyó no ve más pedidos
+  if (isPlayerOpen || supporter) return null
 
   return (
     <AnimatePresence>

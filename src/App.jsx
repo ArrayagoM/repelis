@@ -19,6 +19,8 @@ import ToastHost    from './components/ToastHost'
 import ReminderWatcher from './components/ReminderWatcher'
 import { NewEpisodesWatcher } from './components/NewEpisodes'
 import { AchievementWatcher } from './components/Achievements'
+import DonatePrompt from './components/DonatePrompt'
+import { SupporterWatcher } from './components/Supporter'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -73,6 +75,8 @@ export default function App() {
       <ReminderWatcher />
       <NewEpisodesWatcher />
       <AchievementWatcher />
+      <SupporterWatcher />
+      <DonatePrompt />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />

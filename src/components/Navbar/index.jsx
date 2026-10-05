@@ -8,6 +8,7 @@ import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
 import { StreakChip } from '../Achievements'
+import { SupporterBadge } from '../Supporter'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -247,6 +248,7 @@ export default function Navbar({ onDonateClick }) {
             </Link>
 
             <StreakChip />
+            <SupporterBadge className="hidden lg:flex" />
 
             <Link to="/mi-lista"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
