@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { BookmarkSimple } from '@phosphor-icons/react'
 import { ContinueRow, MyListRow, RemindersRow } from '../../components/MyLibrary'
+import { AchievementsPanel } from '../../components/Achievements'
 import { useLibrary, continueWatching } from '../../lib/library'
 import { useSEO } from '../../lib/useSEO'
 
@@ -41,6 +42,7 @@ export default function MiLista() {
             </Link>
           </div>
         )}
+        <AchievementsPanel />
       </div>
     </motion.main>
   )

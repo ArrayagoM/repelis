@@ -7,6 +7,7 @@ import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
+import { StreakChip } from '../Achievements'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -244,6 +245,8 @@ export default function Navbar({ onDonateClick }) {
               title="Mundial 2026 en vivo">
               <SoccerBall size={14} weight="fill" />
             </Link>
+
+            <StreakChip />
 
             <Link to="/mi-lista"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
