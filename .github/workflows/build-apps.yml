@@ -77,6 +77,8 @@ jobs:
             echo "$h" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-license" > /dev/null
           done
           echo "84831b9409646a918e30573bab4c9c91346d8abd" | sudo tee -a "$ANDROID_HOME/licenses/android-sdk-preview-license" > /dev/null
+          # Licencias oficiales (los hashes cambian con cada versión de la licencia)
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
           sudo chmod a+rwx "$ANDROID_HOME"
           for d in licenses platforms build-tools ndk cmake platform-tools; do
             sudo mkdir -p "$ANDROID_HOME/$d"

@@ -56,7 +56,7 @@ export const dismissInstallBanner = () => safeSet(DISMISS_KEY, String(Date.now()
 
 /** ¿Corresponde mostrar el aviso flotante? Solo celulares/tablets que todavía no tienen la app. */
 export const shouldShowBanner = ({ platform, standalone, installed, dismissed }) =>
-  (platform === 'android' || platform === 'ios') && !standalone && !installed && !dismissed
+  (platform === 'android' || platform === 'ios' || platform === 'tv') && !standalone && !installed && !dismissed
 
 // ── Instalación nativa (Android/Chrome) ──
 let deferredPrompt = null

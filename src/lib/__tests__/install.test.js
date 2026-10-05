@@ -27,7 +27,7 @@ describe('install', () => {
     expect(shouldShowBanner({ ...base, platform: 'ios' })).toBe(true)
     expect(shouldShowBanner({ ...base, platform: 'android' })).toBe(true)
     expect(shouldShowBanner({ ...base, platform: 'windows' })).toBe(false)
-    expect(shouldShowBanner({ ...base, platform: 'tv' })).toBe(false)
+    expect(shouldShowBanner({ ...base, platform: 'tv' })).toBe(true)
     expect(shouldShowBanner({ ...base, platform: 'ios', standalone: true })).toBe(false)
     expect(shouldShowBanner({ ...base, platform: 'ios', installed: true })).toBe(false)
     expect(shouldShowBanner({ ...base, platform: 'ios', dismissed: true })).toBe(false)

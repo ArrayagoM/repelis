@@ -6,6 +6,8 @@ export const RELEASE_BASE = `${REPO}/releases/download/app-latest`
 export const LEGACY_RELEASE_BASE = `${REPO}/releases/download/apk-latest`
 export const RELEASES_PAGE = `${REPO}/releases`
 export const WEB_URL = 'https://repelis.vercel.app'
+// Links cortos (redirigen a GitHub, ver vercel.json): se pueden tipear con el control remoto en la app Downloader.
+export const TV_SHORT_LINK = 'repelis.vercel.app/tv.apk'
 
 // platform = grupo para detectar el dispositivo del visitante.
 export const DOWNLOADS = [
@@ -59,10 +61,11 @@ export const DOWNLOADS = [
   },
 ]
 
-export const detectPlatform = (ua = '', maxTouchPoints = 0) => {
+// maxTouchPoints: null = desconocido. Los proyectores y TV box Android reportan 0 (sin pantalla táctil).
+export const detectPlatform = (ua = '', maxTouchPoints = null) => {
   const s = String(ua)
   if (/android/i.test(s) && /(tv|aft[a-z]*|bravia|mibox|shield|crkey|philips|hisense|vizio)/i.test(s) && !/mobile/i.test(s)) return 'tv'
-  if (/android/i.test(s)) return 'android'
+  if (/android/i.test(s)) return maxTouchPoints === 0 ? 'tv' : 'android'
   if (/(iphone|ipad|ipod)/i.test(s)) return 'ios'
   // iPadOS 13+ se presenta como Mac con pantalla táctil
   if (/macintosh|mac os x/i.test(s) && maxTouchPoints > 1) return 'ios'

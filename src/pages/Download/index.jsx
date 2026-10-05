@@ -6,7 +6,7 @@ import {
   DownloadSimple, Globe, CheckCircle, Warning, GithubLogo, Lightning, DeviceMobile,
 } from '@phosphor-icons/react'
 import {
-  DOWNLOADS, RELEASES_PAGE, WEB_URL, recommendedFor,
+  DOWNLOADS, RELEASES_PAGE, WEB_URL, TV_SHORT_LINK, recommendedFor,
 } from '../../lib/downloads'
 import { useSEO } from '../../lib/useSEO'
 import { currentPlatform, isStandalone, requestInstall, subscribeInstall } from '../../lib/install'
@@ -31,14 +31,14 @@ const GUIDES = [
   { id: 'smarttv', label: 'Samsung / LG', Icon: Globe },
 ]
 
-export default function Download() {
+export default function Download({ forcePlatform } = {}) {
   useSEO({
     title: 'Descargar Life High · Android, iPhone, TV, Windows y Mac',
     description: 'Instalá Life High en tu celular, tablet, iPad, Android TV, proyector, Windows, Mac o Linux. Gratis y sin cuentas.',
     keywords: 'descargar life high, life high apk, life high android tv, life high ios, life high windows, life high mac, peliculas app',
   })
 
-  const detected = useMemo(() => currentPlatform(), [])
+  const detected = useMemo(() => forcePlatform || currentPlatform(), [forcePlatform])
   const recommended = recommendedFor(detected)
   const [guide, setGuide] = useState(GUIDES.some((g) => g.id === detected) ? detected : 'android')
   const [, refresh] = useState(0)
@@ -80,6 +80,36 @@ export default function Download() {
                 Son 3 toques y tarda 20 segundos. No necesitás la App Store ni bajar nada raro.
               </p>
               <div className="max-w-md mx-auto mt-6 text-left"><IOSSteps /></div>
+            </>
+          ) : detected === 'tv' ? (
+            <>
+              <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-chalk tracking-tight">Instalá Life High en tu TV o proyector</h1>
+              <p className="text-muted text-base mt-3 max-w-lg mx-auto">Se maneja con el control remoto. Elegí la forma que te resulte más cómoda.</p>
+              <div className="mt-8 grid md:grid-cols-2 gap-4 text-left">
+                <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40">
+                  <p className="text-emerald-300 text-xs font-bold uppercase tracking-widest mb-3">La forma más fácil</p>
+                  <ol className="space-y-3 text-chalk/90 text-sm">
+                    <li><strong className="text-chalk">1.</strong> En la tienda de tu TV instalá la app gratuita <strong className="text-gold">Downloader</strong>.</li>
+                    <li><strong className="text-chalk">2.</strong> Abrila y escribí exactamente esta dirección:
+                      <span className="block mt-2 px-3 py-3 rounded-xl bg-void border border-gold/40 text-gold font-mono text-lg sm:text-xl text-center select-all">{TV_SHORT_LINK}</span>
+                    </li>
+                    <li><strong className="text-chalk">3.</strong> Cuando termine de descargar, elegí <strong className="text-emerald-300">Instalar</strong>.</li>
+                  </ol>
+                </div>
+                <div className="p-5 rounded-2xl bg-surface border border-white/10 flex flex-col">
+                  <p className="text-muted text-xs font-bold uppercase tracking-widest mb-3">Desde este navegador</p>
+                  <a
+                    href={recommended?.url}
+                    autoFocus
+                    className="inline-flex items-center justify-center gap-3 px-6 py-5 rounded-2xl bg-emerald-500 text-void font-extrabold text-xl focus:outline-none focus:ring-4 focus:ring-gold"
+                  >
+                    <DownloadSimple size={26} weight="bold" /> Descargar para TV
+                  </a>
+                  <p className="text-muted text-sm mt-4 leading-relaxed">
+                    Al terminar, abrí el archivo <span className="font-mono text-chalk/80">lifehigh-android-tv.apk</span> desde el administrador de archivos del TV y elegí Instalar. Si te pide permiso para “fuentes desconocidas”, activalo.
+                  </p>
+                </div>
+              </div>
             </>
           ) : detected === 'android' ? (
             <>
@@ -267,7 +297,7 @@ function GuideBody({ id }) {
     },
     tv: {
       steps: [
-        ['Con Downloader (lo más fácil)', 'Instalá la app gratuita “Downloader” desde la tienda de tu Android TV / Fire TV, abrila y escribí repelis.vercel.app/descargar. Elegí “Android TV”.'],
+        ['Con Downloader (lo más fácil)', `Instalá la app gratuita “Downloader” desde la tienda de tu Android TV / Fire TV, abrila y escribí ${TV_SHORT_LINK} y confirmá la descarga.`],
         ['O con pendrive', 'Bajá lifehigh-android-tv.apk en tu PC, copialo a un pendrive y enchufalo al TV o proyector.'],
         ['Abrí el archivo', 'Desde un explorador de archivos del TV (por ejemplo X-plore) tocá el .apk → Instalar. Habilitá “fuentes desconocidas” si lo pide.'],
         ['A ver', 'El ícono aparece junto a tus otras apps. Se maneja con el control remoto.'],

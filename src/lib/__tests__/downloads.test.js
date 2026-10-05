@@ -33,6 +33,10 @@ describe('downloads', () => {
     it('Android celular', () => {
       expect(detectPlatform('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36')).toBe('android')
     })
+    it('proyector o TV box Android sin pantalla táctil', () => {
+      expect(detectPlatform('Mozilla/5.0 (Linux; Android 9; Projector) AppleWebKit/537.36 Chrome/120 Safari/537.36', 0)).toBe('tv')
+      expect(detectPlatform('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36', 5)).toBe('android')
+    })
     it('Android TV / Fire TV', () => {
       expect(detectPlatform('Mozilla/5.0 (Linux; Android 11; AFTMM Build/RS) AppleWebKit/537.36 Chrome/114 Safari/537.36')).toBe('tv')
       expect(detectPlatform('Mozilla/5.0 (Linux; Android 12; BRAVIA 4K GB) AppleWebKit/537.36 Chrome/120 Safari/537.36')).toBe('tv')

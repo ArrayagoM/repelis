@@ -125,6 +125,7 @@ export default function App() {
             {/* APK Android */}
             <Route path="/descargar" element={<Download />} />
             <Route path="/apk"       element={<Download />} />
+            <Route path="/tv"        element={<Download forcePlatform="tv" />} />
 
             {/* Movies clásicos */}
             <Route path="/populares"      element={<Catalog type="populares" />} />

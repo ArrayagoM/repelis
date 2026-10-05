@@ -1,5 +1,25 @@
 {
+  "redirects": [
+    {
+      "source": "/tv.apk",
+      "destination": "https://github.com/ArrayagoM/repelis/releases/download/app-latest/lifehigh-android-tv.apk",
+      "permanent": false
+    },
+    {
+      "source": "/android.apk",
+      "destination": "https://github.com/ArrayagoM/repelis/releases/download/app-latest/lifehigh-android.apk",
+      "permanent": false
+    },
+    {
+      "source": "/viejo.apk",
+      "destination": "https://github.com/ArrayagoM/repelis/releases/download/apk-latest/lifehigh.apk",
+      "permanent": false
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
