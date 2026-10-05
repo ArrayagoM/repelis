@@ -23,12 +23,14 @@ export default function Home() {
         <View style={styles.rows}>
           <Top10Row title="Top 10 películas hoy" fetcher={movies.trendingDay} mediaType="movie" />
           <Row title="En cartelera" badge="Ahora" fetcher={movies.nowPlaying} mediaType="movie" />
-          <Row title="Tendencias" badge="Esta semana" fetcher={movies.trending} mediaType="movie" />
-          <Row title="Más populares" fetcher={movies.popular} mediaType="movie" />
+          <Row title="Tendencias" badge="Esta semana" fetcher={movies.trending} mediaType="movie" onlyReleased />
+          <Row title="Más populares" fetcher={movies.popular} mediaType="movie" onlyReleased />
+          <Row title="Próximos estrenos" badge="Muy pronto" fetcher={movies.upcoming} mediaType="movie" sortByDate />
           <Row title="Mejor valoradas" badge="Top" fetcher={movies.topRated} mediaType="movie" />
           <Top10Row title="Top 10 series hoy" badgeColor={colors.blue} fetcher={tv.trendingDay} mediaType="tv" />
-          <Row title="Series en tendencia" badge="TV" badgeColor={colors.blue} fetcher={tv.trending} mediaType="tv" />
-          <Row title="Series populares" fetcher={tv.popular} mediaType="tv" />
+          <Row title="Series que se vienen" badge="Próximamente" badgeColor={colors.blue} fetcher={tv.upcoming} mediaType="tv" sortByDate />
+          <Row title="Series en tendencia" badge="TV" badgeColor={colors.blue} fetcher={tv.trending} mediaType="tv" onlyReleased />
+          <Row title="Series populares" fetcher={tv.popular} mediaType="tv" onlyReleased />
           <Row title="Al aire ahora" badge="En vivo" badgeColor={colors.blue} fetcher={tv.airingToday} mediaType="tv" />
           <Row title="Series más recomendables" badge="Imperdibles" badgeColor={colors.blue} fetcher={tv.mostRecommended} mediaType="tv" />
           <Row title="Anime" badge="Anime" badgeColor={colors.purple} fetcher={tv.anime} mediaType="tv" />

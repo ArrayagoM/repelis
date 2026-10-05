@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getReleaseStatus, isUpcoming, isReleased, daysUntilRelease } from '../releaseStatus'
+import { getReleaseStatus, isUpcoming, isReleased, isOut, daysUntilRelease } from '../releaseStatus'
 
 const daysFromNow = (n) => {
   const d = new Date(Date.now() + n * 86400000)
@@ -7,6 +7,13 @@ const daysFromNow = (n) => {
 }
 
 describe('releaseStatus', () => {
+  it('isOut: solo lo ya estrenado con fecha confirmada entra a los rankings', () => {
+    expect(isOut({ release_date: '2010-07-16' })).toBe(true)
+    expect(isOut({ first_air_date: '2008-01-20' })).toBe(true)
+    expect(isOut({ release_date: daysFromNow(60) })).toBe(false) // Avengers: Doomsday y similares
+    expect(isOut({})).toBe(false)
+  })
+
   it('película pasada = released', () => {
     expect(getReleaseStatus({ release_date: '2010-07-16' })).toBe('released')
     expect(isReleased({ release_date: '2010-07-16' })).toBe(true)

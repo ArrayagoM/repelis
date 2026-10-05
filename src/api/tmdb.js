@@ -61,7 +61,15 @@ export const getTrendingDay   = (page = 1) => api.get('/trending/movie/day',   {
 export const getPopular       = (page = 1) => api.get('/movie/popular',        { params: { page } })
 export const getTopRated      = (page = 1) => api.get('/movie/top_rated',      { params: { page } })
 export const getNowPlaying    = (page = 1) => api.get('/movie/now_playing',    { params: { page } })
-export const getUpcoming      = (page = 1) => api.get('/movie/upcoming',       { params: { page } })
+// Próximos estrenos REALES: fecha de estreno futura (de mañana a +120 días), los más esperados primero.
+// (El endpoint /movie/upcoming de TMDB devuelve películas que ya salieron y se pierde estrenos grandes.)
+const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
+export const getUpcoming      = (page = 1) => api.get('/discover/movie', {
+  params: { 'primary_release_date.gte': isoDay(1), 'primary_release_date.lte': isoDay(120), sort_by: 'popularity.desc', page },
+})
+export const getUpcomingTV    = (page = 1) => api.get('/discover/tv', {
+  params: { 'first_air_date.gte': isoDay(1), 'first_air_date.lte': isoDay(120), sort_by: 'popularity.desc', page },
+})
 export const getMovieDetail   = (id)       => api.get('/movie/' + id)
 export const getMovieCredits  = (id)       => api.get('/movie/' + id + '/credits')
 export const getMovieVideos   = (id)       => api.get('/movie/' + id + '/videos', { params: { language: 'en-US' } })

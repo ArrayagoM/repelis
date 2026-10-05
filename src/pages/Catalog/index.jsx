@@ -17,19 +17,20 @@ import {
 import MovieCard, { MovieCardSkeleton } from '../../components/MovieCard'
 import { useLanguageFilter, useCurrentLanguageMode } from '../../lib/useLanguageFilter'
 import { MODE_LABELS } from '../../lib/languageMode'
+import { isOut } from '../../lib/releaseStatus'
 import { useSEO } from '../../lib/useSEO'
 
 // ─── Categorías "clásicas" con su propio slot en el state ────────────────
 const LEGACY_CONFIG = {
-  populares:       { title: 'Más Populares',         badge: 'Popular',       color: 'gold',   key: 'popular',       fetcher: fetchPopular,       mediaType: 'movie' },
+  populares:       { title: 'Más Populares',         badge: 'Popular',       color: 'gold',   key: 'popular',       fetcher: fetchPopular,       mediaType: 'movie', onlyReleased: true },
   'top-valoradas': { title: 'Top Valoradas',         badge: 'Top IMDb',      color: 'gold',   key: 'topRated',      fetcher: fetchTopRated,      mediaType: 'movie' },
   estrenos:        { title: 'En Cartelera',          badge: 'Ahora',         color: 'green',  key: 'nowPlaying',    fetcher: fetchNowPlaying,    mediaType: 'movie' },
   proximos:        { title: 'Próximos Estrenos',     badge: 'Próximamente',  color: 'blue',   key: 'upcoming',      fetcher: fetchUpcoming,      mediaType: 'movie' },
-  tendencias:      { title: 'Tendencias',            badge: 'Trending',      color: 'red',    key: 'trending',      fetcher: fetchTrending,      mediaType: 'movie' },
-  'tendencias-hoy':{ title: 'Tendencias de Hoy',     badge: 'Hoy',           color: 'red',    key: 'trending',      fetcher: fetchTrendingDay,   mediaType: 'movie' },
+  tendencias:      { title: 'Tendencias',            badge: 'Trending',      color: 'red',    key: 'trending',      fetcher: fetchTrending,      mediaType: 'movie', onlyReleased: true },
+  'tendencias-hoy':{ title: 'Tendencias de Hoy',     badge: 'Hoy',           color: 'red',    key: 'trending',      fetcher: fetchTrendingDay,   mediaType: 'movie', onlyReleased: true },
   clasicos:        { title: 'Clásicos del Cine',     badge: 'Clásico',       color: 'amber',  key: 'classics',      fetcher: fetchClassics,      mediaType: 'movie' },
-  series:          { title: 'Series Populares',      badge: 'Series',        color: 'blue',   key: 'popularTV',     fetcher: fetchPopularTV,     mediaType: 'tv' },
-  'series-trending':{title: 'Series en Tendencia',   badge: 'Trending',      color: 'red',    key: 'trendingTV',    fetcher: fetchTrendingTV,    mediaType: 'tv' },
+  series:          { title: 'Series Populares',      badge: 'Series',        color: 'blue',   key: 'popularTV',     fetcher: fetchPopularTV,     mediaType: 'tv', onlyReleased: true },
+  'series-trending':{title: 'Series en Tendencia',   badge: 'Trending',      color: 'red',    key: 'trendingTV',    fetcher: fetchTrendingTV,    mediaType: 'tv', onlyReleased: true },
   'series-top':    { title: 'Series Mejor Valoradas',badge: 'Top Series',    color: 'gold',   key: 'topRatedTV',    fetcher: fetchTopRatedTV,    mediaType: 'tv' },
   'en-emision':    { title: 'En Emisión Hoy',        badge: 'En Vivo',       color: 'green',  key: 'airingTodayTV', fetcher: fetchAiringTodayTV, mediaType: 'tv' },
   'en-antena':     { title: 'En Antena',             badge: 'En Antena',     color: 'blue',   key: 'onTheAirTV',    fetcher: fetchOnTheAirTV,    mediaType: 'tv' },
@@ -42,6 +43,7 @@ const LEGACY_CONFIG = {
 // shape: [tmdbFetcher, mediaType, title, badge, color]
 const DYNAMIC_CONFIG = {
   // GÉNEROS - PELÍCULAS
+  'series-proximas':     [TMDB.getUpcomingTV,  'tv',    'Series que se vienen', 'Próximamente', 'blue'],
   'genero-accion':       [TMDB.getAction,      'movie', 'Acción',           'Acción',    'red'],
   'genero-aventura':     [TMDB.getAdventure,   'movie', 'Aventura',         'Aventura',  'amber'],
   'genero-animacion':    [TMDB.getAnimation,   'movie', 'Animación',        'Animación', 'purple'],
@@ -200,7 +202,9 @@ export default function Catalog({ type }) {
   }
 
   const badgeClass = BADGE_COLORS[config.color] || BADGE_COLORS.gold
-  const filteredResults = useLanguageFilter(data.results)
+  const languageResults = useLanguageFilter(data.results)
+  // Rankings (tendencias / populares): no mostramos estrenos futuros
+  const filteredResults = config.onlyReleased ? languageResults.filter(isOut) : languageResults
   const langMode = useCurrentLanguageMode()
 
   useSEO({

@@ -12,11 +12,15 @@ interface Props {
   badgeColor?: string
   fetcher: ListFetcher
   mediaType?: MediaType
+  /** rankings: oculta estrenos futuros */
+  onlyReleased?: boolean
+  /** próximos estrenos: el más cercano primero */
+  sortByDate?: boolean
 }
 
-export function Row({ title, badge, badgeColor = colors.gold, fetcher, mediaType }: Props) {
+export function Row({ title, badge, badgeColor = colors.gold, fetcher, mediaType, onlyReleased, sortByDate }: Props) {
   const { gutter, rowPosterWidth } = useLayout()
-  const { items, loading, error, reload } = useRow(fetcher)
+  const { items, loading, error, reload } = useRow(fetcher, { onlyReleased, sortByDate })
 
   if (!loading && !error && items.length === 0) return null
 

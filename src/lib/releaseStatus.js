@@ -26,6 +26,10 @@ export const getReleaseStatus = (item) => {
 export const isUpcoming = (item) => getReleaseStatus(item) === 'upcoming'
 export const isReleased = (item) => getReleaseStatus(item) !== 'upcoming'
 
+// Para rankings ("Top 10", "Tendencias"): solo lo que YA salió con fecha confirmada.
+// Un estreno futuro puede aparecer en las tendencias de TMDB por las visitas, pero no se puede ver.
+export const isOut = (item) => getReleaseStatus(item) === 'released'
+
 // Días hasta el estreno (para mostrar "en 12 días"). null si ya salió.
 export const daysUntilRelease = (item) => {
   const ts = parseDate(item?.release_date || item?.first_air_date)

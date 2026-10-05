@@ -3,6 +3,7 @@ import type { ListFetcher } from '@/api/tmdb'
 import type { MediaItem } from '@/api/types'
 import { useLanguageMode } from '@/lib/LanguageProvider'
 import { filterResultsByMode } from '@/lib/languageMode'
+import { byReleaseDate, isOut } from '@/lib/release'
 
 interface AsyncState<T> {
   data: T | null
@@ -41,14 +42,21 @@ export function useTop(fetcher: ListFetcher, limit = 10) {
     const [a, b] = await Promise.all([fetcher(1), fetcher(2).catch(() => null)])
     return [...a.results, ...(b?.results ?? [])]
   }, [fetcher])
-  const items = useMemo<MediaItem[]>(() => (data ? filterResultsByMode(data, mode).slice(0, limit) : []), [data, mode, limit])
+  const items = useMemo<MediaItem[]>(() => (data ? filterResultsByMode(data.filter((m) => isOut(m)), mode).slice(0, limit) : []), [data, mode, limit])
   return { items, loading, error, reload }
 }
 
 /** Fila del catálogo con el filtro de idioma activo aplicado (primera página). */
-export function useRow(fetcher: ListFetcher) {
+export function useRow(fetcher: ListFetcher, opts: { onlyReleased?: boolean; sortByDate?: boolean } = {}) {
+  const { onlyReleased = false, sortByDate = false } = opts
   const { mode } = useLanguageMode()
   const { data, loading, error, reload } = useAsync(() => fetcher(1), [fetcher])
-  const items = useMemo<MediaItem[]>(() => (data ? filterResultsByMode(data.results, mode) : []), [data, mode])
+  const items = useMemo<MediaItem[]>(() => {
+    if (!data) return []
+    let list = filterResultsByMode(data.results, mode)
+    if (onlyReleased) list = list.filter((m) => isOut(m))
+    if (sortByDate) list = [...list].sort(byReleaseDate)
+    return list
+  }, [data, mode, onlyReleased, sortByDate])
   return { items, loading, error, reload }
 }

@@ -139,6 +139,7 @@ export default function App() {
             {/* Series clásicas */}
             <Route path="/series"           element={<Catalog type="series" />} />
             <Route path="/series-trending"  element={<Catalog type="series-trending" />} />
+            <Route path="/series-proximas"  element={<Catalog type="series-proximas" />} />
             <Route path="/series-top"       element={<Catalog type="series-top" />} />
             <Route path="/en-emision"       element={<Catalog type="en-emision" />} />
             <Route path="/en-antena"        element={<Catalog type="en-antena" />} />

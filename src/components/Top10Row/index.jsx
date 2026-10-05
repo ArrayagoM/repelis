@@ -1,9 +1,10 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CaretRight, Star } from '@phosphor-icons/react'
 import { IMG_W342 } from '../../api/tmdb'
 import { useLanguageFilter } from '../../lib/useLanguageFilter'
+import { isOut } from '../../lib/releaseStatus'
 
 const badgeStyles = {
   blue: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
@@ -16,7 +17,8 @@ const badgeStyles = {
 export default function Top10Row({ title, badge = 'Top 10', badgeColor = 'gold', movies = [], loading = false, mediaType = 'movie' }) {
   const trackRef = useRef(null)
   const navigate = useNavigate()
-  const top = useLanguageFilter(movies).slice(0, 10)
+  const released = useMemo(() => movies.filter(isOut), [movies])
+  const top = useLanguageFilter(released).slice(0, 10)
 
   if (!loading && top.length === 0 && movies.length > 0) return null
 

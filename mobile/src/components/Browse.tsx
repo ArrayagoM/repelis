@@ -9,18 +9,20 @@ import { useAsync } from '@/hooks/useAsync'
 import { useLayout } from '@/lib/layout'
 import { useLanguageMode } from '@/lib/LanguageProvider'
 import { filterResultsByMode, getDiscoverParamsForMode } from '@/lib/languageMode'
+import { isOut } from '@/lib/release'
 import { colors, radius } from '@/theme'
 
 interface Category {
   key: string
   label: string
   fetcher: ListFetcher
+  onlyReleased?: boolean
 }
 
 const CATEGORIES: Record<MediaType, Category[]> = {
   movie: [
-    { key: 'popular', label: 'Populares', fetcher: movies.popular },
-    { key: 'trending', label: 'Tendencias', fetcher: movies.trending },
+    { key: 'popular', label: 'Populares', fetcher: movies.popular, onlyReleased: true },
+    { key: 'trending', label: 'Tendencias', fetcher: movies.trending, onlyReleased: true },
     { key: 'topRated', label: 'Mejor valoradas', fetcher: movies.topRated },
     { key: 'nowPlaying', label: 'En cartelera', fetcher: movies.nowPlaying },
     { key: 'upcoming', label: 'Próximos', fetcher: movies.upcoming },
@@ -28,8 +30,9 @@ const CATEGORIES: Record<MediaType, Category[]> = {
     { key: 'animeMovies', label: 'Anime', fetcher: movies.animeMovies },
   ],
   tv: [
-    { key: 'popular', label: 'Populares', fetcher: tv.popular },
-    { key: 'trending', label: 'Tendencias', fetcher: tv.trending },
+    { key: 'popular', label: 'Populares', fetcher: tv.popular, onlyReleased: true },
+    { key: 'trending', label: 'Tendencias', fetcher: tv.trending, onlyReleased: true },
+    { key: 'upcoming', label: 'Próximamente', fetcher: tv.upcoming },
     { key: 'topRated', label: 'Mejor valoradas', fetcher: tv.topRated },
     { key: 'airingToday', label: 'Al aire hoy', fetcher: tv.airingToday },
     { key: 'anime', label: 'Anime', fetcher: tv.anime },
@@ -83,7 +86,9 @@ export function Browse({ type, title }: { type: MediaType; title: string }) {
         pageRef.current = next
         totalPagesRef.current = Math.min(res.total_pages, 500)
         // los discover ya vienen filtrados por el servidor; las categorías se filtran en cliente
-        const fresh = selection.kind === 'genre' ? res.results : filterResultsByMode(res.results, mode)
+        const onlyReleased = selection.kind === 'cat' && !!CATEGORIES[type].find((c) => c.key === selection.key)?.onlyReleased
+        let fresh = selection.kind === 'genre' ? res.results : filterResultsByMode(res.results, mode)
+        if (onlyReleased) fresh = fresh.filter((m) => isOut(m))
         added += fresh.length
         setItems((prev) => {
           const seen = new Set(prev.map((m) => m.id))

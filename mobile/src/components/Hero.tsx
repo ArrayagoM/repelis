@@ -9,13 +9,14 @@ import { resolveType } from '@/components/PosterCard'
 import { backdrop } from '@/api/tmdb'
 import { titleOf, yearOf, type MediaItem } from '@/api/types'
 import { useLayout } from '@/lib/layout'
+import { isOut } from '@/lib/release'
 import { colors, radius } from '@/theme'
 
 const ROTATE_MS = 7000
 
 export function Hero({ items }: { items: MediaItem[] }) {
   const { width, isTV, isTablet, gutter } = useLayout()
-  const slides = useMemo(() => items.filter((m) => m.backdrop_path).slice(0, 6), [items])
+  const slides = useMemo(() => items.filter((m) => m.backdrop_path && isOut(m)).slice(0, 6), [items])
   const [index, setIndex] = useState(0)
 
   useEffect(() => {

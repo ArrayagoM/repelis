@@ -71,13 +71,25 @@ export type ListFetcher = (page: number, extra?: Params) => Promise<Paged<MediaI
 const list = (path: string, base: Params = {}): ListFetcher => (page, extra = {}) =>
   get<Paged<MediaItem>>(path, { ...base, ...extra, page })
 
+// Las fechas se calculan al consultar (no al cargar el módulo): una app abierta varios días no se desfasa.
+const isoDay = (offsetDays: number) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
+const futureWindow = (kind: 'movie' | 'tv'): ListFetcher => (page, extra = {}) =>
+  get<Paged<MediaItem>>(kind === 'movie' ? '/discover/movie' : '/discover/tv', {
+    [kind === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte']: isoDay(1),
+    [kind === 'movie' ? 'primary_release_date.lte' : 'first_air_date.lte']: isoDay(120),
+    sort_by: 'popularity.desc',
+    ...extra,
+    page,
+  })
+
 export const movies = {
   trending: list('/trending/movie/week'),
   trendingDay: list('/trending/movie/day'),
   popular: list('/movie/popular'),
   topRated: list('/movie/top_rated'),
   nowPlaying: list('/movie/now_playing'),
-  upcoming: list('/movie/upcoming'),
+  // Estrenos reales a futuro (el endpoint /movie/upcoming de TMDB devuelve películas que ya salieron)
+  upcoming: futureWindow('movie'),
   classics: list('/discover/movie', {
     'vote_average.gte': 7.5,
     'vote_count.gte': 1000,
@@ -98,6 +110,7 @@ export const movies = {
 export const tv = {
   trending: list('/trending/tv/week'),
   trendingDay: list('/trending/tv/day'),
+  upcoming: futureWindow('tv'),
   // Nota alta con muchos votos (evita series con 3 votos en 10/10)
   mostRecommended: list('/discover/tv', { sort_by: 'vote_average.desc', 'vote_count.gte': 1500 }),
   popular: list('/tv/popular'),
