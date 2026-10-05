@@ -8,6 +8,7 @@ import Top10Row from '../../components/Top10Row'
 import { ContinueRow, MyListRow } from '../../components/MyLibrary'
 import { NewEpisodesRow } from '../../components/NewEpisodes'
 import ForYouRow from '../../components/ForYouRow'
+import { CinemaBanner } from '../../components/CinemaTickets'
 import { useLibrary, continueWatching } from '../../lib/library'
 import {
   fetchTrending, fetchPopular, fetchTopRated, fetchNowPlaying, fetchUpcoming, fetchClassics, fetchAnimeMovies,
@@ -137,6 +138,8 @@ export default function Home() {
         {/* ── PELÍCULAS ── */}
         <MovieRow title="En Cartelera" badge="Ahora" movies={nowPlaying.results}
           loading={nowPlaying.loading && !nowPlaying.results.length} onViewAll={() => navigate('/estrenos')} />
+
+        <CinemaBanner />
 
         <MovieRow title="Tendencias" badge="Esta semana" onlyReleased movies={trending.results}
           loading={trending.loading && !trending.results.length} />

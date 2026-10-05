@@ -15,6 +15,7 @@ import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
+import CinemaTickets from '../../components/CinemaTickets'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
@@ -184,6 +185,9 @@ export default function MovieDetail() {
 
             {/* Plataformas legales donde está la peli */}
             <WatchProviders id={data.id} mediaType="movie" title={data.title} />
+
+            {/* En cartelera / preventa: ir al cine (entradas en sitios oficiales) */}
+            <CinemaTickets movie={data} />
 
             {/* Overview */}
             {data.overview && (
