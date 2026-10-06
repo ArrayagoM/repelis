@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from './auth'
 import { useMe } from './social'
-import { useRoom } from './rooms'
+import { useRoom, rooms } from './rooms'
+import { useVoice } from './voice'
 
 // La sala vive en la RAÍZ de la app (no en la página): así la presencia y, más adelante, la voz siguen activas
 // mientras mirás la película en la misma pestaña o navegás por el sitio. Se ve como una "llamada": barra flotante + cajón de chat opcional.
@@ -21,12 +22,14 @@ export function RoomProvider({ children }) {
   const [unread, setUnread] = useState(0)
   const ready = auth.status === 'in' && !!me.data?.profile
   const live = useRoom(code, ready && !!code)
+  const voice = useVoice(code, rooms.voiceToken)
 
   const enter = useCallback((c) => { setCode(c); write(c) }, [])
   const exit = useCallback(async () => {
+    voice.leave()
     if (code) await live.leave()
     setCode(null); write(null); setChatOpen(false); setUnread(0)
-  }, [code, live])
+  }, [code, live, voice])
 
   // Sin sesión no hay sala; si la sala terminó o te sacaron, se limpia solo al salir de la pantalla de error
   useEffect(() => { if (auth.status === 'out') { setCode(null); write(null) } }, [auth.status])
@@ -41,6 +44,14 @@ export function RoomProvider({ children }) {
     if (fresh) { seen.current = last; setUnread((u) => u + fresh) } else seen.current = Math.max(seen.current, last)
   }, [live.messages, chatOpen])
 
-  const value = useMemo(() => ({ code, live, enter, exit, chatOpen, setChatOpen, unread, ready }), [code, live, enter, exit, chatOpen, unread, ready])
+  // Personas de la sala con su estado de voz (hablando / silenciada / en la llamada)
+  const byHandle = useMemo(() => Object.fromEntries(Object.values(voice.peers).map((p) => [p.handle, p])), [voice.peers])
+  const members = useMemo(() => live.members.map((m) => {
+    const inVoice = m.me ? voice.status === 'on' : !!byHandle[m.handle]
+    const p = byHandle[m.handle]
+    return { ...m, inVoice, muted: inVoice && (m.me ? voice.muted : !!p?.muted), speaking: inVoice && (m.me ? voice.meSpeaking && !voice.muted : !!p?.speaking) }
+  }), [live.members, byHandle, voice.status, voice.muted, voice.meSpeaking])
+
+  const value = useMemo(() => ({ code, live, voice, members, enter, exit, chatOpen, setChatOpen, unread, ready }), [code, live, voice, members, enter, exit, chatOpen, unread, ready])
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

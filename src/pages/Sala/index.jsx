@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion } from 'framer-motion'
-import { Popcorn, Crown, Copy, Check, WhatsappLogo, SignOut, ChatCircleText, Clock, Play, X, Users, LockKey, ArrowLeft, MicrophoneSlash } from '@phosphor-icons/react'
+import { Popcorn, Crown, Copy, Check, WhatsappLogo, SignOut, ChatCircleText, Clock, Play, X, Users, LockKey, ArrowLeft, MicrophoneSlash, Microphone } from '@phosphor-icons/react'
 import { IMG_W342 } from '../../api/tmdb'
 import { rooms, roomErrorText } from '../../lib/rooms'
 import { EMOJIS, ROOM, extractCode } from '../../lib/roomRules'
@@ -13,6 +13,7 @@ import { openPlayer } from '../../store/slices/playerSlice'
 import { showToast } from '../../lib/toast'
 import { useSEO } from '../../lib/useSEO'
 import { Avatar } from '../../components/Community'
+import VoiceControls from '../../components/VoiceControls'
 import { phaseLabel, useCountdown } from '../../components/RoomBits'
 
 export default function Sala() {
@@ -94,6 +95,7 @@ function Tile({ m, canKick, onKick }) {
         {m.host && <Crown size={12} weight="fill" className="text-gold" aria-label="Anfitrión" />}
         {m.me && <span className="text-muted text-[10px]">vos</span>}
         {m.muted && <MicrophoneSlash size={12} className="text-red-300" aria-label="Micrófono apagado" />}
+        {m.inVoice && !m.muted && <Microphone size={12} className="text-emerald-300" aria-label="En la llamada" />}
       </span>
       {canKick && <button onClick={onKick} aria-label={`Sacar a @${m.handle}`} className="absolute top-1 right-1 w-6 h-6 rounded-full text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={12} /></button>}
     </li>
@@ -183,7 +185,7 @@ function RoomView({ code, base }) {
         <section aria-label="Personas en la sala">
           <h2 className="font-display font-bold text-sm text-chalk mb-3">En la sala</h2>
           <ul className="flex flex-wrap gap-3">
-            {live.members.map((m) => <Tile key={m.handle} m={m} canKick={room.isHost && !m.me && !closed} onKick={() => kick(m.handle)} />)}
+            {s.members.map((m) => <Tile key={m.handle} m={m} canKick={room.isHost && !m.me && !closed} onKick={() => kick(m.handle)} />)}
             {live.status !== 'in' && <li className="text-muted text-sm">Entrando…</li>}
           </ul>
         </section>
@@ -211,6 +213,7 @@ function RoomView({ code, base }) {
       {/* Barra de la sala (estilo llamada) */}
       <div className="fixed z-[130] left-1/2 -translate-x-1/2 bottom-4 max-w-[calc(100vw-1rem)]">
         <div className="flex items-center gap-1.5 px-2 py-2 rounded-full bg-card/95 backdrop-blur border border-white/10 shadow-2xl" role="toolbar" aria-label="Controles de la sala">
+          <VoiceControls size={40} />
           <div className="flex gap-0.5 px-1" role="group" aria-label="Reacciones">
             {EMOJIS.map((e) => <button key={e} onClick={() => !closed && live.react(e)} disabled={closed} aria-label={`Reaccionar ${e}`} className="w-9 h-9 rounded-full text-xl hover:scale-125 transition disabled:opacity-40">{e}</button>)}
           </div>

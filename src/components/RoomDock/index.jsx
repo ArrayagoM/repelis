@@ -6,6 +6,7 @@ import { useRoomSession } from '../../lib/roomSession'
 import { EMOJIS, ROOM } from '../../lib/roomRules'
 import { roomErrorText } from '../../lib/rooms'
 import { FloatingReactions, useCountdown } from '../RoomBits'
+import VoiceControls from '../VoiceControls'
 
 const timeOf = (ms) => new Date(ms).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 
@@ -103,6 +104,7 @@ export default function RoomDock() {
             {scheduled && <span className="text-gold text-xs font-mono tabular-nums">{countdown}</span>}
             <span className="hidden sm:inline-flex items-center gap-1 text-muted text-[11px]"><Users size={11} /> {count}</span>
           </Link>
+          <VoiceControls size={36} />
           <button onClick={() => setEmojis((v) => !v)} aria-label="Reacciones" aria-expanded={emojis} className="w-9 h-9 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center"><Smiley size={18} /></button>
           <button onClick={() => s.setChatOpen(!s.chatOpen)} aria-label={s.unread ? `Chat (${s.unread} sin leer)` : 'Chat'} aria-pressed={s.chatOpen} className="relative w-9 h-9 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">
             <ChatCircleText size={18} />

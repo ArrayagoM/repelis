@@ -150,6 +150,14 @@ Para activarlos:
 - **Límites:** 3 salas abiertas por persona, 5 creaciones/hora, 8 mensajes cada 10 s, 300 caracteres, sin links, una sala vive 12 h y se borra con todo 24 h después.
 - Borrar la cuenta borra sus salas, su presencia y sus mensajes.
 
+### Voz (fase 2)
+Llamada de voz dentro de la sala, **WebRTC en malla** (el audio va directo entre las personas, hasta 12, sin pasar por nuestros servidores). Un servidor propio de **WebSocket** (`voice-server/`, desplegado en Railway) solo reenvía la señalización. El micrófono aparece en la barra de la sala únicamente si Vercel tiene `VOICE_URL` y `VOICE_SECRET`.
+
+- **No está siempre prendido:** en Railway se activa *Serverless* (el servicio duerme sin conexiones y no cuesta nada). Al crear una sala (o pedir un token de voz) la API lo "despierta" con un `/health`, y el cliente reintenta unos segundos si todavía está despertando.
+- **Seguridad:** la API emite un token HS256 de 5 min (`POST /api/rooms/voice-token`, solo para quienes están dentro y no fueron sacados); el servidor verifica firma, vencimiento y origen web, aísla las salas, limita mensajes por socket y expulsa si el anfitrión saca a alguien (`POST /kick` con el secreto).
+- **Variables:** Vercel → `VOICE_URL` (`wss://…`) y `VOICE_SECRET`; Railway → `VOICE_SECRET` (el mismo), opcional `VOICE_ORIGINS` e `ICE_SERVERS` (TURN, para redes que bloquean la conexión directa: ~15 %).
+- **Uso:** botón de auriculares → pide el micrófono → "En la llamada"; silenciar con el micrófono; anillo verde en quien habla. Recomendar auriculares para evitar eco.
+
 ## Probar
 
 - **Local:** `npm run dev` incluye una API de cuentas **en memoria** (`scripts/dev-api.js`); los mails se imprimen en la terminal.

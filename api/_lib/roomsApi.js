@@ -24,7 +24,7 @@ const STATUS = {
 }
 
 /** @param {{ store, social, rooms, now?: () => number, rootEmails?: string[], rand?: () => number }} deps */
-export const createRoomsApi = ({ store, social, rooms, now = Date.now, rootEmails = [], rand = Math.random }) => {
+export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.now, rootEmails = [], rand = Math.random }) => {
   const reply = (status, body) => ({ status, body })
   const ok = (body = { ok: true }) => reply(200, body)
   const fail = (code, status) => reply(status || STATUS[code] || 400, { error: code })
@@ -49,7 +49,7 @@ export const createRoomsApi = ({ store, social, rooms, now = Date.now, rootEmail
     return {
       code: room.code, title: room.title, item: room.item, startsAt: room.startsAt, createdAt: room.createdAt,
       phase: roomPhase(room, t), host: host ? { handle: host.handle, name: host.name } : null,
-      online: online.length, maxMembers: ROOM.maxMembers, serverNow: t,
+      online: online.length, maxMembers: ROOM.maxMembers, serverNow: t, voice: { available: !!voice },
       isHost: isHostOf(room, viewer), isOwner: !!viewer && room.ownerId === viewer.id,
     }
   }
@@ -115,6 +115,8 @@ export const createRoomsApi = ({ store, social, rooms, now = Date.now, rootEmail
       await rooms.upsertMember(room.code, { userId: viewer.id, handle: who.profile.handle, name: who.profile.name, lastSeen: t })
       await system(room.code, `@${who.profile.handle} abrió la sala`)
       await rooms.deleteExpired(t)                        // limpieza de salas viejas (barata y acotada)
+      // El servidor de voz duerme cuando no hay nadie: lo despertamos ahora para que esté listo cuando entren (sin esperar la respuesta)
+      if (voice && (!startsAt || startsAt - t < 15 * 60_000)) await voice.warm()
       return ok({ room: await publicRoom((await rooms.getRoom(room.code)), viewer) })
     },
 
@@ -137,6 +139,21 @@ export const createRoomsApi = ({ store, social, rooms, now = Date.now, rootEmail
       const isNew = await rooms.upsertMember(room.code, { userId: viewer.id, handle: who.profile.handle, name: who.profile.name, lastSeen: t })
       if (isNew) await system(room.code, `@${who.profile.handle} entró`)
       return ok(await stateFor(await rooms.getRoom(room.code), viewer, 0))
+    },
+
+    // Token para abrir la voz de esta sala (solo quienes están dentro y no fueron sacados). Despierta el servidor si dormía.
+    'POST voice-token': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (!voice) return fail('voice_unavailable', 503)
+      const room = await loadRoom(body.code)
+      if (!room) return fail('room_not_found')
+      const phase = roomPhase(room, now())
+      if (phase === 'closed' || phase === 'expired') return fail('room_closed')
+      const m = await memberOf(room, viewer)
+      if (!m) return fail((room.kicked || []).includes(viewer.id) ? 'kicked' : 'not_member')
+      if (await limited(`room:voice:${viewer.id}`, 30, HOUR)) return fail('too_many_requests')
+      await voice.warm()
+      return ok({ url: voice.url, token: voice.token({ userId: viewer.id, handle: m.handle, name: m.name, code: room.code }, now()) })
     },
 
     'POST leave': async ({ body, viewer }) => {
@@ -214,6 +231,7 @@ export const createRoomsApi = ({ store, social, rooms, now = Date.now, rootEmail
       if (!room) return fail('room_not_found')
       if (!isHostOf(room, viewer)) return fail('not_host')
       if (!room.closedAt) { await rooms.updateRoom(room.code, { closedAt: now() }); await system(room.code, 'La sala se cerró. ¡Gracias por venir!') }
+      if (voice) await voice.kick({ code: room.code, all: true })
       return ok()
     },
 
@@ -229,6 +247,7 @@ export const createRoomsApi = ({ store, social, rooms, now = Date.now, rootEmail
       if (target.userId === room.ownerId) return fail('cannot_kick_self', 400)
       await rooms.addKicked(room.code, target.userId)
       await rooms.removeMember(room.code, target.userId)
+      if (voice) await voice.kick({ code: room.code, userId: target.userId })
       await system(room.code, `@${target.handle} fue sacado de la sala`)
       return ok()
     },

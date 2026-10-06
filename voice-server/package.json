@@ -1,0 +1,11 @@
+{
+  "name": "lifehigh-voice",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servidor de señalización WebRTC (WebSocket) para las salas de voz de Life High",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "ws": "^8.18.0" }
+}
