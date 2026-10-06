@@ -16,7 +16,7 @@ import { createMemorySocial } from '../api/_lib/socialStore.js'
 import { createSocialApi } from '../api/_lib/socialApi.js'
 import { createMemoryRooms } from '../api/_lib/roomsStore.js'
 import { createRoomsApi } from '../api/_lib/roomsApi.js'
-import { createVoice } from '../api/_lib/voice.js'
+import { parseIceServers } from '../api/_lib/ice.js'
 
 const readJson = (req) => new Promise((resolve) => {
   const chunks = []
@@ -80,7 +80,7 @@ export const devAuthApi = () => ({
       const body = req.method === 'POST' ? await readJson(req) : {}
       send(res, await admin({ method: req.method, action, headers: req.headers, query: { days: url.searchParams.get('days') }, body }))
     })
-    const roomsApi = createRoomsApi({ store, social, rooms, voice: createVoice(process.env), rootEmails })
+    const roomsApi = createRoomsApi({ store, social, rooms, ice: parseIceServers(process.env.ICE_SERVERS), rootEmails })
     server.middlewares.use('/api/rooms', async (req, res) => {
       const url = new URL(req.url || '/', 'http://localhost')
       const action = url.pathname.replace(/^\/+/, '').split('/')[0]

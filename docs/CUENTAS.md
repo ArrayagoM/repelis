@@ -151,12 +151,13 @@ Para activarlos:
 - Borrar la cuenta borra sus salas, su presencia y sus mensajes.
 
 ### Voz (fase 2)
-Llamada de voz dentro de la sala, **WebRTC en malla** (el audio va directo entre las personas, hasta 12, sin pasar por nuestros servidores). Un servidor propio de **WebSocket** (`voice-server/`, desplegado en Railway) solo reenvía la señalización. El micrófono aparece en la barra de la sala únicamente si Vercel tiene `VOICE_URL` y `VOICE_SECRET`.
+Llamada de voz dentro de la sala, **WebRTC en malla**: el audio va directo entre las personas (hasta 12, solo audio) y **no pasa por ningún servidor nuestro**. Para armar cada conexión solo se intercambian unos pocos mensajes chicos ("señales": oferta, respuesta y candidatos ICE) **por la misma API de salas**: no hay servidor extra, nada prendido, ni costo adicional.
 
-- **No está siempre prendido:** en Railway se activa *Serverless* (el servicio duerme sin conexiones y no cuesta nada). Al crear una sala (o pedir un token de voz) la API lo "despierta" con un `/health`, y el cliente reintenta unos segundos si todavía está despertando.
-- **Seguridad:** la API emite un token HS256 de 5 min (`POST /api/rooms/voice-token`, solo para quienes están dentro y no fueron sacados); el servidor verifica firma, vencimiento y origen web, aísla las salas, limita mensajes por socket y expulsa si el anfitrión saca a alguien (`POST /kick` con el secreto).
-- **Variables:** Vercel → `VOICE_URL` (`wss://…`) y `VOICE_SECRET`; Railway → `VOICE_SECRET` (el mismo), opcional `VOICE_ORIGINS` e `ICE_SERVERS` (TURN, para redes que bloquean la conexión directa: ~15 %).
-- **Uso:** botón de auriculares → pide el micrófono → "En la llamada"; silenciar con el micrófono; anillo verde en quien habla. Recomendar auriculares para evitar eco.
+- **API:** `POST /api/rooms/voice` (entrar/salir de la llamada y silenciar; devuelve quiénes están y los servidores ICE), `POST /api/rooms/signal` (mandar una señal a otra persona de la llamada) y `POST /api/rooms/signals` (recoger las propias; sirve además de latido). Buzón efímero en `room_signals` (las señales vencen al minuto). Estado de voz por persona en `room_members.voice`.
+- **Cliente:** `src/lib/voice.js`. Consulta señales cada 0,7 s mientras conecta o cuando entra alguien y cada 4 s cuando todo está estable. Siempre llama la persona que entró después (no se cruzan ofertas). Detección de "hablando" local (anillo verde), silenciar con el micrófono.
+- **Límites:** 120 cambios de estado por hora y 150 señales cada 10 s por persona, señales de hasta 8 KB, solo entre personas que están en la llamada.
+- **Redes difíciles:** por defecto se usa STUN público (alcanza para la mayoría). Para el ~15 % de redes que bloquean la conexión directa se puede sumar un servidor **TURN** con la variable `ICE_SERVERS` (JSON, `turn:`/`turns:`/`stun:`). `VOICE_DISABLED=1` apaga la voz.
+- **Opcional, no desplegado:** `voice-server/` es un servidor de WebSocket equivalente para tener señalización en tiempo real pura; hoy no hace falta (se puede alojar gratis en Cloudflare Workers o Render si algún día se quiere).
 
 ## Probar
 

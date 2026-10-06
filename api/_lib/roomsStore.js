@@ -5,12 +5,16 @@ import { ROOM } from '../../src/lib/roomRules.js'
 const dup = (code) => Object.assign(new Error(code), { code })
 const isDup = (e) => e?.code === 11000
 const KEEP_MESSAGES = 300
+const SIGNAL_TTL_MS = 60_000      // una señal que nadie recogió en 1 minuto ya no sirve
+const SIGNAL_MAX = 300           // por sala (límite de seguridad)
 
 // ─── Memoria ────────────────────────────────────────────────────────────
 export const createMemoryRooms = () => {
   const rooms = new Map()       // code → sala
   const msgs = new Map()        // code → [mensaje]
   const members = new Map()     // `${code}|${userId}` → miembro
+  const signals = new Map()     // code → [señal]
+  let sigSeq = 0
   const clone = (x) => (x ? structuredClone(x) : null)
 
   return {
@@ -43,6 +47,26 @@ export const createMemoryRooms = () => {
       members.set(k, { ...(members.get(k) || {}), ...structuredClone(m), code, joinedAt: members.get(k)?.joinedAt || m.lastSeen })
       return isNew
     },
+
+    // Voz: estado por persona y buzón de señales para armar las llamadas (WebRTC). Todo es efímero.
+    async setVoice(code, userId, v) {
+      const m = members.get(`${code}|${userId}`); if (!m) return null
+      m.voice = { ...(m.voice || { on: false, muted: false, since: 0 }), ...structuredClone(v) }
+      return clone(m)
+    },
+    async pushSignal(code, sig) {
+      const list = signals.get(code) || []
+      const cutoff = sig.at - SIGNAL_TTL_MS
+      const fresh = list.filter((s) => s.at >= cutoff).slice(-(SIGNAL_MAX - 1))
+      fresh.push({ ...structuredClone(sig), id: ++sigSeq })
+      signals.set(code, fresh)
+    },
+    async takeSignals(code, to, now) {
+      const list = signals.get(code) || []
+      const mine = list.filter((s) => s.to === to && s.at >= now - SIGNAL_TTL_MS)
+      signals.set(code, list.filter((s) => s.to !== to && s.at >= now - SIGNAL_TTL_MS))
+      return mine.map(clone)
+    },
     async getMember(code, userId) { return clone(members.get(`${code}|${userId}`)) },
     async removeMember(code, userId) { return members.delete(`${code}|${userId}`) },
     async onlineMembers(code, sinceMs) {
@@ -59,7 +83,7 @@ export const createMemoryRooms = () => {
       for (const r of [...rooms.values()]) {
         const end = r.closedAt || r.expiresAt
         if (now - end > keepMs) {
-          rooms.delete(r.code); msgs.delete(r.code)
+          rooms.delete(r.code); msgs.delete(r.code); signals.delete(r.code)
           for (const k of [...members.keys()]) if (k.startsWith(`${r.code}|`)) members.delete(k)
           n += 1
         }
@@ -85,6 +109,7 @@ export const createMongoRooms = (db) => {
   const rooms = db.collection('rooms')
   const msgs = db.collection('room_messages')
   const members = db.collection('room_members')
+  const signals = db.collection('room_signals')
   const toRoom = (d) => { if (!d) return null; const { _id, ...rest } = d; return { ...rest, code: _id } }
   const toMsg = (d) => { const { _id, ...rest } = d; return rest }
 
@@ -119,6 +144,25 @@ export const createMongoRooms = (db) => {
       )
       return r.upsertedCount > 0
     },
+
+    async setVoice(code, userId, v) {
+      const set = {}
+      for (const [k, val] of Object.entries(v)) set[`voice.${k}`] = val
+      const r = await members.findOneAndUpdate({ _id: `${code}|${userId}` }, { $set: set }, { returnDocument: 'after' })
+      if (!r) return null
+      const { _id, ...rest } = r
+      return rest
+    },
+    async pushSignal(code, sig) {
+      await signals.deleteMany({ code, at: { $lt: sig.at - SIGNAL_TTL_MS } })
+      if ((await signals.countDocuments({ code })) >= SIGNAL_MAX) return
+      await signals.insertOne({ ...sig, code })
+    },
+    async takeSignals(code, to, now) {
+      const rows = await signals.find({ code, to, at: { $gte: now - SIGNAL_TTL_MS } }).sort({ at: 1, _id: 1 }).limit(SIGNAL_MAX).toArray()
+      if (rows.length) await signals.deleteMany({ _id: { $in: rows.map((r) => r._id) } })
+      return rows.map(({ _id, code: _c, ...rest }) => rest)
+    },
     async getMember(code, userId) { const d = await members.findOne({ _id: `${code}|${userId}` }); if (!d) return null; const { _id, ...rest } = d; return rest },
     async removeMember(code, userId) { return (await members.deleteOne({ _id: `${code}|${userId}` })).deletedCount > 0 },
     async onlineMembers(code, sinceMs) {
@@ -133,7 +177,7 @@ export const createMongoRooms = (db) => {
       const old = await rooms.find({ $or: [{ closedAt: { $ne: null, $lt: now - keepMs } }, { closedAt: null, expiresAt: { $lt: now - keepMs } }] }, { projection: { _id: 1 } }).limit(100).toArray()
       if (!old.length) return 0
       const codes = old.map((r) => r._id)
-      await Promise.all([rooms.deleteMany({ _id: { $in: codes } }), msgs.deleteMany({ code: { $in: codes } }), members.deleteMany({ code: { $in: codes } })])
+      await Promise.all([rooms.deleteMany({ _id: { $in: codes } }), msgs.deleteMany({ code: { $in: codes } }), members.deleteMany({ code: { $in: codes } }), signals.deleteMany({ code: { $in: codes } })])
       return codes.length
     },
     async deleteUserData(userId) {
@@ -159,6 +203,7 @@ export const createMongoRooms = (db) => {
         msgs.createIndex({ userId: 1 }),
         members.createIndex({ code: 1, lastSeen: -1 }),
         members.createIndex({ userId: 1 }),
+        signals.createIndex({ code: 1, to: 1, at: 1 }),
       ])
     },
   }

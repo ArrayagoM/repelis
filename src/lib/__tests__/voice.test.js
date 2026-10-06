@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rmsLevel, nextSpeaking, closeAction, voiceErrorText, SPEAK_HOLD_MS, SPEAK_ON } from '../voice'
+import { rmsLevel, nextSpeaking, shouldInitiate, signalDelay, voiceErrorText, SPEAK_HOLD_MS, SPEAK_ON, SIGNAL_FAST_MS, SIGNAL_SLOW_MS } from '../voice'
 
 describe('voz: piezas puras', () => {
   it('calcula el nivel de audio (silencio vs. voz)', () => {
@@ -14,16 +14,20 @@ describe('voz: piezas puras', () => {
     s = nextSpeaking(s, 0, 1000 + SPEAK_HOLD_MS + 10); expect(s.speaking).toBe(false)
     expect(nextSpeaking({ speaking: false, until: 0 }, 0.001, 5)).toEqual({ speaking: false, until: 0 })
   })
-  it('según el código de cierre decide reintentar o mostrar el motivo', () => {
-    expect(closeAction(1000)).toEqual({ retry: false, error: null })
-    expect(closeAction(1006)).toEqual({ retry: true, error: null })          // caída o servidor despertando
-    expect(closeAction(4001).error).toBe('voice_full')
-    expect(closeAction(4002).error).toBe('voice_replaced')
-    expect(closeAction(4003).error).toBe('voice_kicked')
-    expect(closeAction(4008).retry).toBe(false)
+  it('siempre llama la persona que entró después (nunca se cruzan dos ofertas)', () => {
+    expect(shouldInitiate(200, 100, 'bea', 'ana')).toBe(true)
+    expect(shouldInitiate(100, 200, 'ana', 'bea')).toBe(false)
+    // empate exacto: decide el @usuario, y exactamente una de las dos llama
+    expect(shouldInitiate(100, 100, 'bea', 'ana')).toBe(true)
+    expect(shouldInitiate(100, 100, 'ana', 'bea')).toBe(false)
+  })
+  it('consulta señales rápido mientras conecta y lento cuando está estable', () => {
+    expect(signalDelay({ negotiating: true, recentChange: false })).toBe(SIGNAL_FAST_MS)
+    expect(signalDelay({ negotiating: false, recentChange: true })).toBe(SIGNAL_FAST_MS)
+    expect(signalDelay({ negotiating: false, recentChange: false })).toBe(SIGNAL_SLOW_MS)
   })
   it('todos los errores tienen texto en español', () => {
-    for (const k of ['mic_denied', 'mic_missing', 'voice_unavailable', 'voice_full', 'voice_replaced', 'voice_kicked', 'voice_rate', 'voice_failed', 'unsupported']) expect(voiceErrorText(k).length).toBeGreaterThan(10)
+    for (const k of ['mic_denied', 'mic_missing', 'voice_unavailable', 'kicked', 'room_closed', 'voice_failed', 'unsupported']) expect(voiceErrorText(k).length).toBeGreaterThan(10)
     expect(voiceErrorText('cualquier_cosa')).toMatch(/conectar/)
   })
 })

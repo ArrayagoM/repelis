@@ -40,7 +40,9 @@ export const rooms = {
     return r
   },
   leave: (code) => request('leave', { method: 'POST', body: { code } }),
-  voiceToken: (code) => request('voice-token', { method: 'POST', body: { code } }),
+  voice: (code, patch) => request('voice', { method: 'POST', body: { code, ...patch } }),
+  signal: (code, to, data) => request('signal', { method: 'POST', body: { code, to, data } }),
+  signals: (code) => request('signals', { method: 'POST', body: { code } }),
   sync: (code, since) => request('sync', { method: 'POST', body: { code, since } }),
   say: (code, text) => request('say', { method: 'POST', body: { code, text } }),
   react: (code, emoji) => request('react', { method: 'POST', body: { code, emoji } }),

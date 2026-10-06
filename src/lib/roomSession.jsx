@@ -22,7 +22,7 @@ export function RoomProvider({ children }) {
   const [unread, setUnread] = useState(0)
   const ready = auth.status === 'in' && !!me.data?.profile
   const live = useRoom(code, ready && !!code)
-  const voice = useVoice(code, rooms.voiceToken)
+  const voice = useVoice(code, rooms)
 
   const enter = useCallback((c) => { setCode(c); write(c) }, [])
   const exit = useCallback(async () => {

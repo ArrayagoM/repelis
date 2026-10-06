@@ -18,13 +18,16 @@ const NEW_ACCOUNT_WAIT_MS = HOUR
 const CAPACITY_WINDOW_MS = 90_000          // quienes siguen "dentro" aunque se hayan demorado en el latido
 const FIRST_LOAD = 50
 
+export const DEFAULT_ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
+const SIGNAL_MAX_CHARS = 8000
+
 const STATUS = {
   not_authenticated: 401, profile_required: 400, cannot_publish_yet: 403, forbidden: 403, kicked: 403, not_host: 403, not_member: 403,
   room_not_found: 404, room_closed: 410, room_full: 409, room_limit: 403, too_fast: 429, too_many_requests: 429,
 }
 
 /** @param {{ store, social, rooms, now?: () => number, rootEmails?: string[], rand?: () => number }} deps */
-export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.now, rootEmails = [], rand = Math.random }) => {
+export const createRoomsApi = ({ store, social, rooms, ice = DEFAULT_ICE, voiceEnabled = true, now = Date.now, rootEmails = [], rand = Math.random }) => {
   const reply = (status, body) => ({ status, body })
   const ok = (body = { ok: true }) => reply(200, body)
   const fail = (code, status) => reply(status || STATUS[code] || 400, { error: code })
@@ -49,7 +52,7 @@ export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.
     return {
       code: room.code, title: room.title, item: room.item, startsAt: room.startsAt, createdAt: room.createdAt,
       phase: roomPhase(room, t), host: host ? { handle: host.handle, name: host.name } : null,
-      online: online.length, maxMembers: ROOM.maxMembers, serverNow: t, voice: { available: !!voice },
+      online: online.length, maxMembers: ROOM.maxMembers, serverNow: t, voice: { available: !!voiceEnabled },
       isHost: isHostOf(room, viewer), isOwner: !!viewer && room.ownerId === viewer.id,
     }
   }
@@ -63,10 +66,12 @@ export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.
     ])
     return {
       room: info, seq: room.seq,
-      members: online.map((m) => ({ handle: m.handle, name: m.name, host: m.userId === room.ownerId, me: m.userId === viewer.id })),
+      members: online.map((m) => ({ handle: m.handle, name: m.name, host: m.userId === room.ownerId, me: m.userId === viewer.id, voice: voiceOf(m) })),
       messages: msgs.map((m) => ({ seq: m.seq, kind: m.kind, handle: m.handle, name: m.name, text: m.text, at: m.at, mine: !!m.userId && m.userId === viewer.id })),
     }
   }
+
+  const voiceOf = (m) => ({ on: !!m.voice?.on, muted: !!m.voice?.muted })
 
   /** Quien habla/entra necesita cuenta, @usuario y poder publicar. Devuelve { profile } o { error }. */
   const speaker = async (viewer) => {
@@ -115,8 +120,6 @@ export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.
       await rooms.upsertMember(room.code, { userId: viewer.id, handle: who.profile.handle, name: who.profile.name, lastSeen: t })
       await system(room.code, `@${who.profile.handle} abrió la sala`)
       await rooms.deleteExpired(t)                        // limpieza de salas viejas (barata y acotada)
-      // El servidor de voz duerme cuando no hay nadie: lo despertamos ahora para que esté listo cuando entren (sin esperar la respuesta)
-      if (voice && (!startsAt || startsAt - t < 15 * 60_000)) await voice.warm()
       return ok({ room: await publicRoom((await rooms.getRoom(room.code)), viewer) })
     },
 
@@ -141,19 +144,66 @@ export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.
       return ok(await stateFor(await rooms.getRoom(room.code), viewer, 0))
     },
 
-    // Token para abrir la voz de esta sala (solo quienes están dentro y no fueron sacados). Despierta el servidor si dormía.
-    'POST voice-token': async ({ body, viewer }) => {
+    // ─── Voz (llamada WebRTC en malla): el audio va directo entre las personas; acá solo se pasan las "señales" para armar la conexión ───
+    // Entrar/salir de la llamada y silenciar. Al entrar devuelve quiénes ya están en la llamada y los servidores ICE (STUN/TURN).
+    'POST voice': async ({ body, viewer }) => {
       if (!viewer) return fail('not_authenticated')
-      if (!voice) return fail('voice_unavailable', 503)
+      if (!voiceEnabled) return fail('voice_unavailable', 503)
       const room = await loadRoom(body.code)
       if (!room) return fail('room_not_found')
       const phase = roomPhase(room, now())
       if (phase === 'closed' || phase === 'expired') return fail('room_closed')
       const m = await memberOf(room, viewer)
       if (!m) return fail((room.kicked || []).includes(viewer.id) ? 'kicked' : 'not_member')
-      if (await limited(`room:voice:${viewer.id}`, 30, HOUR)) return fail('too_many_requests')
-      await voice.warm()
-      return ok({ url: voice.url, token: voice.token({ userId: viewer.id, handle: m.handle, name: m.name, code: room.code }, now()) })
+      if (await limited(`room:voice:${viewer.id}`, 120, HOUR)) return fail('too_many_requests')
+      const t = now()
+      const patch = {}
+      if (typeof body.on === 'boolean') { patch.on = body.on; if (body.on) { patch.since = t; patch.muted = false } else patch.muted = false }
+      if (typeof body.muted === 'boolean' && body.on !== false) patch.muted = body.muted
+      const saved = await rooms.setVoice(room.code, viewer.id, patch)
+      const roster = (await rooms.onlineMembers(room.code, t - ROOM.onlineMs)).filter((p) => p.userId !== viewer.id && p.voice?.on)
+        .map((p) => ({ handle: p.handle, name: p.name, muted: !!p.voice.muted, since: p.voice.since || 0 }))
+      return ok({ on: !!saved?.voice?.on, muted: !!saved?.voice?.muted, since: saved?.voice?.since || 0, handle: m.handle, peers: roster, ice })
+    },
+
+    // Mandar una señal (oferta, respuesta o candidato ICE) a otra persona que esté en la llamada.
+    'POST signal': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (!voiceEnabled) return fail('voice_unavailable', 503)
+      const room = await loadRoom(body.code)
+      if (!room) return fail('room_not_found')
+      const me = await memberOf(room, viewer)
+      if (!me) return fail('not_member')
+      if (!me.voice?.on) return fail('not_in_voice', 403)
+      const to = normalizeHandle(body.to)
+      const target = (await rooms.onlineMembers(room.code, now() - ROOM.onlineMs)).find((p) => p.handle === to)
+      if (!target || !target.voice?.on || target.userId === viewer.id) return fail('room_not_found')
+      let data
+      try { data = JSON.stringify(body.data ?? null) } catch { return fail('bad_request', 400) }
+      if (data.length > SIGNAL_MAX_CHARS || body.data === null || typeof body.data !== 'object') return fail('bad_request', 400)
+      if (await limited(`room:signal:${viewer.id}`, 150, 10_000)) return fail('too_fast')
+      await rooms.pushSignal(room.code, { to, from: me.handle, data: JSON.parse(data), at: now() })
+      return ok()
+    },
+
+    // Recoger mis señales pendientes. Es liviano y además sirve de latido: el cliente lo llama rápido mientras conecta y despacio después.
+    'POST signals': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (!voiceEnabled) return fail('voice_unavailable', 503)
+      const room = await loadRoom(body.code)
+      if (!room) return fail('room_not_found')
+      const phase = roomPhase(room, now())
+      if (phase === 'closed' || phase === 'expired') return fail('room_closed')
+      const me = await memberOf(room, viewer)
+      if (!me) return fail((room.kicked || []).includes(viewer.id) ? 'kicked' : 'not_member')
+      const t = now()
+      await rooms.upsertMember(room.code, { userId: viewer.id, handle: me.handle, name: me.name, lastSeen: t })
+      const [pending, online] = await Promise.all([rooms.takeSignals(room.code, me.handle, t), rooms.onlineMembers(room.code, t - ROOM.onlineMs)])
+      return ok({
+        signals: pending.map((s) => ({ from: s.from, data: s.data })),
+        peers: online.filter((p) => p.userId !== viewer.id && p.voice?.on).map((p) => ({ handle: p.handle, name: p.name, muted: !!p.voice.muted, since: p.voice.since || 0 })),
+        me: { on: !!me.voice?.on, muted: !!me.voice?.muted },
+      })
     },
 
     'POST leave': async ({ body, viewer }) => {
@@ -231,7 +281,7 @@ export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.
       if (!room) return fail('room_not_found')
       if (!isHostOf(room, viewer)) return fail('not_host')
       if (!room.closedAt) { await rooms.updateRoom(room.code, { closedAt: now() }); await system(room.code, 'La sala se cerró. ¡Gracias por venir!') }
-      if (voice) await voice.kick({ code: room.code, all: true })
+
       return ok()
     },
 
@@ -247,7 +297,7 @@ export const createRoomsApi = ({ store, social, rooms, voice = null, now = Date.
       if (target.userId === room.ownerId) return fail('cannot_kick_self', 400)
       await rooms.addKicked(room.code, target.userId)
       await rooms.removeMember(room.code, target.userId)
-      if (voice) await voice.kick({ code: room.code, userId: target.userId })
+
       await system(room.code, `@${target.handle} fue sacado de la sala`)
       return ok()
     },

@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { WebSocket } from 'ws'
 import { createVoiceServer } from '../../voice-server/server.js'
 import { signToken, verifyToken, safeEqual, originAllowed, makeLimiter, parseIceServers, MAX_PEERS } from '../../voice-server/lib.js'
-import { createVoice } from '../_lib/voice.js'
+import { parseIceServers } from '../_lib/ice.js'
 import { createRoomsApi } from '../_lib/roomsApi.js'
+import { ROOM } from '../../src/lib/roomRules.js'
 import { createMemoryRooms } from '../_lib/roomsStore.js'
 import { createMemoryStore } from '../_lib/stores.js'
 import { createMemorySocial } from '../_lib/socialStore.js'
@@ -171,32 +172,9 @@ describe('servidor de voz (WebSocket real)', () => {
   it('no arranca sin secreto', () => { expect(() => createVoiceServer({ secret: '' })).toThrow() })
 })
 
-describe('puente de la API hacia el servidor de voz', () => {
-  it('sin variables no hay voz; con variables firma tokens y arma la URL', () => {
-    expect(createVoice({})).toBeNull()
-    expect(createVoice({ VOICE_URL: 'wss://v.example.com', VOICE_SECRET: 'corto' })).toBeNull()
-    expect(createVoice({ VOICE_URL: 'https://v.example.com', VOICE_SECRET: SECRET })).toBeNull()
-    const v = createVoice({ VOICE_URL: 'wss://v.example.com/', VOICE_SECRET: SECRET })
-    expect(v.url).toBe('wss://v.example.com/ws')
-    expect(verifyToken(v.token({ userId: 5, handle: 'ana', name: 'Ana', code: CODE }), SECRET)).toMatchObject({ ok: true, claims: { sub: '5', handle: 'ana' } })
-  })
-  it('warm y kick llaman al servidor por HTTP con el secreto y no explotan si no responde', async () => {
-    const calls = []
-    const fetchImpl = async (u, init) => { calls.push({ u, init }); return { ok: true } }
-    const v = createVoice({ VOICE_URL: 'wss://v.example.com', VOICE_SECRET: SECRET }, fetchImpl)
-    await v.warm(); await v.kick({ code: CODE, userId: '9' })
-    expect(calls[0].u).toBe('https://v.example.com/health')
-    expect(calls[1].u).toBe('https://v.example.com/kick')
-    expect(calls[1].init.headers['x-voice-secret']).toBe(SECRET)
-    expect(JSON.parse(calls[1].init.body)).toEqual({ code: CODE, userId: '9', all: false })
-    const down = createVoice({ VOICE_URL: 'wss://v.example.com', VOICE_SECRET: SECRET }, async () => { throw new Error('dormido') })
-    await expect(down.warm()).resolves.toBeNull()
-  })
-})
-
-describe('API de salas con voz', () => {
+describe('voz por la API (sin servidor extra)', () => {
   const T0 = Date.UTC(2026, 9, 20, 22, 0, 0)
-  let store, social, rooms, api, n, calls, clock
+  let store, social, rooms, api, n, clock
   const H = { 'content-type': 'application/json', host: 'lifehigh.test' }
   const mk = async (handle) => {
     n += 1
@@ -207,54 +185,120 @@ describe('API de salas con voz', () => {
     return { user, h: { ...H, cookie: `lh_session=${token}` } }
   }
   const post = (action, body, h) => api({ method: 'POST', action, headers: h, body })
+  const setup = async (...handles) => {
+    const users = []
+    for (const h of handles) users.push(await mk(h))
+    const { code } = (await post('create', { title: 'Cine' }, users[0].h)).body.room
+    for (const u of users.slice(1)) await post('join', { code }, u.h)
+    return { code, users }
+  }
 
-  beforeEach(() => {
-    store = createMemoryStore(); social = createMemorySocial(); rooms = createMemoryRooms(); n = 0; clock = T0; calls = []
-    const voice = createVoice({ VOICE_URL: 'wss://v.example.com', VOICE_SECRET: SECRET }, async (u, init) => { calls.push({ u, body: init?.body ? JSON.parse(init.body) : null }); return { ok: true } })
-    api = createRoomsApi({ store, social, rooms, voice, now: () => clock })
-  })
+  beforeEach(() => { store = createMemoryStore(); social = createMemorySocial(); rooms = createMemoryRooms(); n = 0; clock = T0; api = createRoomsApi({ store, social, rooms, now: () => clock }) })
 
-  it('crear una sala despierta el servidor de voz; la ficha avisa que hay voz', async () => {
+  it('la ficha de la sala dice que hay voz y se puede apagar por configuración', async () => {
     const ana = await mk('ana')
-    const r = await post('create', { title: 'Cine' }, ana.h)
-    expect(r.body.room.voice).toEqual({ available: true })
-    expect(calls.some((c) => c.u.endsWith('/health'))).toBe(true)
+    expect((await post('create', { title: 'Cine' }, ana.h)).body.room.voice).toEqual({ available: true })
+    api = createRoomsApi({ store, social, rooms, voiceEnabled: false, now: () => clock })
+    const { code } = (await post('create', { title: 'Otra' }, ana.h)).body.room
+    expect((await post('voice', { code, on: true }, ana.h)).status).toBe(503)
+    expect((await post('signals', { code }, ana.h)).status).toBe(503)
   })
 
-  it('una sala para dentro de horas no lo despierta todavía', async () => {
-    const ana = await mk('ana')
-    await post('create', { title: 'Cine', startsAt: T0 + 5 * 3_600_000 }, ana.h)
-    expect(calls).toHaveLength(0)
+  it('entrar a la llamada exige estar en la sala; devuelve ICE y quiénes ya estaban', async () => {
+    const { code, users: [ana, bea] } = await setup('ana', 'bea')
+    const out = await mk('afuera')
+    expect((await post('voice', { code, on: true }, H)).status).toBe(401)
+    expect((await post('voice', { code, on: true }, out.h)).body.error).toBe('not_member')
+    const a = await post('voice', { code, on: true }, ana.h)
+    expect(a.body).toMatchObject({ on: true, muted: false, peers: [] })
+    expect(a.body.ice.length).toBeGreaterThan(0)
+    clock += 1000
+    const b = await post('voice', { code, on: true }, bea.h)
+    expect(b.body.peers).toEqual([{ handle: 'ana', name: 'U1', muted: false, since: T0 }])
+    expect(b.body.since).toBe(T0 + 1000)
   })
 
-  it('el token de voz es solo para quienes están dentro y no fueron sacados', async () => {
-    const ana = await mk('ana'), bea = await mk('bea')
-    const { code } = (await post('create', { title: 'Cine' }, ana.h)).body.room
-    expect((await post('voice-token', { code }, H)).status).toBe(401)
-    expect((await post('voice-token', { code }, bea.h)).body.error).toBe('not_member')
-    await post('join', { code }, bea.h)
-    const t = await post('voice-token', { code }, bea.h)
-    expect(t.status).toBe(200)
-    expect(t.body.url).toBe('wss://v.example.com/ws')
-    expect(verifyToken(t.body.token, SECRET)).toMatchObject({ ok: true, claims: { handle: 'bea', code } })
+  it('silenciar se refleja en los demás y salir de la llamada limpia el estado', async () => {
+    const { code, users: [ana, bea] } = await setup('ana', 'bea')
+    await post('voice', { code, on: true }, ana.h); await post('voice', { code, on: true }, bea.h)
+    await post('voice', { code, muted: true }, ana.h)
+    expect((await post('signals', { code }, bea.h)).body.peers).toEqual([expect.objectContaining({ handle: 'ana', muted: true })])
+    const sync = await post('sync', { code, since: 0 }, bea.h)
+    expect(sync.body.members.find((m) => m.handle === 'ana').voice).toEqual({ on: true, muted: true })
+    await post('voice', { code, on: false }, ana.h)
+    expect((await post('signals', { code }, bea.h)).body.peers).toEqual([])
+    expect((await post('sync', { code, since: 0 }, bea.h)).body.members.find((m) => m.handle === 'ana').voice).toEqual({ on: false, muted: false })
+  })
+
+  it('las señales llegan solo a su destinatario, una sola vez y en orden', async () => {
+    const { code, users: [ana, bea, cami] } = await setup('ana', 'bea', 'cami')
+    for (const u of [ana, bea, cami]) await post('voice', { code, on: true }, u.h)
+    expect((await post('signal', { code, to: 'ana', data: { sdp: { type: 'offer', sdp: 'v=0' } } }, bea.h)).status).toBe(200)
+    expect((await post('signal', { code, to: 'ana', data: { candidate: { candidate: 'a' } } }, bea.h)).status).toBe(200)
+    const got = (await post('signals', { code }, ana.h)).body.signals
+    expect(got).toEqual([{ from: 'bea', data: { sdp: { type: 'offer', sdp: 'v=0' } } }, { from: 'bea', data: { candidate: { candidate: 'a' } } }])
+    expect((await post('signals', { code }, ana.h)).body.signals).toEqual([])            // ya se entregaron
+    expect((await post('signals', { code }, cami.h)).body.signals).toEqual([])           // cami no ve lo de ana y bea
+  })
+
+  it('no se pueden mandar señales a quien no está en la llamada, a uno mismo o sin estar en la llamada', async () => {
+    const { code, users: [ana, bea, cami] } = await setup('ana', 'bea', 'cami')
+    await post('voice', { code, on: true }, ana.h); await post('voice', { code, on: true }, bea.h)
+    expect((await post('signal', { code, to: 'cami', data: { x: 1 } }, ana.h)).status).toBe(404)       // cami no está en la llamada
+    expect((await post('signal', { code, to: 'ana', data: { x: 1 } }, ana.h)).status).toBe(404)        // a sí misma
+    expect((await post('signal', { code, to: 'ana', data: { x: 1 } }, cami.h)).body.error).toBe('not_in_voice')
+    expect((await post('signal', { code, to: 'nadie', data: { x: 1 } }, ana.h)).status).toBe(404)
+    expect((await post('signal', { code, to: 'ana', data: { x: 1 } }, H)).status).toBe(401)
+    expect(bea).toBeTruthy()
+  })
+
+  it('valida el tamaño y la forma de las señales y limita la velocidad', async () => {
+    const { code, users: [ana, bea] } = await setup('ana', 'bea')
+    await post('voice', { code, on: true }, ana.h); await post('voice', { code, on: true }, bea.h)
+    for (const data of [null, 'texto', 5, undefined, { big: 'x'.repeat(9000) }]) expect((await post('signal', { code, to: 'ana', data }, bea.h)).status).toBe(400)
+    let last
+    for (let i = 0; i < 151; i++) last = await post('signal', { code, to: 'ana', data: { i } }, bea.h)
+    expect(last.status).toBe(429)
+  })
+
+  it('las señales viejas (más de 1 minuto) se descartan', async () => {
+    const { code, users: [ana, bea] } = await setup('ana', 'bea')
+    await post('voice', { code, on: true }, ana.h); await post('voice', { code, on: true }, bea.h)
+    await post('signal', { code, to: 'ana', data: { old: true } }, bea.h)
+    clock += 61_000
+    await post('sync', { code, since: 0 }, ana.h); await post('sync', { code, since: 0 }, bea.h)        // siguen conectadas
+    expect((await post('signals', { code }, ana.h)).body.signals).toEqual([])
+  })
+
+  it('quien fue sacado o la sala cerrada cortan la voz', async () => {
+    const { code, users: [ana, bea] } = await setup('ana', 'bea')
+    await post('voice', { code, on: true }, ana.h); await post('voice', { code, on: true }, bea.h)
     await post('kick', { code, handle: 'bea' }, ana.h)
-    expect(calls.some((c) => c.u.endsWith('/kick') && c.body.code === code && c.body.userId === bea.user.id)).toBe(true)
-    expect((await post('voice-token', { code }, bea.h)).body.error).toBe('kicked')
-  })
-
-  it('cerrar la sala corta la voz de todos y ya no se dan tokens', async () => {
-    const ana = await mk('ana')
-    const { code } = (await post('create', { title: 'Cine' }, ana.h)).body.room
+    expect((await post('signals', { code }, bea.h)).body.error).toBe('kicked')
+    expect((await post('voice', { code, on: true }, bea.h)).body.error).toBe('kicked')
+    expect((await post('signals', { code }, ana.h)).body.peers).toEqual([])
     await post('close', { code }, ana.h)
-    expect(calls.some((c) => c.u.endsWith('/kick') && c.body.all === true)).toBe(true)
-    expect((await post('voice-token', { code }, ana.h)).status).toBe(410)
+    expect((await post('voice', { code, on: true }, ana.h)).status).toBe(410)
   })
 
-  it('sin servidor de voz configurado, la API lo dice y el resto sigue', async () => {
-    api = createRoomsApi({ store, social, rooms, voice: null, now: () => clock })
-    const ana = await mk('ana')
-    const r = await post('create', { title: 'Cine' }, ana.h)
-    expect(r.body.room.voice).toEqual({ available: false })
-    expect((await post('voice-token', { code: r.body.room.code }, ana.h)).status).toBe(503)
+  it('al desconectarse de la sala deja de figurar en la llamada', async () => {
+    const { code, users: [ana, bea] } = await setup('ana', 'bea')
+    await post('voice', { code, on: true }, ana.h); await post('voice', { code, on: true }, bea.h)
+    clock += ROOM.onlineMs + 5_000
+    await post('signals', { code }, bea.h)                                                       // solo bea sigue latiendo
+    expect((await post('signals', { code }, bea.h)).body.peers).toEqual([])
+  })
+})
+
+describe('servidores ICE', () => {
+  it('usa STUN público por defecto y acepta TURN válido por configuración', () => {
+    expect(parseIceServers('')).toHaveLength(2)
+    expect(parseIceServers('{roto')).toHaveLength(2)
+    const turn = parseIceServers('[{"urls":"turn:t.example.com:3478","username":"u","credential":"c"}]')
+    expect(turn).toEqual([{ urls: 'turn:t.example.com:3478', username: 'u', credential: 'c' }])
+  })
+  it('descarta entradas que no son stun/turn (no se reenvía cualquier cosa a los clientes)', () => {
+    expect(parseIceServers('[{"urls":"javascript:alert(1)"},{"urls":["http://x.com"]}]')).toHaveLength(2)    // todo inválido → por defecto
+    expect(parseIceServers('[{"urls":"file:///etc"},{"urls":"stun:s.example.com:3478"}]')).toEqual([{ urls: 'stun:s.example.com:3478' }])
   })
 })

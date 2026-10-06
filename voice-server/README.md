@@ -1,3 +1,5 @@
+> **Opcional — hoy NO está desplegado ni hace falta.** La voz de las salas funciona con la señalización por la API de Life High (ver `docs/CUENTAS.md`). Este servidor queda como alternativa de tiempo real puro por WebSocket; no usa Railway necesariamente: es un Node chico que puede correr en cualquier hosting (Render, Fly, un VPS) y solo debería estar prendido cuando haya salas.
+
 # Servidor de voz de Life High
 
 Servicio de WebSocket que hace de "central telefónica" de las **salas**: reenvía la señalización WebRTC entre las personas de una
