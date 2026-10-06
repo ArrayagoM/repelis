@@ -153,6 +153,16 @@ self.addEventListener('fetch', (event) => {
 })
 
 
+// Push de la comunidad (alguien te sigue, comenta o publica una lista). El servidor manda { title, body, url, tag }.
+self.addEventListener('push', (event) => {
+  let d = {}
+  try { d = event.data ? event.data.json() : {} } catch { d = { body: event.data ? event.data.text() : '' } }
+  event.waitUntil(self.registration.showNotification(d.title || 'Life High', {
+    body: d.body || '', icon: '/icon-192.png', badge: '/icon-192.png', tag: d.tag || undefined,
+    data: { url: typeof d.url === 'string' && d.url.startsWith('/') ? d.url : '/' },
+  }))
+})
+
 // Click en una notificación de estreno: abre (o enfoca) la ficha del título.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()

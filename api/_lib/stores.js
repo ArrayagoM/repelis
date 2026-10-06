@@ -69,6 +69,10 @@ export const createMemoryStore = () => {
         recent: all.sort((a, b) => b.createdAt - a.createdAt).slice(0, 10).map((u) => ({ email: u.email, name: u.name, google: !!u.googleSub, createdAt: u.createdAt })),
       }
     },
+    async usersWithEmailPrefs(limit = 300) {
+      return [...users.values()].filter((u) => u.notifyPrefs?.email === true).slice(0, limit)
+        .map((u) => ({ id: u.id, email: u.email, name: u.name, emailVerified: u.emailVerified === true, lastDigestAt: u.lastDigestAt || 0 }))
+    },
     /** Usuarios para retención: los creados desde `sinceMs` o vistos desde el día `sinceDay` (AAAA-MM-DD). */
     async activityRows(sinceMs, sinceDay) {
       return [...users.values()]
@@ -167,6 +171,10 @@ export const createMongoStore = (db, { ObjectId }) => {
       }
     },
 
+    async usersWithEmailPrefs(limit = 300) {
+      const rows = await users.find({ 'notifyPrefs.email': true }, { projection: { email: 1, name: 1, emailVerified: 1, lastDigestAt: 1 } }).limit(limit).toArray()
+      return rows.map((u) => ({ id: String(u._id), email: u.email, name: u.name, emailVerified: u.emailVerified === true, lastDigestAt: u.lastDigestAt || 0 }))
+    },
     async activityRows(sinceMs, sinceDay) {
       const rows = await users.find(
         { $or: [{ createdAt: { $gte: sinceMs } }, { lastSeenDay: { $gte: sinceDay } }] },

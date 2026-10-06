@@ -61,11 +61,26 @@ try {
   assert.equal((await get('feed', { kind: 'new' })).body.lists.length, 0); step('3 reportes distintos ocultan la lista')
   assert.equal((await social.reportedLists(10)).length, 1); step('cola de moderación')
 
+  // Opiniones, avisos y push
+  const c1 = await post('comment', { target: 'movie:603', text: 'Una joya', rating: 5 }, bea.h)
+  assert.equal(c1.status, 200)
+  assert.equal((await post('comment', { target: 'movie:603', text: 'La vi de nuevo', rating: 4 }, bea.h)).body.updated, true)
+  assert.deepEqual((await get('comments', { target: 'movie:603' })).body.summary, { count: 1, rated: 1, avg: 4 }); step('opinión con estrellas (una por persona)')
+  const note = await get('notifications', {}, ana.h)
+  assert.ok(note.body.unread >= 1); step('avisos al ser seguida / recibir me gusta')
+  assert.equal((await post('notifications-read', {}, ana.h)).status, 200)
+  assert.equal((await get('unread', {}, ana.h)).body.unread, 0); step('marcar avisos como leídos')
+  await social.addPushSub({ userId: ana.user.id, endpoint: 'https://push.example.com/abcdefghij', keys: { p256dh: 'a', auth: 'b' }, createdAt: Date.now() })
+  assert.equal((await social.pushSubsOf(ana.user.id)).length, 1)
+  await social.removePushSub('https://push.example.com/abcdefghij'); step('suscripciones push')
+  assert.ok((await store.activityRows(0, '2000-01-01')).length >= 2); step('filas de retención')
+
   await social.deleteUserData(ana.user.id)
   assert.equal(await social.getProfile(ana.user.id), null)
   assert.equal(await social.getList(id), null)
   assert.equal(await social.countFollowers(ana.user.id), 0)
-  assert.equal(await social.countFollowing(bea.user.id), 0); step('borrar cuenta limpia perfil, listas y seguimientos')
+  assert.equal(await social.countFollowing(bea.user.id), 0)
+  assert.equal((await get('notifications', {}, bea.h)).body.items.filter((n) => n.type === 'follow').length, 0); step('borrar cuenta limpia perfil, listas y seguimientos')
 
   console.log('\nOK: la comunidad funciona contra MongoDB real.')
 } catch (e) {

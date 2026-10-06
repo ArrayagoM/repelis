@@ -50,6 +50,12 @@ export const social = {
     return r
   },
   report: (id, reason) => request('report', { method: 'POST', body: { id, reason } }),
+  notifications: () => request('notifications'),
+  unread: () => request('unread'),
+  markRead: () => request('notifications-read', { method: 'POST', body: {} }),
+  setPrefs: (prefs) => request('notify-prefs', { method: 'POST', body: prefs }),
+  pushSubscribe: (subscription) => request('push-subscribe', { method: 'POST', body: { subscription } }),
+  pushUnsubscribe: (endpoint) => request('push-unsubscribe', { method: 'POST', body: { endpoint } }),
   comments: (target, before) => request('comments', { query: { target, before } }),
   postComment: async (body) => {
     const r = await request('comment', { method: 'POST', body })

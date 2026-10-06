@@ -19,14 +19,15 @@ const AUTO_HIDE_REPORTS = 3
 const POPULAR_WINDOW_MS = 60 * DAY
 const FEED_LIMIT = 24
 const COMMENTS_PAGE = 20
+const FANOUT_MAX = 200
 
 const STATUS = {
   not_found: 404, forbidden: 403, list_limit: 403, private_requires_premium: 403, cannot_publish_yet: 403, cannot_follow_self: 400,
-  handle_taken: 409, handle_cooldown: 429, too_many_requests: 429, not_authenticated: 401, profile_required: 400,
+  handle_taken: 409, push_unavailable: 503, handle_cooldown: 429, too_many_requests: 429, not_authenticated: 401, profile_required: 400,
 }
 
-/** @param {{ store, social, now?: () => number, rootEmails?: string[] }} deps */
-export const createSocialApi = ({ store, social, now = Date.now, rootEmails = [] }) => {
+/** @param {{ store, social, push?: object|null, now?: () => number, rootEmails?: string[] }} deps */
+export const createSocialApi = ({ store, social, push = null, now = Date.now, rootEmails = [] }) => {
   const reply = (status, body) => ({ status, body })
   const ok = (body = { ok: true }) => reply(200, body)
   const fail = (code, status) => reply(status || STATUS[code] || 400, { error: code })
@@ -64,6 +65,26 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
     const mine = !!viewer && viewer.id === l.ownerId
     if (!mine && (l.visibility !== 'public' || l.hidden)) return { ok: false }
     return { ok: true, ownerId: l.ownerId }
+  }
+
+
+  // ─── Avisos ─────────────────────────────────────────────────────────
+  const prefsOf = (user) => ({ push: user?.notifyPrefs?.push !== false, email: user?.notifyPrefs?.email === true })
+  const handleOf = async (userId) => (await social.getProfile(userId))?.handle || null
+
+  /** Crea un aviso (sin repetirlo) y, si la persona tiene push activado, lo manda. Nunca rompe la acción principal. */
+  const notify = async (userId, { type, key, text, link, actorId }) => {
+    try {
+      if (!userId || String(userId) === String(actorId)) return
+      const created = await social.addNotification({ userId, type, key, text, link, actorId: actorId || null, createdAt: now() })
+      if (!created || !push) return
+      const target = await store.findUserById(userId)
+      if (!target || prefsOf(target).push === false) return
+      const subs = await social.pushSubsOf(userId)
+      if (!subs.length) return
+      const { gone } = await push.send(subs, { title: 'Life High', body: text, url: link, tag: key })
+      for (const endpoint of gone) await social.removePushSub(endpoint)
+    } catch (e) { console.error('[social] aviso falló:', e?.message) }
   }
 
   // ─── Acciones ───────────────────────────────────────────────────────
@@ -161,6 +182,13 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
       }
       if ((await social.countListsByOwner(viewer.id)) >= LIMITS[planOf(viewer)].lists) return fail('list_limit')
       const created = await social.createList({ ownerId: viewer.id, ...checked.value, createdAt: now(), updatedAt: now() })
+      // Avisa a quienes la siguen (solo listas públicas con títulos; tope por si alguien tiene muchísimos seguidores)
+      if (created.visibility === 'public' && created.items.length > 0) {
+        const followers = await social.followerIds(viewer.id, FANOUT_MAX)
+        await Promise.all(followers.map((fid) => notify(fid, {
+          type: 'new_list', key: `nl:${created.id}`, text: `@${profile.handle} publicó una lista nueva: «${created.title}»`, link: `/lista/${created.id}`, actorId: viewer.id,
+        })))
+      }
       return ok({ list: summary(created, profile, { forOwner: true }) })
     },
 
@@ -196,7 +224,11 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
       const l = await social.getList(String(body.id || ''))
       if (!l || (l.visibility !== 'public' && l.ownerId !== viewer.id) || (l.hidden && l.ownerId !== viewer.id)) return fail('not_found')
       if (body.on === false) { if (await social.removeLike(viewer.id, l.id)) await social.incListLikes(l.id, -1) }
-      else if (await social.addLike(viewer.id, l.id)) await social.incListLikes(l.id, 1)
+      else if (await social.addLike(viewer.id, l.id)) {
+        await social.incListLikes(l.id, 1)
+        const me = await handleOf(viewer.id)
+        if (me && l.visibility === 'public') await notify(l.ownerId, { type: 'like', key: `lk:${l.id}:${viewer.id}`, text: `A @${me} le gustó tu lista «${l.title}»`, link: `/lista/${l.id}`, actorId: viewer.id })
+      }
       const fresh = await social.getList(l.id)
       return ok({ liked: body.on !== false, likes: fresh?.likes || 0 })
     },
@@ -208,7 +240,10 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
       if (!target) return fail('not_found')
       if (target.userId === viewer.id) return fail('cannot_follow_self')
       if (body.on === false) await social.removeFollow(viewer.id, target.userId)
-      else await social.addFollow(viewer.id, target.userId)
+      else if (await social.addFollow(viewer.id, target.userId)) {
+        const me = await handleOf(viewer.id)
+        if (me) await notify(target.userId, { type: 'follow', key: `fw:${viewer.id}`, text: `@${me} empezó a seguirte`, link: `/u/${me}`, actorId: viewer.id })
+      }
       return ok({ following: body.on !== false, followers: await social.countFollowers(target.userId) })
     },
 
@@ -226,6 +261,48 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
         lists = await social.queryLists({ sort: 'new', limit: FEED_LIMIT })
       }
       return ok({ kind, lists: await summaries(lists, viewer) })
+    },
+
+    // ─── Avisos y push ───────────────────────────────────────────────────
+    'GET notifications': async ({ viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      const [items, unread] = await Promise.all([social.listNotifications(viewer.id, 30), social.countUnread(viewer.id)])
+      const prefs = prefsOf(viewer)
+      const subs = await social.pushSubsOf(viewer.id)
+      return ok({
+        unread,
+        items: items.map((n) => ({ id: n.id, type: n.type, text: n.text, link: n.link, createdAt: n.createdAt, read: !!n.readAt })),
+        prefs, push: { available: !!push, publicKey: push?.publicKey || null, devices: subs.length },
+      })
+    },
+    'GET unread': async ({ viewer }) => (viewer ? ok({ unread: await social.countUnread(viewer.id) }) : ok({ unread: 0 })),
+    'POST notifications-read': async ({ viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      await social.markRead(viewer.id, now())
+      return ok()
+    },
+    'POST notify-prefs': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      const prefs = { ...prefsOf(viewer) }
+      for (const k of ['push', 'email']) if (typeof body[k] === 'boolean') prefs[k] = body[k]
+      await store.updateUser(viewer.id, { notifyPrefs: prefs })
+      return ok({ prefs })
+    },
+    'POST push-subscribe': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (!push) return fail('push_unavailable', 503)
+      const sub = body.subscription
+      const endpoint = typeof sub?.endpoint === 'string' ? sub.endpoint : ''
+      const keys = sub?.keys
+      if (!/^https:\/\/[^\s]{10,500}$/.test(endpoint) || typeof keys?.p256dh !== 'string' || typeof keys?.auth !== 'string' || keys.p256dh.length > 200 || keys.auth.length > 100) return fail('bad_request', 400)
+      if (await limited(`soc:push:${viewer.id}`, 20, HOUR)) return fail('too_many_requests')
+      await social.addPushSub({ userId: viewer.id, endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, createdAt: now() })
+      return ok({ subscribed: true })
+    },
+    'POST push-unsubscribe': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (typeof body.endpoint === 'string') await social.removePushSub(body.endpoint, viewer.id)
+      return ok()
     },
 
     // ─── Opiniones y comentarios (en listas y en películas/series) ───────────
@@ -278,6 +355,10 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
         }
       }
       const saved = await social.addComment({ target: key, authorId: viewer.id, text, rating, createdAt: now(), updatedAt: now() })
+      if (target.kind === 'list' && access.ownerId) {
+        const l = await social.getList(target.id)
+        await notify(access.ownerId, { type: 'comment', key: `cm:${saved.id}`, text: `@${profile.handle} comentó en «${l?.title || 'tu lista'}»`, link: `/lista/${target.id}`, actorId: viewer.id })
+      }
       return ok({ comment: { id: saved.id, text: saved.text, rating: saved.rating || null }, updated: false })
     },
 

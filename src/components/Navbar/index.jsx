@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, Ghost, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, Ghost, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree, Bell } from '@phosphor-icons/react'
 import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
@@ -11,6 +11,7 @@ import { StreakChip } from '../Achievements'
 import { SupporterBadge } from '../Supporter'
 import { useAuth } from '../../lib/auth'
 import { isHalloweenSeason } from '../../lib/seasons'
+import { useUnread } from '../../lib/notifications'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -150,6 +151,22 @@ function AccountLink() {
   )
 }
 
+// Campanita de avisos (solo con cuenta): seguidores, me gusta, comentarios y listas nuevas de a quienes seguís
+function BellLink() {
+  const auth = useAuth()
+  const unread = useUnread()
+  if (auth.status !== 'in') return null
+  return (
+    <Link to="/avisos" title={unread ? `${unread} avisos sin leer` : 'Avisos'} aria-label={unread ? `Avisos: ${unread} sin leer` : 'Avisos'}
+      className="relative hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all">
+      <Bell size={14} weight={unread ? 'fill' : 'regular'} />
+      {unread > 0 && (
+        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>
+      )}
+    </Link>
+  )
+}
+
 // Solo el fundador (root) ve este acceso; el servidor igual vuelve a verificar el permiso en cada pedido
 function PanelLink() {
   const auth = useAuth()
@@ -284,6 +301,7 @@ export default function Navbar({ onDonateClick }) {
             )}
 
             <PanelLink />
+            <BellLink />
             <AccountLink />
             <StreakChip />
             <SupporterBadge className="hidden lg:flex" />

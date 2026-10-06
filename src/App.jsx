@@ -37,6 +37,7 @@ const Privacy     = lazy(() => import('./pages/Privacy'))
 const DMCA        = lazy(() => import('./pages/DMCA'))
 const Admin       = lazy(() => import('./pages/Admin'))
 const Terror      = lazy(() => import('./pages/Terror'))
+const Avisos      = lazy(() => import('./pages/Avisos'))
 const CinesCerca  = lazy(() => import('./pages/CinesCerca'))
 const Download    = lazy(() => import('./pages/Download'))
 const MiLista     = lazy(() => import('./pages/MiLista'))
@@ -158,6 +159,7 @@ export default function App() {
             <Route path="/lista/:id/editar" element={<ListEditor />} />
             <Route path="/u/:handle" element={<Profile />} />
             <Route path="/perfil" element={<MyProfile />} />
+            <Route path="/avisos" element={<Avisos />} />
             <Route path="/cuenta" element={<Cuenta />} />
             <Route path="/cuenta/restablecer" element={<Cuenta view="reset" />} />
             <Route path="/cuenta/verificar" element={<Cuenta view="verify" />} />

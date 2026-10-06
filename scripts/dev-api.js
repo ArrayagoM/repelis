@@ -56,7 +56,9 @@ export const devAuthApi = () => ({
     }
     const pulse = createPulse({ stats })
     const admin = createAdminApi({ store, stats, social, rootEmails })
-    const socialApi = createSocialApi({ store, social, rootEmails })
+    // Push de mentira para desarrollo: acepta suscripciones y cuenta los envíos (no sale nada a la red)
+    const devPush = { publicKey: 'dev-vapid-public-key', sent: [], async send(subs, payload) { devPush.sent.push({ subs: subs.length, payload }); return { sent: subs.length, gone: [] } } }
+    const socialApi = createSocialApi({ store, social, push: devPush, rootEmails })
 
     const send = (res, out) => {
       res.statusCode = out.status

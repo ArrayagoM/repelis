@@ -12,6 +12,8 @@ export const createMemorySocial = () => {
   const follows = new Map()      // `${follower}|${followee}` → { follower, followee, at }
   const reports = new Map()      // `${listId}|${reporter}` → { listId, reporter, reason, at }  (listId = 'c:<id>' para comentarios)
   const comments = new Map()     // id → comentario
+  const notifs = new Map()       // id → aviso
+  const pushSubs = new Map()     // endpoint → suscripción push
   let seq = 0
   const clone = (x) => (x ? structuredClone(x) : null)
 
@@ -96,6 +98,24 @@ export const createMemorySocial = () => {
       return { count: vis.length, rated: rated.length, avg: rated.length ? Math.round((rated.reduce((a, c) => a + c.rating, 0) / rated.length) * 10) / 10 : null }
     },
 
+    // Avisos (notificaciones dentro de la app) y suscripciones push
+    async addNotification(n) {
+      if ([...notifs.values()].some((x) => x.userId === String(n.userId) && x.key === n.key)) return null
+      const id = `n${++seq}`
+      notifs.set(id, { ...structuredClone(n), userId: String(n.userId), id, readAt: null })
+      return clone(notifs.get(id))
+    },
+    async listNotifications(userId, limit = 30) {
+      return [...notifs.values()].filter((n) => n.userId === String(userId)).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit).map(clone)
+    },
+    async countUnread(userId) { return [...notifs.values()].filter((n) => n.userId === String(userId) && !n.readAt).length },
+    async markRead(userId, at) { for (const n of notifs.values()) if (n.userId === String(userId) && !n.readAt) n.readAt = at },
+    async pruneNotifications(beforeMs) { for (const [k, n] of [...notifs]) if (n.createdAt < beforeMs) notifs.delete(k) },
+    async followerIds(userId, limit = 500) { return [...follows.values()].filter((f) => f.followee === String(userId)).slice(0, limit).map((f) => f.follower) },
+    async addPushSub(sub) { pushSubs.set(sub.endpoint, { ...structuredClone(sub), userId: String(sub.userId) }) },
+    async removePushSub(endpoint, userId) { const s = pushSubs.get(endpoint); if (s && (!userId || s.userId === String(userId))) pushSubs.delete(endpoint) },
+    async pushSubsOf(userId) { return [...pushSubs.values()].filter((s) => s.userId === String(userId)).map(clone) },
+
     // Reportes
     async addReport(r) {
       const k = `${r.listId}|${r.reporter}`
@@ -126,6 +146,8 @@ export const createMemorySocial = () => {
       }
       for (const [k, f] of [...follows]) if (f.follower === uid || f.followee === uid) follows.delete(k)
       for (const [k, r] of [...reports]) if (r.reporter === uid) reports.delete(k)
+      for (const [k, n] of [...notifs]) if (n.userId === uid || n.actorId === uid) notifs.delete(k)
+      for (const [k, s] of [...pushSubs]) if (s.userId === uid) pushSubs.delete(k)
       for (const c of [...comments.values()]) if (c.authorId === uid) await this.deleteComment(c.id)
       profiles.delete(uid)
     },
@@ -151,6 +173,8 @@ export const createMongoSocial = (db, { ObjectId }) => {
   const follows = db.collection('follows')
   const reports = db.collection('reports')
   const comments = db.collection('comments')
+  const notifs = db.collection('notifications')
+  const pushSubs = db.collection('push_subs')
 
   const oid = (id) => { try { return new ObjectId(String(id)) } catch { return null } }
   const toList = (d) => { if (!d) return null; const { _id, ...rest } = d; return { ...rest, id: String(_id) } }
@@ -251,6 +275,25 @@ export const createMongoSocial = (db, { ObjectId }) => {
       return { count: row.count, rated: row.rated, avg: row.rated ? Math.round((row.sum / row.rated) * 10) / 10 : null }
     },
 
+    async addNotification(n) {
+      try {
+        const doc = { ...n, userId: String(n.userId), _id: `${n.userId}|${n.key}`, readAt: null }
+        await notifs.insertOne(doc)
+        const { _id, ...rest } = doc
+        return { ...rest, id: _id }
+      } catch (e) { if (isDup(e)) return null; throw e }
+    },
+    async listNotifications(userId, limit = 30) {
+      return (await notifs.find({ userId: String(userId) }).sort({ createdAt: -1 }).limit(limit).toArray()).map((d) => { const { _id, ...rest } = d; return { ...rest, id: String(_id) } })
+    },
+    async countUnread(userId) { return notifs.countDocuments({ userId: String(userId), readAt: null }) },
+    async markRead(userId, at) { await notifs.updateMany({ userId: String(userId), readAt: null }, { $set: { readAt: at } }) },
+    async pruneNotifications(beforeMs) { await notifs.deleteMany({ createdAt: { $lt: beforeMs } }) },
+    async followerIds(userId, limit = 500) { return (await follows.find({ followee: String(userId) }).limit(limit).toArray()).map((f) => f.follower) },
+    async addPushSub(sub) { await pushSubs.replaceOne({ _id: sub.endpoint }, { ...sub, userId: String(sub.userId), _id: sub.endpoint }, { upsert: true }) },
+    async removePushSub(endpoint, userId) { await pushSubs.deleteOne(userId ? { _id: endpoint, userId: String(userId) } : { _id: endpoint }) },
+    async pushSubsOf(userId) { return (await pushSubs.find({ userId: String(userId) }).limit(10).toArray()).map(({ _id, ...rest }) => rest) },
+
     async addReport(r) {
       let added = true
       try { await reports.insertOne({ _id: `${r.listId}|${r.reporter}`, ...r }) } catch (e) { if (isDup(e)) added = false; else throw e }
@@ -276,6 +319,8 @@ export const createMongoSocial = (db, { ObjectId }) => {
         follows.deleteMany({ $or: [{ follower: uid }, { followee: uid }] }),
         reports.deleteMany({ reporter: uid }),
         comments.deleteMany({ authorId: uid }),
+        notifs.deleteMany({ $or: [{ userId: uid }, { actorId: uid }] }),
+        pushSubs.deleteMany({ userId: uid }),
         profiles.deleteOne({ _id: uid }),
       ])
     },
@@ -306,6 +351,10 @@ export const createMongoSocial = (db, { ObjectId }) => {
         comments.createIndex({ target: 1, hidden: 1, createdAt: -1 }),
         comments.createIndex({ target: 1, authorId: 1 }),
         comments.createIndex({ authorId: 1 }),
+        notifs.createIndex({ userId: 1, createdAt: -1 }),
+        notifs.createIndex({ userId: 1, readAt: 1 }),
+        notifs.createIndex({ createdAt: 1 }),
+        pushSubs.createIndex({ userId: 1 }),
       ])
     },
   }
