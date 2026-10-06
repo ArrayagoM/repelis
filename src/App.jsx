@@ -43,6 +43,11 @@ const MiLista     = lazy(() => import('./pages/MiLista'))
 const Calendario  = lazy(() => import('./pages/Calendario'))
 const Cuenta      = lazy(() => import('./pages/Cuenta'))
 const Panel       = lazy(() => import('./pages/Panel'))
+const Comunidad   = lazy(() => import('./pages/Comunidad'))
+const ListView    = lazy(() => import('./pages/ListView'))
+const ListEditor  = lazy(() => import('./pages/ListEditor'))
+const Profile     = lazy(() => import('./pages/Profile'))
+const MyProfile   = lazy(() => import('./pages/MyProfile'))
 
 function RouteFallback() {
   return (
@@ -147,6 +152,12 @@ export default function App() {
             <Route path="/mi-lista" element={<MiLista />} />
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/panel" element={<Panel />} />
+            <Route path="/comunidad" element={<Comunidad />} />
+            <Route path="/lista/nueva" element={<ListEditor />} />
+            <Route path="/lista/:id" element={<ListView />} />
+            <Route path="/lista/:id/editar" element={<ListEditor />} />
+            <Route path="/u/:handle" element={<Profile />} />
+            <Route path="/perfil" element={<MyProfile />} />
             <Route path="/cuenta" element={<Cuenta />} />
             <Route path="/cuenta/restablecer" element={<Cuenta view="reset" />} />
             <Route path="/cuenta/verificar" element={<Cuenta view="verify" />} />

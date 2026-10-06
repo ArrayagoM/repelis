@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree } from '@phosphor-icons/react'
 import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
@@ -285,6 +285,12 @@ export default function Navbar({ onDonateClick }) {
             <StreakChip />
             <SupporterBadge className="hidden lg:flex" />
 
+            <Link to="/comunidad"
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
+              title="Comunidad: listas y planes de la gente" aria-label="Comunidad">
+              <UsersThree size={14} weight="fill" />
+            </Link>
+
             <Link to="/mi-lista"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
               title="Mi lista y Continuar viendo" aria-label="Mi lista">
@@ -424,6 +430,10 @@ export default function Navbar({ onDonateClick }) {
               <Link to="/mi-lista" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
                 <BookmarkSimple size={16} weight="fill" className="text-gold" /> Mi lista
+              </Link>
+              <Link to="/comunidad" onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
+                <UsersThree size={16} weight="fill" className="text-gold" /> Comunidad
               </Link>
               <Link to="/cines-cerca" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">

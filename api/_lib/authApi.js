@@ -49,6 +49,7 @@ const publicUser = (u, root = false) => ({
   createdAt: u.createdAt,
   hasPassword: !!u.passHash,     // las cuentas creadas con Google no tienen contraseña
   google: !!u.googleSub,
+  premium: !!u.premium,          // plan Premium (límites de la comunidad)
   root,                          // fundador: ve el panel de estadísticas (decidido por el servidor)
 })
 
@@ -58,7 +59,7 @@ const buildCookie = (value, { maxAgeSec, secure }) =>
 /**
  * @param {{ store, mailer?: {sendVerify, sendReset}|null, secureCookies?: boolean, now?: () => number }} deps
  */
-export const createAuthApi = ({ store, mailer = null, secureCookies = true, now = Date.now, googleClientId = '', verifyGoogle = null, rootEmails = [] }) => {
+export const createAuthApi = ({ store, mailer = null, secureCookies = true, now = Date.now, googleClientId = '', verifyGoogle = null, rootEmails = [], onUserDeleted = null }) => {
   const reply = (status, body, cookies) => ({ status, body, cookies })
   const fail = (status, error) => reply(status, { error })
   const ok = (body = { ok: true }, cookies) => reply(200, body, cookies)
@@ -298,6 +299,8 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       if (await limited(`del:${auth.user.id}`, 5, HOUR)) return fail(429, 'too_many_requests')
       if (!(await confirmIdentity(auth.user, body))) return fail(401, 'invalid_credentials')
       await store.deleteUser(auth.user.id)
+      // Lo que la persona publicó en la comunidad se borra con su cuenta (si falla, la cuenta ya no existe igual)
+      try { await onUserDeleted?.(auth.user.id) } catch (e) { console.error('[auth] no se pudo limpiar la comunidad:', e?.message) }
       return ok({ ok: true }, [clearCookie()])
     },
   }

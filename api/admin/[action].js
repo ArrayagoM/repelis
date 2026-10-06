@@ -12,9 +12,11 @@ export default async function handler(req, res) {
   if (!process.env.MONGODB_URI) return res.status(503).json({ error: 'auth_unavailable' })
 
   try {
-    const { store, stats } = await getBackend()
-    const api = createAdminApi({ store, stats, rootEmails: parseRootEmails(process.env.ROOT_EMAILS) })
-    const out = await api({ method: req.method, action: String(req.query?.action || ''), headers: req.headers, query: { days: req.query?.days } })
+    const { store, stats, social } = await getBackend()
+    const api = createAdminApi({ store, stats, social, rootEmails: parseRootEmails(process.env.ROOT_EMAILS) })
+    let body = req.body
+    if (typeof body === 'string') { try { body = JSON.parse(body) } catch { body = {} } }
+    const out = await api({ method: req.method, action: String(req.query?.action || ''), headers: req.headers, query: { days: req.query?.days }, body: body || {} })
     return res.status(out.status).json(out.body)
   } catch (e) {
     console.error('[admin]', e?.message)

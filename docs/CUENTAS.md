@@ -111,6 +111,18 @@ emisor, audiencia = nuestro Client ID, vencimiento y mail verificado). No se gua
 3. **Network Access:** `0.0.0.0/0` (Vercel usa IPs que cambian).
 4. Las colecciones e índices (`users`, `sessions`, `rate_limits`) se crean solos en el primer pedido.
 
+## Comunidad (`/comunidad`)
+
+Perfiles con @usuario, listas públicas (zapping, plan de finde, maratón…), me gusta, seguir y un feed. **Mirar es libre; publicar, dar me gusta o seguir pide cuenta.**
+
+- **Páginas:** `/comunidad` (Populares · Nuevas · Siguiendo), `/lista/:id`, `/lista/nueva`, `/lista/:id/editar`, `/u/:handle`, `/perfil`. En las fichas de película/serie hay "Agregar a una lista".
+- **API:** `api/social/[action].js` → `api/_lib/socialApi.js`. Reglas compartidas cliente/servidor en `src/lib/socialRules.js` (el servidor vuelve a validar todo).
+- **Datos (MongoDB):** colecciones `profiles`, `lists`, `likes`, `follows`, `reports` (índices en `socialStore.js`).
+- **Límites:** gratis 3 listas × 50 títulos; Premium 100 × 200 y listas privadas (el campo `user.premium` existe, aún sin cobro). Sin links en ningún texto. Cuenta nueva sin mail verificado espera 1 h para publicar. @usuario cambia 1 vez cada 30 días.
+- **Moderación:** botón "Reportar" en cada lista; a los **3 reportes de personas distintas** se oculta sola. En `/panel` (solo fundador) hay números de comunidad y la cola de reportes: descartar / ocultar / borrar.
+- **Borrar cuenta** elimina también perfil, listas, me gusta, seguimientos y reportes de esa persona.
+- **Probar contra Mongo real** (base temporal que se borra sola): `$env:MONGODB_URI = "<uri>"; node scripts/smoke-social.mjs`.
+
 ## Probar
 
 - **Local:** `npm run dev` incluye una API de cuentas **en memoria** (`scripts/dev-api.js`); los mails se imprimen en la terminal.

@@ -13,6 +13,7 @@ import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
+import AddToList from '../../components/AddToList'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
 import CinemaTickets from '../../components/CinemaTickets'
@@ -249,6 +250,7 @@ export default function MovieDetail() {
               )}
 
               <ListButton item={toLibItem(data, 'movie')} />
+              <AddToList item={toLibItem(data, 'movie')} />
               {!movieUpcoming && <WatchTogether title={data.title} type="movie" id={data.id} runtimeMin={data.runtime || 0} />}
               <ShareButtons title={data.title} description={data.tagline || ''} />
             </div>

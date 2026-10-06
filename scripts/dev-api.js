@@ -12,6 +12,8 @@ import { createPulse } from '../api/_lib/pulse.js'
 import { createAdminApi } from '../api/_lib/adminApi.js'
 import { parseRootEmails } from '../api/_lib/session.js'
 import { seedDemoStats } from './dev-seed.js'
+import { createMemorySocial } from '../api/_lib/socialStore.js'
+import { createSocialApi } from '../api/_lib/socialApi.js'
 
 const readJson = (req) => new Promise((resolve) => {
   const chunks = []
@@ -43,7 +45,8 @@ export const devAuthApi = () => ({
         }
     // Fundador de desarrollo: ROOT_EMAILS del entorno, o root@dev.test (se prueba con la credencial falsa "fake:1:root@dev.test:Fundador")
     const rootEmails = parseRootEmails(process.env.ROOT_EMAILS).length ? parseRootEmails(process.env.ROOT_EMAILS) : ['root@dev.test']
-    const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle, rootEmails })
+    const social = createMemorySocial()
+    const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle, rootEmails, onUserDeleted: (id) => social.deleteUserData(id) })
 
     // Estadísticas en memoria. Arrancan VACÍAS. Con DEV_SEED=1 se cargan 7 días de datos INVENTADOS y el panel lo avisa con un cartel rojo.
     const stats = createMemoryStats()
@@ -52,7 +55,8 @@ export const devAuthApi = () => ({
       seedDemoStats({ stats }).catch((e) => console.error('[dev-seed]', e?.message))
     }
     const pulse = createPulse({ stats })
-    const admin = createAdminApi({ store, stats, rootEmails })
+    const admin = createAdminApi({ store, stats, social, rootEmails })
+    const socialApi = createSocialApi({ store, social, rootEmails })
 
     const send = (res, out) => {
       res.statusCode = out.status
@@ -67,7 +71,14 @@ export const devAuthApi = () => ({
     server.middlewares.use('/api/admin', async (req, res) => {
       const url = new URL(req.url || '/', 'http://localhost')
       const action = url.pathname.replace(/^\/+/, '').split('/')[0]
-      send(res, await admin({ method: req.method, action, headers: req.headers, query: { days: url.searchParams.get('days') } }))
+      const body = req.method === 'POST' ? await readJson(req) : {}
+      send(res, await admin({ method: req.method, action, headers: req.headers, query: { days: url.searchParams.get('days') }, body }))
+    })
+    server.middlewares.use('/api/social', async (req, res) => {
+      const url = new URL(req.url || '/', 'http://localhost')
+      const action = url.pathname.replace(/^\/+/, '').split('/')[0]
+      const body = req.method === 'POST' ? await readJson(req) : {}
+      send(res, await socialApi({ method: req.method, action, headers: req.headers, body, query: Object.fromEntries(url.searchParams), ip: req.socket.remoteAddress || '' }))
     })
 
     server.middlewares.use('/api/auth', async (req, res) => {

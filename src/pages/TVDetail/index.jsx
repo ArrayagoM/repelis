@@ -13,6 +13,7 @@ import MovieRow from '../../components/MovieRow'
 import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
+import AddToList from '../../components/AddToList'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
 import { GuestLockNote } from '../../components/AccessGate'
@@ -230,6 +231,7 @@ export default function TVDetail() {
 
               {isUpcoming(data) && <ReminderButton item={toLibItem(data, 'tv')} />}
               <ListButton item={toLibItem(data, 'tv')} />
+              <AddToList item={toLibItem(data, 'tv')} />
               {!isUpcoming(data) && <WatchTogether title={data.name} type="tv" id={Number(id)} runtimeMin={data.episode_run_time?.[0] || 0} />}
               <ShareButtons title={data.name} description={data.tagline || ''} />
             </div>

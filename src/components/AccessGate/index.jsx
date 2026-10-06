@@ -27,7 +27,7 @@ export default function AccessGate({ title, onClose, reason = 'watch' }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    pulseEvent(reason === 'list' ? 'gate_shown_list' : 'gate_shown_watch')
+    pulseEvent(reason === 'list' || reason === 'social' ? 'gate_shown_list' : 'gate_shown_watch')
     markGateShown()
   }, [reason])
 
@@ -65,12 +65,14 @@ export default function AccessGate({ title, onClose, reason = 'watch' }) {
             <LockKey size={26} weight="fill" className="text-gold" />
           </div>
           <h2 className="font-display font-extrabold text-xl text-chalk leading-snug">
-            {status === 'loading' ? 'Un momento…' : reason === 'list' ? 'Para guardar, creá tu cuenta gratis' : 'Para verla, creá tu cuenta gratis'}
+            {status === 'loading' ? 'Un momento…' : reason === 'social' ? 'Para participar, creá tu cuenta gratis' : reason === 'list' ? 'Para guardar, creá tu cuenta gratis' : 'Para verla, creá tu cuenta gratis'}
           </h2>
           <p className="text-muted text-sm mt-2 leading-relaxed">
             {status === 'loading'
               ? 'Estamos verificando tu sesión.'
-              : reason === 'list'
+              : reason === 'social'
+                ? <>Dar like, seguir gente y armar tus propias listas es con cuenta. Ver las listas de la comunidad es libre, sin registrarte.</>
+                : reason === 'list'
                 ? <>Guardar <strong className="text-chalk/90">{title || 'este título'}</strong> en Mi lista (y seguir viendo después) es con cuenta. Ver y buscar sigue siendo libre, sin registrarte.</>
                 : <><strong className="text-chalk/90">{title || 'Este título'}</strong> es de los más calificados y populares. Hay miles de títulos que se ven sin registrarte; para este necesitás una cuenta, y te lleva 10 segundos.</>}
           </p>

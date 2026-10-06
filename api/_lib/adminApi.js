@@ -4,7 +4,7 @@
 //   GET dashboard?days=1|7|30 → tráfico, tiempo de visualización, títulos más vistos, audiencia, cuentas, embudo
 // Para cualquiera que no sea root responde 404 (ni siquiera confirma que el panel existe).
 // ─────────────────────────────────────────────────────────────────────────
-import { authenticateSession, isRoot } from './session.js'
+import { authenticateSession, isRoot, checkWriteRequest } from './session.js'
 import { dayKey, ONLINE_WINDOW_MS } from './pulse.js'
 
 const RANGES = [1, 7, 30]
@@ -60,13 +60,47 @@ const aggregateTitles = (docs) => {
 }
 const shapeTitle = (t) => ({ key: t.key, title: t.title, type: t.type, hours: round(t.seconds / 3600, 2), minutes: round(t.seconds / 60, 0), plays: t.plays })
 
-export const createAdminApi = ({ store, stats, rootEmails = [], now = Date.now }) => async ({ method, action, headers = {}, query = {} }) => {
-  if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } }
+export const createAdminApi = ({ store, stats, social = null, rootEmails = [], now = Date.now }) => async ({ method, action, headers = {}, query = {}, body = {} }) => {
+  const isModerate = method === 'POST' && action === 'moderate'
+  if (method !== 'GET' && !isModerate) return { status: 405, body: { error: 'method_not_allowed' } }
+  if (isModerate) {
+    const bad = checkWriteRequest(Object.fromEntries(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])))
+    if (bad) return { status: bad.status, body: { error: bad.error } }
+  }
   const auth = await authenticateSession({ store, headers, now: now() })
   if (!auth) return { status: 401, body: { error: 'not_authenticated' } }
   if (!isRoot(auth.user, rootEmails)) return { status: 404, body: { error: 'not_found' } }
 
   const t = now()
+
+  // ── Moderación de la comunidad ───────────────────────────────────────
+  if (action === 'reports' && social) {
+    const rows = await social.reportedLists(50)
+    const out = []
+    for (const r of rows) {
+      const l = await social.getList(r.listId)
+      if (!l) { await social.clearReports(r.listId); continue }        // la lista ya no existe
+      const owner = await social.getProfile(l.ownerId)
+      out.push({
+        listId: l.id, title: l.title, description: l.description, owner: owner?.handle || '—', itemsCount: l.items.length,
+        hidden: !!l.hidden, reports: r.count, reasons: r.reasons.slice(0, 3), sample: l.items.slice(0, 5).map((i) => i.title),
+      })
+    }
+    return { status: 200, body: { reports: out } }
+  }
+  if (isModerate && social) {
+    const id = String(body.listId || '')
+    const l = await social.getList(id)
+    if (!l) return { status: 404, body: { error: 'not_found' } }
+    switch (body.decision) {
+      case 'hide': await social.updateList(id, { hidden: true }); break
+      case 'unhide': await social.updateList(id, { hidden: false }); break
+      case 'dismiss': await social.clearReports(id); await social.updateList(id, { hidden: false }); break    // falsa alarma
+      case 'delete': await social.deleteList(id); break
+      default: return { status: 400, body: { error: 'bad_request' } }
+    }
+    return { status: 200, body: { ok: true } }
+  }
 
   // ── En vivo ──────────────────────────────────────────────────────────
   if (action === 'realtime') {
@@ -163,6 +197,7 @@ export const createAdminApi = ({ store, stats, rootEmails = [], now = Date.now }
           members: tot.members, guests: tot.guests,
           watchHoursMembers: round(tot.watchMember / 3600, 3), watchHoursGuests: round(tot.watchGuest / 3600, 3),
         },
+        community: social ? await social.stats() : null,
         funnel: {
           gateShown, gateShownWatch: num(tot.ev.gate_shown_watch), gateShownList: num(tot.ev.gate_shown_list),
           signupsFromGate: num(tot.ev.signup_gate), signupsOther: num(tot.ev.signup), logins: num(tot.ev.login),

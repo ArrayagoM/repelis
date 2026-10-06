@@ -4,6 +4,8 @@ import { createPulse, dayKey, ONLINE_WINDOW_MS } from '../_lib/pulse.js'
 import { createMemoryStats } from '../_lib/statsStore.js'
 import { createMemoryStore } from '../_lib/stores.js'
 import { createAuthApi } from '../_lib/authApi.js'
+import { createMemorySocial } from '../_lib/socialStore.js'
+import { createSocialApi } from '../_lib/socialApi.js'
 import { parseRootEmails, isRoot } from '../_lib/session.js'
 import { sha256 } from '../_lib/passwords.js'
 
@@ -232,6 +234,79 @@ describe('datos de demostración', () => {
     const h = await session(await mkUser({ email: ROOT }))
     expect((await call('dashboard', h)).body.demo).toBe(true)
     expect((await call('realtime', h)).body.demo).toBe(true)
+  })
+})
+
+describe('moderación de la comunidad', () => {
+  let social, root, social_api
+  const H = { 'content-type': 'application/json', host: 'lifehigh.test' }
+  const mk = async (email, over = {}) => {
+    const u = await store.createUser({ email, name: email.split('@')[0], emailVerified: true, createdAt: T0 - 7 * 86400000, library: {}, ...over })
+    const token = `tok-${u.id}`
+    await store.createSession({ id: sha256(token), userId: u.id, ua: '', createdAt: clock, expiresAt: clock + 86400000 })
+    return { u, h: { ...H, cookie: `lh_session=${token}` } }
+  }
+  const mkList = async (handle, title = 'Lista') => {
+    const { h } = await mk(`${handle}@mail.com`)
+    await social_api({ method: 'POST', action: 'profile', headers: h, body: { handle } })
+    const r = await social_api({ method: 'POST', action: 'list', headers: h, body: { title, items: [{ type: 'movie', id: 1, title: 'Peli' }] } })
+    return r.body.list.id
+  }
+  const modPost = (action, body, h) => admin({ method: 'POST', action, headers: h, body })
+
+  beforeEach(async () => {
+    social = createMemorySocial()
+    social_api = createSocialApi({ store, social, now: () => clock, rootEmails: [ROOT] })
+    admin = createAdminApi({ store, stats, social, rootEmails: [ROOT], now: () => clock })
+    root = await mk(ROOT)
+  })
+
+  it('la cola de reportes muestra las listas reportadas con cantidad y motivos', async () => {
+    const id = await mkList('ana', 'Lista dudosa')
+    for (const n of ['r1', 'r2']) { const { h } = await mk(`${n}@mail.com`); await social_api({ method: 'POST', action: 'report', headers: h, body: { id, reason: 'ofensiva' } }) }
+    const { status, body } = await call('reports', root.h)
+    expect(status).toBe(200)
+    expect(body.reports).toHaveLength(1)
+    expect(body.reports[0]).toMatchObject({ listId: id, title: 'Lista dudosa', owner: 'ana', reports: 2, hidden: false, reasons: ['ofensiva', 'ofensiva'] })
+  })
+  it('solo el fundador accede a los reportes y a moderar', async () => {
+    const id = await mkList('ana')
+    const normal = await mk('normal@mail.com')
+    expect((await call('reports', normal.h)).status).toBe(404)
+    expect((await modPost('moderate', { listId: id, decision: 'delete' }, normal.h)).status).toBe(404)
+    expect((await modPost('moderate', { listId: id, decision: 'delete' }, H)).status).toBe(401)
+    expect(await social.getList(id)).not.toBeNull()
+  })
+  it('moderar exige JSON y mismo origen (anti-CSRF)', async () => {
+    const id = await mkList('ana')
+    expect((await modPost('moderate', { listId: id, decision: 'hide' }, { ...root.h, 'content-type': 'text/plain' })).status).toBe(415)
+    expect((await modPost('moderate', { listId: id, decision: 'hide' }, { ...root.h, origin: 'https://malo.com' })).status).toBe(403)
+  })
+  it('puede ocultar, mostrar, descartar el reporte y borrar', async () => {
+    const id = await mkList('ana')
+    expect((await modPost('moderate', { listId: id, decision: 'hide' }, root.h)).status).toBe(200)
+    expect((await social.getList(id)).hidden).toBe(true)
+    await modPost('moderate', { listId: id, decision: 'unhide' }, root.h)
+    expect((await social.getList(id)).hidden).toBe(false)
+    const r1 = await mk('r1@mail.com'); await social_api({ method: 'POST', action: 'report', headers: r1.h, body: { id } })
+    await modPost('moderate', { listId: id, decision: 'dismiss' }, root.h)
+    expect((await call('reports', root.h)).body.reports).toEqual([])
+    expect((await modPost('moderate', { listId: id, decision: 'delete' }, root.h)).status).toBe(200)
+    expect(await social.getList(id)).toBeNull()
+  })
+  it('decisiones inválidas o listas inexistentes se rechazan', async () => {
+    const id = await mkList('ana')
+    expect((await modPost('moderate', { listId: id, decision: 'explotar' }, root.h)).status).toBe(400)
+    expect((await modPost('moderate', { listId: 'nope', decision: 'hide' }, root.h)).status).toBe(404)
+  })
+  it('el panel incluye las estadísticas de la comunidad', async () => {
+    await mkList('ana'); await mkList('beto')
+    const { body } = await call('dashboard', root.h)
+    expect(body.community).toMatchObject({ profiles: 2, lists: 2, likes: 0, follows: 0, pendingReports: 0 })
+  })
+  it('sin almacenamiento de comunidad, el panel igual funciona', async () => {
+    admin = createAdminApi({ store, stats, rootEmails: [ROOT], now: () => clock })
+    expect((await call('dashboard', root.h)).body.community).toBeNull()
   })
 })
 

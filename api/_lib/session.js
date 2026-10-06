@@ -36,3 +36,19 @@ export const parseRootEmails = (value) =>
  */
 export const isRoot = (user, rootEmails = []) =>
   !!user && user.emailVerified === true && rootEmails.includes(String(user.email || '').toLowerCase())
+
+/**
+ * Anti-CSRF para pedidos que modifican datos: mismo origen y cuerpo JSON (sin CORS, un formulario ajeno no puede mandar JSON).
+ * @returns {null | { status: number, error: string }} null si está todo bien
+ */
+export const checkWriteRequest = (headers) => {
+  const site = headers['sec-fetch-site']
+  if (site && site !== 'same-origin' && site !== 'none') return { status: 403, error: 'forbidden' }
+  const origin = headers.origin
+  if (origin) {
+    const host = headers['x-forwarded-host'] || headers.host
+    try { if (new URL(origin).host !== host) return { status: 403, error: 'forbidden' } } catch { return { status: 403, error: 'forbidden' } }
+  }
+  if (!String(headers['content-type'] || '').toLowerCase().includes('application/json')) return { status: 415, error: 'json_required' }
+  return null
+}

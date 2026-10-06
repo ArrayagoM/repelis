@@ -44,9 +44,24 @@ export default function Terms() {
             derechos de autor es responsabilidad exclusiva del usuario.
           </Section>
 
-          <Section title="4. Ausencia de cuentas y datos personales">
-            Life High no requiere registro. No recolectamos correos, contraseñas, números de teléfono ni
-            datos identificatorios. Para más detalle ver nuestra <Link to="/privacy" className="text-gold hover:underline">Política de Privacidad</Link>.
+          <Section title="4. Cuentas y datos personales">
+            Mirar contenido no requiere registro. Algunas funciones (Mi lista, Continuar viendo, ciertos títulos destacados y la
+            comunidad) piden una cuenta gratuita. Solo guardamos lo necesario para que funcione: tu email, una contraseña
+            protegida (o tu cuenta de Google) y tu biblioteca. Podés borrar tu cuenta cuando quieras. Para más detalle ver
+            nuestra <Link to="/privacy" className="text-gold hover:underline">Política de Privacidad</Link>.
+          </Section>
+
+          <Section title="4 bis. Comunidad: perfiles y listas">
+            Con tu cuenta podés elegir un @usuario público y armar listas de películas y series. Lo que publicás es visible
+            para cualquier persona. Reglas:
+            <ul className="list-disc list-inside mt-2 space-y-1 marker:text-gold/60">
+              <li>Sin links, publicidad, spam ni datos personales de nadie (tuyos o de terceros).</li>
+              <li>Sin contenido que insulte, acose, discrimine o incite al odio; sin suplantar a otras personas ni a Life High.</li>
+              <li>Sin enlaces a sitios de piratería ni pedidos de contenido ilegal.</li>
+              <li>Podés reportar una lista; cuando varias personas distintas la reportan se oculta automáticamente hasta que se revise.</li>
+              <li>Podemos ocultar o eliminar listas y suspender perfiles que incumplan estas reglas, sin aviso previo.</li>
+              <li>Vos seguís siendo autor de tus listas; nos das permiso para mostrarlas dentro de Life High mientras estén publicadas. Si las borrás, dejan de mostrarse.</li>
+            </ul>
           </Section>
 
           <Section title="5. Disponibilidad y garantías">

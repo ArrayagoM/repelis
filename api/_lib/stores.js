@@ -3,6 +3,7 @@
 //   · createMongoStore()   → producción (MongoDB Atlas)
 //
 import { createMongoStats } from './statsStore.js'
+import { createMongoSocial } from './socialStore.js'
 
 // Interfaz (todo async). Los usuarios salen con `id` (string); los tiempos son milisegundos.
 
@@ -190,8 +191,9 @@ export const getBackend = (env = process.env) => {
       const db = client.db(env.MONGODB_DB || 'lifehigh')
       const store = createMongoStore(db, { ObjectId })
       const stats = createMongoStats(db)
-      await Promise.all([store.ensureIndexes(), stats.ensureIndexes()])
-      return { store, stats }
+      const social = createMongoSocial(db, { ObjectId })
+      await Promise.all([store.ensureIndexes(), stats.ensureIndexes(), social.ensureIndexes()])
+      return { store, stats, social }
     })().catch((e) => { cached = null; throw e })   // si falla, el próximo pedido reintenta
   }
   return cached
@@ -199,3 +201,4 @@ export const getBackend = (env = process.env) => {
 
 export const getStore = (env = process.env) => getBackend(env)?.then((b) => b.store) ?? null
 export const getStats = (env = process.env) => getBackend(env)?.then((b) => b.stats) ?? null
+export const getSocial = (env = process.env) => getBackend(env)?.then((b) => b.social) ?? null

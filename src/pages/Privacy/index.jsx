@@ -102,6 +102,11 @@ export default function Privacy() {
               se borran tu mail, tu contraseña y tu biblioteca de nuestros servidores. Al cerrar sesión, tu biblioteca se borra de ese
               dispositivo (sigue en tu cuenta) para que nadie más la vea en un equipo compartido.
             </p>
+            <p className="mt-3">
+              <strong className="text-chalk/85">Comunidad.</strong> Si elegís un @usuario y publicás listas, el @usuario, tu nombre, tu bio y tus listas públicas
+              son <strong className="text-chalk/85">visibles para cualquiera</strong>, incluso sin cuenta. Tus me gusta y a quién seguís se usan para mostrar contadores y tu pestaña
+              "Siguiendo"; no se publican como lista. No se muestra tu mail. Al borrar tu cuenta se eliminan también tu perfil, tus listas, tus me gusta, tus seguimientos y tus reportes.
+            </p>
           </Section>
 
           <Section title="4. Service Worker y cache">

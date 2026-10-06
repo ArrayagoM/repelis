@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ChartLineUp, Users, PlayCircle, Clock, Eye, UserPlus, ArrowClockwise, Television, FilmSlate, Heart, Funnel, Globe,
+  ChartLineUp, Users, PlayCircle, Clock, Eye, UserPlus, ArrowClockwise, Television, FilmSlate, Heart, Funnel, Globe, UsersThree, Flag,
 } from '@phosphor-icons/react'
 import AreaChart from '../../components/charts/AreaChart'
 import BarList from '../../components/charts/BarList'
@@ -44,6 +44,13 @@ export default function Panel() {
     )
   }
   return <PanelBody />
+}
+
+const postJson = async (path, body) => {
+  try {
+    const res = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    return { ok: res.ok }
+  } catch { return { ok: false } }
 }
 
 function PanelBody() {
@@ -176,6 +183,7 @@ function PanelBody() {
             </div>
 
             <AccountsSection users={dash.users} />
+            <CommunitySection stats={dash.community} />
           </>
         )}
 
@@ -381,3 +389,71 @@ const SkeletonBlocks = () => (
     <div className="skeleton h-64 rounded-2xl" />
   </div>
 )
+
+// ─── Comunidad: números y cola de moderación ────────────────────────────
+function CommunitySection({ stats }) {
+  const [reports, setReports] = useState(null)
+  const [busy, setBusy] = useState('')
+
+  const load = useCallback(async () => {
+    const r = await getJson('/api/admin/reports')
+    setReports(r.ok ? r.data.reports : [])
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  const decide = async (listId, decision) => {
+    if (decision === 'delete' && !window.confirm('¿Borrar esta lista para siempre?')) return
+    setBusy(listId)
+    await postJson('/api/admin/moderate', { listId, decision })
+    setBusy('')
+    load()
+  }
+
+  if (!stats) return null
+  const cells = [
+    ['Perfiles', stats.profiles], ['Listas públicas', stats.lists], ['Listas privadas', stats.privateLists],
+    ['Me gusta', stats.likes], ['Seguimientos', stats.follows], ['Ocultas', stats.hiddenLists],
+  ]
+  return (
+    <section aria-label="Comunidad" className="space-y-4">
+      <h2 className="font-display font-bold text-lg text-chalk flex items-center gap-2"><UsersThree size={18} className="text-gold" /> Comunidad</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {cells.map(([label, value]) => (
+          <div key={label} className="p-4 rounded-2xl bg-card border border-white/[0.06]">
+            <p className="text-muted text-xs">{label}</p>
+            <p className="font-display font-extrabold text-2xl text-chalk mt-1">{fmtInt(value || 0)}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-5 rounded-2xl bg-card border border-white/[0.06]">
+        <h3 className="font-display font-bold text-base text-chalk flex items-center gap-2 mb-3">
+          <Flag size={16} className="text-amber-300" /> Reportes pendientes {reports?.length ? <span className="text-amber-300 font-mono text-sm">({reports.length})</span> : null}
+        </h3>
+        {reports === null ? <div className="skeleton h-16 rounded-xl" />
+          : reports.length === 0 ? <p className="text-muted text-sm">Nada para revisar. Una lista se oculta sola a los 3 reportes de personas distintas.</p>
+          : (
+            <ul className="space-y-3">
+              {reports.map((r) => (
+                <li key={r.listId} className="p-4 rounded-xl bg-surface border border-white/[0.06] space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to={`/lista/${r.listId}`} className="font-semibold text-chalk hover:text-gold mr-auto">{r.title}</Link>
+                    <span className="text-xs text-muted font-mono">@{r.owner} · {r.itemsCount} títulos · {r.reports} reportes</span>
+                    {r.hidden && <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px]">oculta</span>}
+                  </div>
+                  {r.description && <p className="text-muted text-xs">{r.description}</p>}
+                  {r.sample.length > 0 && <p className="text-muted/70 text-xs">Incluye: {r.sample.join(', ')}</p>}
+                  {r.reasons.length > 0 && <ul className="text-xs text-amber-200/90 list-disc pl-4">{r.reasons.map((x, i) => <li key={i}>{x}</li>)}</ul>}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button disabled={busy === r.listId} onClick={() => decide(r.listId, 'dismiss')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-emerald-400/40">Está bien (descartar)</button>
+                    {!r.hidden && <button disabled={busy === r.listId} onClick={() => decide(r.listId, 'hide')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-amber-400/40">Ocultar</button>}
+                    <button disabled={busy === r.listId} onClick={() => decide(r.listId, 'delete')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">Borrar</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+      </div>
+    </section>
+  )
+}
