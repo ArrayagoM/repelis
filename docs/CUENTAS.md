@@ -1,6 +1,6 @@
 # Cuentas de usuario (opcionales) y sincronización
 
-Registro e ingreso con mail y contraseña. Sirve para sincronizar **Mi lista, Continuar viendo, avisos, logros y Supporter**
+Ingreso con **Google** (principal) y con mail y contraseña (alternativa). Sirve para sincronizar **Mi lista, Continuar viendo, avisos, logros y Supporter**
 entre dispositivos. Sin cuenta, todo sigue funcionando igual (guardado en el dispositivo).
 
 ## Cómo funciona
@@ -23,6 +23,7 @@ entre dispositivos. Sin cuenta, todo sigue funcionando igual (guardado en el dis
 |---|---|---|
 | `MONGODB_URI` | **Sí** | Cadena de conexión de Atlas (`mongodb+srv://usuario:CLAVE@cluster/...`). |
 | `MONGODB_DB` | No | Nombre de la base (por defecto `lifehigh`). |
+| `GOOGLE_CLIENT_ID` | Recomendada | Client ID de Google (termina en `.apps.googleusercontent.com`). Es **público**; no hay "client secret" en este flujo. Sin ella no aparece el botón de Google. |
 | `RESEND_API_KEY` | No* | Clave de [Resend](https://resend.com) (gratis). *Sin ella no hay mails: no se puede confirmar el mail ni recuperar la contraseña. |
 | `MAIL_FROM` | No | Remitente, ej. `Life High <avisos@tudominio.com>`. Sin dominio verificado en Resend solo se puede mandar a tu propio mail (`onboarding@resend.dev`). |
 | `SITE_URL` | No | URL pública para los enlaces de los mails (por defecto `https://repelis.vercel.app`). Poné `https://lifehigh.site` cuando el dominio funcione. |
@@ -33,6 +34,30 @@ Cargalas en **Production, Preview y Development** y hacé **Redeploy**.
 
 Si la clave de la base tiene símbolos (`# @ / : ? %`), en la URL hay que escribirlos codificados (`#` → `%23`, `@` → `%40`, `/` → `%2F`, `:` → `%3A`).
 Lo más simple: usar la contraseña **autogenerada** de Atlas (solo letras y números).
+
+## Ingreso con Google
+
+El botón oficial de Google entrega un token firmado; el servidor lo verifica (firma con las claves públicas de Google,
+emisor, audiencia = nuestro Client ID, vencimiento y mail verificado). No se guardan contraseñas de Google.
+
+- **Primera vez:** crea la cuenta (mail verificado, sin contraseña). **Si el mail ya tenía cuenta**, se vincula.
+- **Protección contra pre-secuestro:** si esa cuenta existente nunca había verificado su mail, al vincular Google se **borran su
+  contraseña y sus sesiones** (quien la creó pudo no ser el dueño del mail).
+- Las cuentas de Google no tienen contraseña (pueden crear una con "Olvidé mi contraseña" si hay mails). Para borrar la cuenta
+  se confirma con Google.
+- **Apps embebidas:** Google bloquea el ingreso dentro de WebViews (el APK liviano de Capacitor y las apps de escritorio).
+  Ahí funciona el ingreso con mail y contraseña; en el navegador y en la PWA instalada funciona Google.
+
+### Alta en Google Cloud (una vez)
+
+1. Cuenta de Google del proyecto → https://console.cloud.google.com → **Crear proyecto** "Life High".
+2. **Google Auth Platform → Primeros pasos:** nombre de la app `Life High`, mail de asistencia, público **Externo**, mail de contacto.
+3. **Clientes → Crear cliente → Aplicación web.** En **Orígenes de JavaScript autorizados** agregá:
+   `https://repelis.vercel.app`, `https://lifehigh.site`, `https://www.lifehigh.site` y `http://localhost:5173`.
+   (No hace falta ningún "URI de redireccionamiento".) Copiá el **ID de cliente**.
+4. **Público → Publicar la app** (pasar a "En producción"). Sin esto solo pueden entrar los "usuarios de prueba" que cargues.
+   Con los permisos básicos (email, perfil) no se necesita verificación de Google.
+5. En Vercel cargá `GOOGLE_CLIENT_ID` con ese ID (Production, Preview, Development) y hacé **Redeploy**.
 
 ## MongoDB Atlas (checklist)
 
@@ -49,5 +74,5 @@ Lo más simple: usar la contraseña **autogenerada** de Atlas (solo letras y nú
 
 ## Pendiente / ideas
 
-- Ingreso con Google/Apple (requiere configurar sus consolas).
+- Ingreso con Apple (requiere cuenta de desarrollador de Apple).
 - App móvil (React Native): pantalla de ingreso + sincronización (hoy las cuentas funcionan en la web, las apps de escritorio y el APK liviano).

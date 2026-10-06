@@ -47,6 +47,8 @@ const publicUser = (u) => ({
   emailVerified: !!u.emailVerified,
   supporterSince: u.supporterSince || null,
   createdAt: u.createdAt,
+  hasPassword: !!u.passHash,     // las cuentas creadas con Google no tienen contraseña
+  google: !!u.googleSub,
 })
 
 const parseCookies = (header = '') => {
@@ -64,7 +66,7 @@ const buildCookie = (value, { maxAgeSec, secure }) =>
 /**
  * @param {{ store, mailer?: {sendVerify, sendReset}|null, secureCookies?: boolean, now?: () => number }} deps
  */
-export const createAuthApi = ({ store, mailer = null, secureCookies = true, now = Date.now }) => {
+export const createAuthApi = ({ store, mailer = null, secureCookies = true, now = Date.now, googleClientId = '', verifyGoogle = null }) => {
   const reply = (status, body, cookies) => ({ status, body, cookies })
   const fail = (status, error) => reply(status, { error })
   const ok = (body = { ok: true }, cookies) => reply(200, body, cookies)
@@ -114,9 +116,20 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
     try { await mailer.sendVerify(user.email, token); return true } catch { return false }
   }
 
+  /** Confirma que quien pide una acción delicada es el dueño: contraseña, o credencial de Google reciente. */
+  const confirmIdentity = async (user, body) => {
+    if (user.passHash && typeof body.password === 'string' && body.password) {
+      return verifyPassword(body.password.slice(0, 200), user.passHash)
+    }
+    if (user.googleSub && typeof body.credential === 'string' && verifyGoogle) {
+      try { return (await verifyGoogle(body.credential)).sub === user.googleSub } catch { return false }
+    }
+    return false
+  }
+
   // ─── Acciones ─────────────────────────────────────────────────────────
   const actions = {
-    'GET status': async () => ok({ enabled: true, mail: !!mailer }),
+    'GET status': async () => ok({ enabled: true, mail: !!mailer, googleClientId: googleClientId && verifyGoogle ? googleClientId : null }),
 
     'POST register': async ({ body, headers, ip }) => {
       if (await limited(`reg:${ipKey(ip)}`, 5, HOUR)) return fail(429, 'too_many_requests')
@@ -154,13 +167,53 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       const user = isValidEmail(email) && typeof body.password === 'string' && body.password.length <= 200
         ? await store.findUserByEmail(email) : null
       // Siempre hacemos un scrypt, exista o no el mail: la demora no revela si la cuenta existe
-      const valid = await verifyPassword(String(body.password ?? '').slice(0, 200), user ? user.passHash : await dummyHash())
-      if (!user || !valid) return fail(401, 'invalid_credentials')
+      const hash = user?.passHash || await dummyHash()
+      const valid = await verifyPassword(String(body.password ?? '').slice(0, 200), hash)
+      if (!user || !user.passHash || !valid) return fail(401, 'invalid_credentials')
 
       // Limitamos las sesiones abiertas por usuario (cada login nuevo)
       if ((await store.countSessions(user.id)) >= MAX_SESSIONS_PER_USER) await store.deleteSessionsOfUser(user.id)
       const cookie = await startSession(user.id, headers)
       return ok({ user: publicUser(user), library: normalizeLibrary(user.library) }, [cookie])
+    },
+
+    // Ingreso / registro con Google (si el mail ya tenía cuenta, se vincula)
+    'POST google': async ({ body, headers, ip }) => {
+      if (!verifyGoogle || !googleClientId) return fail(503, 'google_unavailable')
+      if (await limited(`google:${ipKey(ip)}`, 30, 15 * MIN)) return fail(429, 'too_many_requests')
+
+      let g
+      try { g = await verifyGoogle(body.credential) } catch { return fail(401, 'google_invalid') }
+
+      let user = await store.findUserByGoogleSub(g.sub)
+      let created = false
+      if (!user) {
+        const byEmail = await store.findUserByEmail(g.email)
+        if (byEmail) {
+          // Vincula Google a la cuenta existente. Si ese mail NUNCA se había verificado, quien creó la cuenta
+          // pudo no ser el dueño del mail (pre-secuestro): borramos su contraseña y sus sesiones.
+          const patch = { googleSub: g.sub, emailVerified: true, name: byEmail.name || cleanName(g.name) }
+          if (!byEmail.emailVerified) patch.passHash = undefined
+          user = await store.updateUser(byEmail.id, patch)
+          if (!byEmail.emailVerified) await store.deleteSessionsOfUser(byEmail.id)
+        } else {
+          try {
+            user = await store.createUser({
+              email: g.email, name: cleanName(g.name), googleSub: g.sub, emailVerified: true,
+              createdAt: now(), library: mergeLibraries(emptyLibrary(), normalizeLibrary(body.library), { now: now() }), libraryUpdatedAt: now(),
+            })
+            created = true
+          } catch (e) {
+            if (e?.code !== 'email_taken') throw e
+            user = await store.findUserByEmail(g.email)       // carrera: se registró justo en paralelo
+          }
+        }
+      }
+      if (!user) return fail(500, 'server_error')
+
+      if ((await store.countSessions(user.id)) >= MAX_SESSIONS_PER_USER) await store.deleteSessionsOfUser(user.id)
+      const cookie = await startSession(user.id, headers)
+      return ok({ user: publicUser(user), library: normalizeLibrary(user.library), created }, [cookie])
     },
 
     'POST logout': async ({ headers }) => {
@@ -246,6 +299,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       const auth = await authenticate(headers)
       if (!auth) return fail(401, 'not_authenticated')
       if (await limited(`pw:${auth.user.id}`, 10, HOUR)) return fail(429, 'too_many_requests')
+      if (!auth.user.passHash) return fail(400, 'no_password')
       if (!(await verifyPassword(String(body.current ?? '').slice(0, 200), auth.user.passHash))) return fail(401, 'invalid_credentials')
       const problem = passwordProblem(body.next, auth.user.email)
       if (problem) return fail(400, problem)
@@ -258,7 +312,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       const auth = await authenticate(headers)
       if (!auth) return fail(401, 'not_authenticated')
       if (await limited(`del:${auth.user.id}`, 5, HOUR)) return fail(429, 'too_many_requests')
-      if (!(await verifyPassword(String(body.password ?? '').slice(0, 200), auth.user.passHash))) return fail(401, 'invalid_credentials')
+      if (!(await confirmIdentity(auth.user, body))) return fail(401, 'invalid_credentials')
       await store.deleteUser(auth.user.id)
       return ok({ ok: true }, [clearCookie()])
     },

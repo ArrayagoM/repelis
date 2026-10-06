@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import {
   UserCircle, Eye, EyeSlash, CheckCircle, WarningCircle, CloudCheck, ArrowsClockwise, SignOut, Heart,
 } from '@phosphor-icons/react'
+import GoogleButton from '../../components/GoogleButton'
 import {
-  useAuth, register, login, logout, forgotPassword, resetPassword, verifyEmail, resendVerification,
+  useAuth, register, login, loginWithGoogle, logout, forgotPassword, resetPassword, verifyEmail, resendVerification,
   changePassword, deleteAccount, syncNow, errorMessage,
 } from '../../lib/auth'
 import { useDonations, isSupporter } from '../../lib/donations'
@@ -57,7 +58,7 @@ const Message = ({ kind = 'error', children }) => (
 )
 
 // ─── Ingresar / Crear cuenta / Olvidé mi contraseña ─────────────────────
-function AuthForm({ mail }) {
+function AuthForm({ mail, googleClientId }) {
   const [mode, setMode] = useState('login')       // 'login' | 'register' | 'forgot'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -68,6 +69,15 @@ function AuthForm({ mail }) {
   const navigate = useNavigate()
 
   const switchMode = (m) => { setMode(m); setError(''); setInfo('') }
+
+  const onGoogle = async (credential) => {
+    if (busy) return
+    setBusy(true); setError(''); setInfo('')
+    const r = await loginWithGoogle(credential)
+    setBusy(false)
+    if (!r.ok) return setError(errorMessage(r.error))
+    navigate('/mi-lista')
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -96,6 +106,14 @@ function AuthForm({ mail }) {
 
   return (
     <Shell title={titles[mode]} subtitle={subtitles[mode]}>
+      {googleClientId && mode !== 'forgot' && (
+        <div className="mb-6">
+          <GoogleButton clientId={googleClientId} onCredential={onGoogle} text={mode === 'register' ? 'signup_with' : 'continue_with'} />
+          <div className="flex items-center gap-3 mt-6 text-muted/60 text-xs">
+            <span className="flex-1 h-px bg-white/10" /> o con tu mail <span className="flex-1 h-px bg-white/10" />
+          </div>
+        </div>
+      )}
       <form onSubmit={submit} className="space-y-4" noValidate={false}>
         {mode === 'register' && (
           <div>
@@ -152,7 +170,7 @@ const agoText = (ts) => {
 }
 
 function AccountPanel() {
-  const { user, syncing, lastSyncAt, syncError, mail } = useAuth()
+  const { user, syncing, lastSyncAt, syncError, mail, googleClientId } = useAuth()
   const supporter = isSupporter(useDonations())
   const navigate = useNavigate()
   const [msg, setMsg] = useState({ kind: '', text: '' })
@@ -184,6 +202,11 @@ function AccountPanel() {
     if (!r.ok) return say('error', errorMessage(r.error))
     navigate('/')
   }) }
+  const onDeleteGoogle = (credential) => run('del', async () => {
+    const r = await deleteAccount({ credential })
+    if (!r.ok) return say('error', errorMessage(r.error))
+    navigate('/')
+  })
 
   return (
     <Shell title={user.name ? `Hola, ${user.name}` : 'Tu cuenta'} subtitle={user.email}>
@@ -217,6 +240,7 @@ function AccountPanel() {
 
         {msg.text && <Message kind={msg.kind === 'ok' ? 'ok' : 'error'}>{msg.text}</Message>}
 
+        {user.hasPassword && (
         <div className="p-4 rounded-2xl bg-card border border-white/[0.06]">
           <button onClick={() => setShowPw((v) => !v)} className="text-chalk text-sm font-semibold w-full text-left flex justify-between" aria-expanded={showPw}>
             Cambiar contraseña <span className="text-muted">{showPw ? '–' : '+'}</span>
@@ -229,6 +253,12 @@ function AccountPanel() {
             </form>
           )}
         </div>
+        )}
+        {!user.hasPassword && user.google && (
+          <p className="text-muted text-xs leading-relaxed p-3 rounded-xl bg-white/5 border border-white/10">
+            Ingresás con tu cuenta de Google, por eso no tenés contraseña de Life High. Si querés una, usá "Olvidé mi contraseña" al ingresar.
+          </p>
+        )}
 
         <button onClick={onLogout} disabled={busy === 'logout'} className={`${ghostBtn} w-full inline-flex items-center justify-center gap-2`}>
           <SignOut size={16} /> {busy === 'logout' ? 'Cerrando…' : 'Cerrar sesión'}
@@ -242,10 +272,20 @@ function AccountPanel() {
           {showDel && (
             <form onSubmit={onDelete} className="space-y-3 mt-3 p-4 rounded-2xl bg-red-500/5 border border-red-500/20">
               <p className="text-muted text-xs leading-relaxed">Se borran tu cuenta y todo lo sincronizado en nuestros servidores. No se puede deshacer. Lo guardado en este dispositivo se conserva.</p>
-              <PasswordField id="del-pw" label="Tu contraseña para confirmar" value={delPw} onChange={setDelPw} autoComplete="current-password" />
-              <button type="submit" disabled={busy === 'del'} className="w-full py-3 rounded-full bg-red-500/90 text-white font-bold text-sm hover:bg-red-500 transition-colors disabled:opacity-50">
-                {busy === 'del' ? 'Eliminando…' : 'Eliminar para siempre'}
-              </button>
+              {user.hasPassword && (
+                <>
+                  <PasswordField id="del-pw" label="Tu contraseña para confirmar" value={delPw} onChange={setDelPw} autoComplete="current-password" />
+                  <button type="submit" disabled={busy === 'del'} className="w-full py-3 rounded-full bg-red-500/90 text-white font-bold text-sm hover:bg-red-500 transition-colors disabled:opacity-50">
+                    {busy === 'del' ? 'Eliminando…' : 'Eliminar para siempre'}
+                  </button>
+                </>
+              )}
+              {user.google && googleClientId && (
+                <div>
+                  <p className="text-muted text-xs mb-2">{user.hasPassword ? 'O confirmá con Google:' : 'Confirmá con tu cuenta de Google para eliminarla:'}</p>
+                  <GoogleButton clientId={googleClientId} onCredential={onDeleteGoogle} text="continue_with" />
+                </div>
+              )}
             </form>
           )}
         </div>
@@ -328,5 +368,5 @@ export default function Cuenta({ view = 'main' }) {
       </Shell>
     )
   }
-  return auth.status === 'in' ? <AccountPanel /> : <AuthForm mail={auth.mail} />
+  return auth.status === 'in' ? <AccountPanel /> : <AuthForm mail={auth.mail} googleClientId={auth.googleClientId} />
 }

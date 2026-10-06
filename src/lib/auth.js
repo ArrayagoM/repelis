@@ -18,7 +18,7 @@ const MIN_INTERVAL_MS = 60_000    // como mucho una subida por minuto (mientras 
 const POLL_MS = 5 * 60_000        // trae cambios de otros dispositivos cada 5 min con la app abierta
 
 // status: 'loading' | 'out' | 'in' | 'unavailable'
-let state = { status: 'loading', user: null, mail: false, syncing: false, lastSyncAt: 0, syncError: false }
+let state = { status: 'loading', user: null, mail: false, googleClientId: null, syncing: false, lastSyncAt: 0, syncError: false }
 const listeners = new Set()
 const set = (patch) => { state = { ...state, ...patch }; listeners.forEach((fn) => fn()) }
 
@@ -28,7 +28,7 @@ export const useAuth = () => useSyncExternalStore(subscribeAuth, getAuth, getAut
 
 /** Para tests. */
 export const __resetAuth = () => {
-  state = { status: 'loading', user: null, mail: false, syncing: false, lastSyncAt: 0, syncError: false }
+  state = { status: 'loading', user: null, mail: false, googleClientId: null, syncing: false, lastSyncAt: 0, syncError: false }
   lastFp = ''; started = false; clearTimeout(timer)
 }
 
@@ -61,6 +61,9 @@ export const ERROR_MESSAGES = {
   password_weak: 'Esa contraseña es muy fácil de adivinar. Elegí otra.',
   password_invalid: 'Escribí una contraseña.',
   invalid_credentials: 'Mail o contraseña incorrectos.',
+  google_invalid: 'No pudimos verificar tu cuenta de Google. Probá de nuevo.',
+  google_unavailable: 'El ingreso con Google no está disponible por ahora. Usá tu mail y contraseña.',
+  no_password: 'Tu cuenta entra con Google y no tiene contraseña.',
   too_many_requests: 'Demasiados intentos. Esperá unos minutos y probá de nuevo.',
   token_invalid: 'Este enlace ya no sirve (venció o ya se usó). Pedí uno nuevo.',
   not_authenticated: 'Tu sesión venció. Ingresá de nuevo.',
@@ -146,7 +149,7 @@ const enter = async (data) => {
 export const initAuth = async () => {
   const status = await request('status')
   if (!status.ok || !status.data.enabled) { set({ status: 'unavailable' }); return }
-  set({ mail: !!status.data.mail })
+  set({ mail: !!status.data.mail, googleClientId: status.data.googleClientId || null })
   const me = await request('me')
   if (me.ok) await enter(me.data)
   else set({ status: 'out', user: null })
@@ -160,6 +163,17 @@ export const register = async ({ email, password, name }) => {
   if (!res.ok) return { ok: false, error: res.data.error || 'server_error' }
   await enter(res.data)
   return { ok: true, mailSent: !!res.data.mailSent }
+}
+
+/** Ingreso / registro con Google: `credential` es el ID token que entrega el botón de Google. */
+export const loginWithGoogle = async (credential) => {
+  const res = await request('google', {
+    method: 'POST',
+    body: { credential, library: getLibrary(), supporterSince: getDonations().supporterSince || undefined },
+  })
+  if (!res.ok) return { ok: false, error: res.data.error || 'server_error' }
+  await enter(res.data)
+  return { ok: true, created: !!res.data.created }
 }
 
 export const login = async ({ email, password }) => {
@@ -206,8 +220,10 @@ export const changePassword = async ({ current, next }) => {
 }
 
 /** Borra la cuenta y sus datos del servidor. Lo local del dispositivo se conserva. */
-export const deleteAccount = async (password) => {
-  const res = await request('delete', { method: 'POST', body: { password } })
+export const deleteAccount = async (proof) => {
+  // proof: la contraseña (texto) o { credential } de Google para cuentas sin contraseña
+  const body = typeof proof === 'string' ? { password: proof } : { password: proof?.password, credential: proof?.credential }
+  const res = await request('delete', { method: 'POST', body })
   if (!res.ok) return { ok: false, error: res.data.error || 'server_error' }
   set({ status: 'out', user: null })
   lastFp = ''

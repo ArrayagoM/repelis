@@ -3,11 +3,12 @@
 //
 // Necesita la variable de entorno MONGODB_URI. Sin ella, las cuentas quedan deshabilitadas
 // (/api/auth/status devuelve enabled:false) y el resto del sitio sigue funcionando igual.
-// Opcionales: RESEND_API_KEY y MAIL_FROM (mails), SITE_URL (links de los mails), MONGODB_DB.
+// Opcionales: GOOGLE_CLIENT_ID (ingreso con Google), RESEND_API_KEY y MAIL_FROM (mails), SITE_URL, MONGODB_DB.
 
 import { createAuthApi } from '../_lib/authApi.js'
 import { createMailer } from '../_lib/mailer.js'
 import { getStore } from '../_lib/stores.js'
+import { getGoogleKeys, verifyGoogleIdToken } from '../_lib/google.js'
 
 const send = (res, status, body, cookies) => {
   res.setHeader('Cache-Control', 'no-store')
@@ -39,7 +40,12 @@ export default async function handler(req, res) {
   let body = req.body
   if (typeof body === 'string') { try { body = JSON.parse(body) } catch { body = {} } }
 
-  const api = createAuthApi({ store, mailer: createMailer(process.env), secureCookies: true })
+  const googleClientId = (process.env.GOOGLE_CLIENT_ID || '').trim()
+  const verifyGoogle = googleClientId
+    ? async (credential) => verifyGoogleIdToken(credential, { clientId: googleClientId, keys: await getGoogleKeys() })
+    : null
+
+  const api = createAuthApi({ store, mailer: createMailer(process.env), secureCookies: true, googleClientId, verifyGoogle })
   const out = await api({ method: req.method, action, headers: req.headers, body, ip: clientIp(req) })
   return send(res, out.status, out.body, out.cookies)
 }

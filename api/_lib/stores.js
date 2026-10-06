@@ -18,6 +18,7 @@ export const createMemoryStore = () => {
     kind: 'memory',
     async findUserByEmail(email) { return clone([...users.values()].find((u) => u.email === email)) },
     async findUserById(id) { return clone(users.get(String(id))) },
+    async findUserByGoogleSub(sub) { return clone([...users.values()].find((u) => u.googleSub === sub)) },
     async findUserByToken(field, hash, now) {
       const u = [...users.values()].find((x) => x[`${field}Hash`] === hash && (x[`${field}Expires`] || 0) > now)
       return clone(u)
@@ -74,6 +75,7 @@ export const createMongoStore = (db, { ObjectId }) => {
     kind: 'mongo',
     async findUserByEmail(email) { return toUser(await users.findOne({ email })) },
     async findUserById(id) { const _id = oid(id); return _id ? toUser(await users.findOne({ _id })) : null },
+    async findUserByGoogleSub(sub) { return toUser(await users.findOne({ googleSub: sub })) },
     async findUserByToken(field, hash, now) {
       return toUser(await users.findOne({ [`${field}Hash`]: hash, [`${field}Expires`]: { $gt: now } }))
     },
@@ -130,6 +132,7 @@ export const createMongoStore = (db, { ObjectId }) => {
     async ensureIndexes() {
       await Promise.all([
         users.createIndex({ email: 1 }, { unique: true }),
+        users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: 'string' } } }),
         users.createIndex({ verifyHash: 1 }, { sparse: true }),
         users.createIndex({ resetHash: 1 }, { sparse: true }),
         sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),

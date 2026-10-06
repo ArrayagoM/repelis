@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
-  initAuth, register, login, logout, getAuth, syncNow, deleteAccount, forgotPassword, errorMessage, __resetAuth,
+  initAuth, register, login, loginWithGoogle, logout, getAuth, syncNow, deleteAccount, forgotPassword, errorMessage, __resetAuth,
 } from '../auth'
 import { getLibrary, reloadLibrary, toggleList, toLibItem, isInList } from '../library'
 import { reloadDonations, getDonations } from '../donations'
@@ -111,6 +111,48 @@ describe('registro e ingreso', () => {
     await initAuth()
     await login({ email: 'ana@mail.com', password: 'x'.repeat(10) })
     expect(getDonations().supporterSince).toBe(12345)
+  })
+})
+
+describe('ingreso con Google', () => {
+  beforeEach(() => {
+    routes['GET status'] = reply(200, { enabled: true, mail: false, googleClientId: 'cid.apps.googleusercontent.com' })
+    routes['GET me'] = reply(401, { error: 'not_authenticated' })
+    routes['POST sync'] = (body) => reply(200, { library: body.library })
+  })
+
+  it('el estado guarda el client id que informa el servidor', async () => {
+    await initAuth()
+    expect(getAuth().googleClientId).toBe('cid.apps.googleusercontent.com')
+  })
+  it('manda la credencial junto con la biblioteca del dispositivo y entra', async () => {
+    toggleList(movie(1, 'Local'))
+    routes['POST google'] = (body) => reply(200, { user: { ...user, google: true, hasPassword: false }, library: body.library, created: true })
+    await initAuth()
+    const r = await loginWithGoogle('credencial-de-google')
+    expect(r).toEqual({ ok: true, created: true })
+    const sent = calls.find((c) => c.path === 'google').body
+    expect(sent.credential).toBe('credencial-de-google')
+    expect(sent.library.list.map((x) => x.title)).toEqual(['Local'])
+    expect(getAuth().status).toBe('in')
+  })
+  it('si Google es inválido no cambia nada', async () => {
+    routes['POST google'] = reply(401, { error: 'google_invalid' })
+    await initAuth()
+    expect(await loginWithGoogle('mala')).toEqual({ ok: false, error: 'google_invalid' })
+    expect(getAuth().status).toBe('out')
+  })
+  it('borrar la cuenta acepta la credencial de Google como prueba', async () => {
+    routes['POST google'] = reply(200, { user: { ...user, google: true, hasPassword: false }, library: {} })
+    routes['POST delete'] = reply(200, { ok: true })
+    await initAuth()
+    await loginWithGoogle('c')
+    expect((await deleteAccount({ credential: 'otra-credencial' })).ok).toBe(true)
+    expect(calls.find((c) => c.path === 'delete').body).toMatchObject({ credential: 'otra-credencial' })
+  })
+  it('hay mensajes en español para los errores de Google', () => {
+    expect(errorMessage('google_invalid')).toMatch(/Google/)
+    expect(errorMessage('no_password').length).toBeGreaterThan(10)
   })
 })
 

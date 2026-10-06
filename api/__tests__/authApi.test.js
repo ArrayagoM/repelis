@@ -340,9 +340,9 @@ describe('cambiar contraseña y borrar cuenta', () => {
 
 describe('estado', () => {
   it('informa si hay servicio de mail', async () => {
-    expect((await call('GET', 'status')).body).toEqual({ enabled: true, mail: true })
+    expect((await call('GET', 'status')).body).toEqual({ enabled: true, mail: true, googleClientId: null })
     api = createAuthApi({ store, mailer: null })
-    expect((await call('GET', 'status')).body).toEqual({ enabled: true, mail: false })
+    expect((await call('GET', 'status')).body).toEqual({ enabled: true, mail: false, googleClientId: null })
   })
   it('un error interno no filtra detalles', async () => {
     const broken = { ...store, findUserByEmail: async () => { throw new Error('mongodb://usuario:clave@host explotó') } }
