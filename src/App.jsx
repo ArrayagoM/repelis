@@ -24,6 +24,8 @@ import { SupporterWatcher } from './components/Supporter'
 import { initAuth } from './lib/auth'
 import { AccountPromptHost } from './components/AccessGate'
 import PulseReporter from './components/PulseReporter'
+import { RoomProvider } from './lib/roomSession'
+import RoomDock, { RoomChatDrawer } from './components/RoomDock'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -85,6 +87,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+     <RoomProvider>
       <IntroSplash />
       <ErrorBar />
       <ToastHost />
@@ -95,6 +98,8 @@ export default function App() {
       <DonatePrompt />
       <AccountPromptHost />
       <PulseReporter />
+      <RoomDock />
+      <RoomChatDrawer />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
@@ -310,6 +315,7 @@ export default function App() {
       </Suspense>
 
       <Footer onDonateClick={() => setDonateOpen(true)} />
+     </RoomProvider>
     </ErrorBoundary>
   )
 }

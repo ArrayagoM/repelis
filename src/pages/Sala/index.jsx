@@ -1,25 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import { motion } from 'framer-motion'
-import { Popcorn, Crown, Copy, Check, WhatsappLogo, SignOut, PaperPlaneRight, Clock, Play, X, Users, LockKey, ArrowLeft } from '@phosphor-icons/react'
+import { Popcorn, Crown, Copy, Check, WhatsappLogo, SignOut, ChatCircleText, Clock, Play, X, Users, LockKey, ArrowLeft, MicrophoneSlash } from '@phosphor-icons/react'
 import { IMG_W342 } from '../../api/tmdb'
-import { rooms, roomErrorText, useRoom } from '../../lib/rooms'
+import { rooms, roomErrorText } from '../../lib/rooms'
 import { EMOJIS, ROOM, extractCode } from '../../lib/roomRules'
+import { useRoomSession } from '../../lib/roomSession'
 import { useAuth } from '../../lib/auth'
 import { useMe } from '../../lib/social'
+import { openPlayer } from '../../store/slices/playerSlice'
 import { showToast } from '../../lib/toast'
 import { useSEO } from '../../lib/useSEO'
-import { FloatingReactions, phaseLabel, useCountdown } from '../../components/RoomBits'
-
-const timeOf = (ms) => new Date(ms).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+import { Avatar } from '../../components/Community'
+import { phaseLabel, useCountdown } from '../../components/RoomBits'
 
 export default function Sala() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   const { code: raw } = useParams()
   const code = extractCode(raw)
-  const navigate = useNavigate()
   const auth = useAuth()
   const me = useMe()
+  const s = useRoomSession()
   const ready = auth.status === 'in' && !!me.data?.profile
 
   const [info, setInfo] = useState({ loading: true, room: null, error: '' })
@@ -32,7 +34,8 @@ export default function Sala() {
     return () => { cancelled = true }
   }, [code])
 
-  const live = useRoom(code, ready && !!info.room)
+  // Entrar a la sala = activarla en la raíz de la app (sigue viva si navegás o abrís la película)
+  useEffect(() => { if (ready && code && info.room && s.code !== code) s.enter(code) }, [ready, code, info.room, s])
 
   if (info.loading) return <div className="min-h-screen bg-void pt-32 px-6"><div className="max-w-5xl mx-auto skeleton h-72 rounded-3xl" /></div>
   if (!info.room) {
@@ -57,200 +60,168 @@ export default function Sala() {
           {r.item && <p className="text-chalk/80 text-sm">Película: <strong>{r.item.title}</strong></p>}
           <LockKey size={20} className="text-gold mx-auto mt-2" />
           {auth.status !== 'in'
-            ? <><p className="text-muted text-sm">Para entrar al chat necesitás una cuenta gratis.</p>
+            ? <><p className="text-muted text-sm">Para entrar necesitás una cuenta gratis.</p>
                 <Link to={`/cuenta?modo=registro&volver=/sala/${code}`} className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear cuenta o ingresar</Link></>
-            : <><p className="text-muted text-sm">Elegí tu @usuario para que te vean en el chat.</p>
+            : <><p className="text-muted text-sm">Elegí tu @usuario para que te vean en la sala.</p>
                 <Link to="/perfil" className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi perfil</Link></>}
         </div>
       </main>
     )
   }
 
-  if (live.status === 'error') {
+  if (s.code === code && s.live.status === 'error') {
     return (
       <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-3 px-6 text-center">
         <Popcorn size={40} className="text-gold" />
-        <p className="text-chalk font-display font-bold text-xl max-w-md">{roomErrorText(live.error)}</p>
-        <Link to="/salas" className="text-gold text-sm hover:underline">Ir a Salas</Link>
+        <p className="text-chalk font-display font-bold text-xl max-w-md">{roomErrorText(s.live.error)}</p>
+        <Link to="/salas" onClick={() => s.exit()} className="text-gold text-sm hover:underline">Ir a Salas</Link>
       </main>
     )
   }
 
-  return <RoomView code={code} live={live} base={info.room} navigate={navigate} />
+  return <RoomView code={code} base={info.room} />
 }
 
-function RoomView({ code, live, base, navigate }) {
+/** Una persona en la sala: círculo con su inicial, @usuario y, cuando haya voz, anillo si está hablando. */
+function Tile({ m, canKick, onKick }) {
+  return (
+    <li className="relative flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-surface border border-white/[0.06] w-28 sm:w-32">
+      <span className={`rounded-full p-0.5 transition-shadow ${m.speaking ? 'ring-2 ring-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.6)]' : 'ring-1 ring-white/10'}`}>
+        <Avatar name={m.name || m.handle} size={56} />
+      </span>
+      <Link to={`/u/${m.handle}`} className="text-chalk text-xs font-semibold hover:text-gold truncate max-w-full">@{m.handle}</Link>
+      <span className="flex items-center gap-1 h-4">
+        {m.host && <Crown size={12} weight="fill" className="text-gold" aria-label="Anfitrión" />}
+        {m.me && <span className="text-muted text-[10px]">vos</span>}
+        {m.muted && <MicrophoneSlash size={12} className="text-red-300" aria-label="Micrófono apagado" />}
+      </span>
+      {canKick && <button onClick={onKick} aria-label={`Sacar a @${m.handle}`} className="absolute top-1 right-1 w-6 h-6 rounded-full text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={12} /></button>}
+    </li>
+  )
+}
+
+function RoomView({ code, base }) {
+  const s = useRoomSession()
+  const live = s.live
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
   const room = live.room || base
   const { text: countdown, started } = useCountdown(room.phase === 'scheduled' ? room.startsAt : null, live.offset)
   const scheduled = room.phase === 'scheduled' && !started
   const closed = room.phase === 'closed' || room.phase === 'expired'
-  const [text, setText] = useState('')
-  const [sending, setSending] = useState(false)
-  const [err, setErr] = useState('')
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
   const [when, setWhen] = useState('')
-  const box = useRef(null)
-  const stick = useRef(true)
   const announced = useRef(false)
 
   const url = typeof window !== 'undefined' ? `${window.location.origin}/sala/${code}` : ''
+  const waLink = `https://wa.me/?text=${encodeURIComponent(`Sumate a mi sala "${room.title}" en Life High: ${url}`)}`
 
-  // Auto-scroll solo si la persona ya estaba abajo (no le movemos la pantalla si está leyendo arriba)
-  useEffect(() => {
-    const el = box.current
-    if (el && stick.current) el.scrollTop = el.scrollHeight
-  }, [live.messages.length])
-  const onScroll = () => { const el = box.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }
-
-  // Aviso cuando llega la hora
   useEffect(() => {
     if (room.phase === 'scheduled' && started && !announced.current) {
       announced.current = true
-      showToast({ icon: '🍿', title: '¡Es la hora!', text: 'Cada quien le da play a su película.', ttl: 6000, tone: 'green' })
+      showToast({ icon: '🍿', title: '¡Es la hora!', text: 'Dale play a la película.', ttl: 6000, tone: 'green' })
     }
   }, [started, room.phase])
 
-  const send = async (e) => {
-    e.preventDefault()
-    const t = text.trim()
-    if (!t || sending || closed) return
-    setSending(true); setErr('')
-    const r = await live.say(t)
-    setSending(false)
-    if (r.ok) { setText(''); stick.current = true } else setErr(roomErrorText(r.error))
-  }
   const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { /* sin portapapeles */ } }
-  const leave = async () => { await live.leave(); navigate('/salas') }
-  const close = async () => { if (window.confirm('¿Cerrar la sala para todos?')) { await rooms.close(code) } }
+  const leave = async () => { await s.exit(); navigate('/salas') }
+  const close = async () => { if (window.confirm('¿Cerrar la sala para todos?')) await rooms.close(code) }
   const saveWhen = async () => {
-    const startsAt = when ? new Date(when).getTime() : null
-    const r = await rooms.update(code, { startsAt })
+    const r = await rooms.update(code, { startsAt: when ? new Date(when).getTime() : null })
     if (r.ok) setEditing(false); else showToast({ icon: '⚠️', title: roomErrorText(r.error), ttl: 4000, tone: 'blue' })
   }
   const kick = async (handle) => { if (window.confirm(`¿Sacar a @${handle} de la sala?`)) await rooms.kick(code, handle) }
-  const waLink = `https://wa.me/?text=${encodeURIComponent(`Sumate a mi sala "${room.title}" en Life High: ${url}`)}`
-  const itemLink = room.item ? `/${room.item.type}/${room.item.id}` : null
 
-  const sorted = useMemo(() => live.members, [live.members])
+  // Ver la película acá: el reproductor se abre en esta misma pestaña y la barra de la sala queda por encima
+  const watchHere = () => {
+    const it = room.item
+    if (!it) return
+    if (it.type === 'tv') return navigate(`/tv/${it.id}`)
+    dispatch(openPlayer({ movieId: it.id, title: it.title, mediaType: 'movie', item: { id: it.id, type: 'movie', title: it.title, poster: it.poster, date: it.year ? `${it.year}-01-01` : null } }))
+  }
 
   return (
-    <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-24 pb-10">
-      <FloatingReactions items={live.fx} onDone={live.consumeFx} />
-      <div className="max-w-6xl mx-auto px-4 md:px-8 space-y-4">
+    <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-24 pb-32">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 space-y-5">
         <header className="flex flex-wrap items-center gap-3">
           <Link to="/salas" aria-label="Volver a Salas" className="w-9 h-9 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-gold"><ArrowLeft size={16} /></Link>
           <div className="mr-auto min-w-0">
             <h1 className="font-display font-extrabold text-xl sm:text-2xl text-chalk truncate">{room.title}</h1>
-            <p className="text-muted text-xs">Anfitrión: @{room.host?.handle || '—'} · <Users size={11} className="inline -mt-0.5" /> {sorted.length}/{ROOM.maxMembers}</p>
+            <p className="text-muted text-xs">Anfitrión: @{room.host?.handle || '—'} · <Users size={11} className="inline -mt-0.5" /> {live.members.length}/{ROOM.maxMembers}</p>
           </div>
-          <button onClick={copy} className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-white/10 text-chalk text-sm hover:border-gold/40 hover:text-gold transition-colors">
-            {copied ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />} {copied ? 'Copiado' : 'Copiar enlace'}
-          </button>
-          <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-sm hover:bg-emerald-500/25 transition-colors">
-            <WhatsappLogo size={15} weight="fill" /> Invitar
-          </a>
-          <button onClick={leave} className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-white/10 text-muted text-sm hover:text-red-300 hover:border-red-400/40 transition-colors"><SignOut size={14} /> Salir</button>
         </header>
 
-        <div className="grid lg:grid-cols-[320px_1fr] gap-4">
-          {/* Lateral: película, hora y personas */}
-          <aside className="space-y-4">
-            <section className="p-4 rounded-3xl bg-card border border-white/[0.06] text-center space-y-3">
-              {closed ? (
-                <p className="text-muted text-sm py-4">La sala terminó. ¡Gracias por venir!</p>
-              ) : scheduled ? (
-                <>
-                  <p className="text-muted text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5"><Clock size={13} /> Arranca en</p>
-                  <p aria-live="off" className="font-display font-extrabold text-5xl text-gold tabular-nums">{countdown}</p>
-                  <p className="text-muted text-xs">{phaseLabel(room)}</p>
-                </>
-              ) : (
-                <div className="py-2 space-y-1">
-                  <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest"><Play size={12} weight="fill" /> ¡Es la hora!</p>
-                  <p className="text-chalk text-sm">Cada quien le da play a su película y charlamos acá.</p>
-                </div>
-              )}
-              {room.item && (
-                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-surface border border-white/[0.06] text-left">
-                  <div className="w-12 h-[4.5rem] rounded-lg overflow-hidden bg-card flex-shrink-0">{room.item.poster && <img src={`${IMG_W342}${room.item.poster}`} alt="" className="w-full h-full object-cover" />}</div>
-                  <div className="min-w-0">
-                    <p className="text-chalk text-sm font-semibold leading-tight">{room.item.title}</p>
-                    <p className="text-muted text-xs font-mono">{room.item.year || ''}{room.item.type === 'tv' ? ' · Serie' : ''}</p>
-                    {!closed && <Link to={itemLink} target="_blank" className="inline-flex items-center gap-1 mt-1.5 text-xs text-gold hover:underline"><Play size={11} weight="fill" /> Abrir en otra pestaña</Link>}
-                  </div>
-                </div>
-              )}
-              {room.isHost && !closed && (
-                <div className="text-left space-y-2 pt-1">
-                  {editing ? (
-                    <div className="space-y-2">
-                      <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} aria-label="Nuevo horario" className="w-full bg-surface border border-white/10 rounded-xl px-3 py-2 text-chalk text-sm" />
-                      <div className="flex gap-2">
-                        <button onClick={saveWhen} className="px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold">Guardar</button>
-                        <button onClick={() => { setWhen(''); rooms.update(code, { startsAt: null }).then(() => setEditing(false)) }} className="px-4 py-1.5 rounded-full glass border border-white/10 text-muted text-xs">Sin horario</button>
-                        <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-muted text-xs">Cancelar</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditing(true)} className="px-4 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-gold/40">Cambiar horario</button>
-                      <button onClick={close} className="px-4 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">Cerrar sala</button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
+        {/* Escenario: hora de arranque + película */}
+        <section className="p-6 rounded-3xl bg-gradient-to-b from-card to-void border border-white/[0.06] text-center space-y-4">
+          {closed ? (
+            <p className="text-muted text-sm py-4">La sala terminó. ¡Gracias por venir!</p>
+          ) : scheduled ? (
+            <>
+              <p className="text-muted text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5"><Clock size={13} /> Arranca en</p>
+              <p className="font-display font-extrabold text-6xl sm:text-7xl text-gold tabular-nums">{countdown}</p>
+              <p className="text-muted text-xs">{phaseLabel(room)}</p>
+            </>
+          ) : (
+            <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest"><Play size={12} weight="fill" /> ¡Es la hora!</p>
+          )}
 
-            <section aria-label="Personas" className="p-4 rounded-3xl bg-card border border-white/[0.06]">
-              <h2 className="font-display font-bold text-sm text-chalk mb-3">En la sala ({sorted.length})</h2>
-              <ul className="space-y-1.5">
-                {sorted.map((m) => (
-                  <li key={m.handle} className="flex items-center gap-2 text-sm">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" aria-hidden="true" />
-                    <Link to={`/u/${m.handle}`} className="text-chalk hover:text-gold truncate">@{m.handle}</Link>
-                    {m.host && <Crown size={13} weight="fill" className="text-gold flex-shrink-0" aria-label="Anfitrión" />}
-                    {m.me && <span className="text-muted text-[11px]">(vos)</span>}
-                    {room.isHost && !m.me && !closed && <button onClick={() => kick(m.handle)} aria-label={`Sacar a @${m.handle}`} className="ml-auto w-6 h-6 rounded-full text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={12} /></button>}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </aside>
-
-          {/* Chat */}
-          <section aria-label="Chat de la sala" className="rounded-3xl bg-card border border-white/[0.06] flex flex-col h-[70vh] lg:h-[calc(100vh-9rem)] min-h-[24rem]">
-            <div ref={box} onScroll={onScroll} className="flex-1 overflow-y-auto p-4 space-y-2" role="log" aria-live="polite">
-              {live.messages.length === 0 && <p className="text-muted text-sm text-center py-8">Todavía no hay mensajes. ¡Rompé el hielo!</p>}
-              {live.messages.map((m) => m.kind === 'sys' ? (
-                <p key={m.seq} className="text-center text-muted/70 text-xs py-0.5">{m.text}</p>
-              ) : (
-                <div key={m.seq} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 ${m.mine ? 'bg-gold/15 border border-gold/25' : 'bg-surface border border-white/[0.06]'}`}>
-                    {!m.mine && <p className="text-gold text-[11px] font-semibold mb-0.5">@{m.handle}</p>}
-                    <p className="text-chalk text-sm leading-snug break-words whitespace-pre-line">{m.text}</p>
-                    <p className="text-muted/60 text-[10px] text-right mt-0.5">{timeOf(m.at)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t border-white/[0.06] p-3 space-y-2">
-              <div className="flex gap-1.5 flex-wrap" role="group" aria-label="Reacciones">
-                {EMOJIS.map((e) => (
-                  <button key={e} onClick={() => !closed && live.react(e)} disabled={closed} aria-label={`Reaccionar ${e}`}
-                    className="w-10 h-10 rounded-full glass border border-white/10 text-xl hover:scale-110 hover:border-gold/40 transition disabled:opacity-40">{e}</button>
-                ))}
+          {room.item && (
+            <div className="mx-auto max-w-sm flex items-center gap-3 p-3 rounded-2xl bg-surface border border-white/[0.06] text-left">
+              <div className="w-14 h-[5.25rem] rounded-lg overflow-hidden bg-card flex-shrink-0">{room.item.poster && <img src={`${IMG_W342}${room.item.poster}`} alt="" className="w-full h-full object-cover" />}</div>
+              <div className="min-w-0">
+                <p className="text-chalk text-sm font-semibold leading-tight">{room.item.title}</p>
+                <p className="text-muted text-xs font-mono">{room.item.year || ''}{room.item.type === 'tv' ? ' · Serie' : ''}</p>
+                {!closed && <button onClick={watchHere} className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi transition-colors"><Play size={11} weight="fill" /> {room.item.type === 'tv' ? 'Elegir capítulo' : 'Ver la película acá'}</button>}
               </div>
-              {err && <p role="alert" className="text-red-300 text-xs">{err}</p>}
-              <form onSubmit={send} className="flex gap-2">
-                <input value={text} onChange={(e) => setText(e.target.value)} maxLength={ROOM.textMax} disabled={closed} aria-label="Escribí un mensaje"
-                  placeholder={closed ? 'La sala terminó' : 'Escribí un mensaje…'}
-                  className="flex-1 bg-surface border border-white/10 rounded-full px-4 py-2.5 text-chalk text-sm placeholder:text-muted/50 focus:outline-none focus:border-gold/50" />
-                <button disabled={sending || !text.trim() || closed} aria-label="Enviar" className="w-11 h-11 rounded-full bg-gold text-void flex items-center justify-center hover:bg-gold-hi transition-colors disabled:opacity-40"><PaperPlaneRight size={18} weight="fill" /></button>
-              </form>
             </div>
+          )}
+          {!closed && <p className="text-muted/70 text-xs max-w-md mx-auto">Mientras mirás, la barra de la sala queda abajo para hablar y reaccionar sin tapar la pantalla. Cada quien reproduce la película en su pantalla.</p>}
+        </section>
+
+        {/* Personas */}
+        <section aria-label="Personas en la sala">
+          <h2 className="font-display font-bold text-sm text-chalk mb-3">En la sala</h2>
+          <ul className="flex flex-wrap gap-3">
+            {live.members.map((m) => <Tile key={m.handle} m={m} canKick={room.isHost && !m.me && !closed} onKick={() => kick(m.handle)} />)}
+            {live.status !== 'in' && <li className="text-muted text-sm">Entrando…</li>}
+          </ul>
+        </section>
+
+        {room.isHost && !closed && (
+          <section className="p-4 rounded-2xl bg-card border border-white/[0.06] space-y-2">
+            <h2 className="font-display font-bold text-sm text-chalk">Anfitrión</h2>
+            {editing ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} aria-label="Nuevo horario" className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-chalk text-sm" />
+                <button onClick={saveWhen} className="px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold">Guardar</button>
+                <button onClick={() => rooms.update(code, { startsAt: null }).then(() => setEditing(false))} className="px-4 py-1.5 rounded-full glass border border-white/10 text-muted text-xs">Sin horario</button>
+                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-muted text-xs">Cancelar</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={() => setEditing(true)} className="px-4 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-gold/40">Cambiar horario</button>
+                <button onClick={close} className="px-4 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">Cerrar sala</button>
+              </div>
+            )}
           </section>
+        )}
+      </div>
+
+      {/* Barra de la sala (estilo llamada) */}
+      <div className="fixed z-[130] left-1/2 -translate-x-1/2 bottom-4 max-w-[calc(100vw-1rem)]">
+        <div className="flex items-center gap-1.5 px-2 py-2 rounded-full bg-card/95 backdrop-blur border border-white/10 shadow-2xl" role="toolbar" aria-label="Controles de la sala">
+          <div className="flex gap-0.5 px-1" role="group" aria-label="Reacciones">
+            {EMOJIS.map((e) => <button key={e} onClick={() => !closed && live.react(e)} disabled={closed} aria-label={`Reaccionar ${e}`} className="w-9 h-9 rounded-full text-xl hover:scale-125 transition disabled:opacity-40">{e}</button>)}
+          </div>
+          <span className="w-px h-6 bg-white/10" aria-hidden="true" />
+          <button onClick={() => s.setChatOpen(!s.chatOpen)} aria-pressed={s.chatOpen} aria-label={s.unread ? `Chat (${s.unread} sin leer)` : 'Chat'} className="relative w-10 h-10 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">
+            <ChatCircleText size={20} />
+            {s.unread > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{s.unread > 9 ? '9+' : s.unread}</span>}
+          </button>
+          <button onClick={copy} aria-label="Copiar enlace de invitación" className="w-10 h-10 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">{copied ? <Check size={18} className="text-emerald-300" /> : <Copy size={18} />}</button>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" aria-label="Invitar por WhatsApp" className="w-10 h-10 rounded-full text-emerald-300 hover:bg-emerald-500/15 flex items-center justify-center"><WhatsappLogo size={20} weight="fill" /></a>
+          <button onClick={leave} aria-label="Salir de la sala" className="w-10 h-10 rounded-full bg-red-500/15 text-red-300 hover:bg-red-500/30 flex items-center justify-center"><SignOut size={18} /></button>
         </div>
       </div>
     </motion.main>
