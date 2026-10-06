@@ -62,7 +62,8 @@ export default function GoogleButton({ clientId, onCredential, text = 'continue_
   }
   return (
     <div className="flex flex-col items-center gap-2">
-      <div ref={holder} className="w-full flex justify-center min-h-[44px]" aria-label={label} />
+      {/* color-scheme claro: así el iframe del botón de Google no dibuja un marco blanco sobre el fondo oscuro */}
+      <div ref={holder} style={{ colorScheme: 'light' }} className="w-full flex justify-center min-h-[44px]" aria-label={label} />
       {state === 'loading' && <p className="text-muted/60 text-xs">Cargando Google…</p>}
     </div>
   )
