@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, Ghost, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree } from '@phosphor-icons/react'
 import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
@@ -10,6 +10,7 @@ import LanguageModeToggle from '../LanguageModeToggle'
 import { StreakChip } from '../Achievements'
 import { SupporterBadge } from '../Supporter'
 import { useAuth } from '../../lib/auth'
+import { isHalloweenSeason } from '../../lib/seasons'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -274,11 +275,13 @@ export default function Navbar({ onDonateClick }) {
 
           {/* Right actions — compactos para que entren en lg+ sin overflow */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Link to="/mundial"
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all"
-              title="Mundial 2026 en vivo">
-              <SoccerBall size={14} weight="fill" />
-            </Link>
+            {isHalloweenSeason() && (
+              <Link to="/terror"
+                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-red-500/15 border border-red-500/35 text-red-300 hover:bg-red-500/25 transition-all"
+                title="Sesión de terror · Halloween" aria-label="Sesión de terror">
+                <Ghost size={14} weight="fill" />
+              </Link>
+            )}
 
             <PanelLink />
             <AccountLink />
@@ -435,6 +438,12 @@ export default function Navbar({ onDonateClick }) {
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
                 <UsersThree size={16} weight="fill" className="text-gold" /> Comunidad
               </Link>
+              {isHalloweenSeason() && (
+                <Link to="/terror" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-400/30 text-red-300 text-sm font-semibold">
+                  <Ghost size={16} weight="fill" /> Sesión de terror
+                </Link>
+              )}
               <Link to="/cines-cerca" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
                 <MapPin size={16} weight="fill" className="text-gold" /> Cines cerca

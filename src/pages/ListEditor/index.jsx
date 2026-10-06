@@ -27,7 +27,10 @@ export default function ListEditor() {
   const library = useLibrary()
   useSEO({ title: editing ? 'Editar lista' : 'Nueva lista', description: 'Armá y compartí tu lista', noindex: true })
 
-  const [form, setForm] = useState({ title: '', description: '', tag: 'finde', visibility: 'public', items: [] })
+  const [form, setForm] = useState(() => ({
+    title: String(location.state?.title || '').slice(0, 80), description: '',
+    tag: TAGS.includes(location.state?.tag) ? location.state.tag : 'finde', visibility: 'public', items: [],
+  }))
   const [loading, setLoading] = useState(editing)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)

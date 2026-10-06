@@ -4,6 +4,8 @@
   <!-- Páginas principales -->
   <url><loc>https://repelis.vercel.app/</loc><priority>1.0</priority><changefreq>daily</changefreq></url>
   <url><loc>https://repelis.vercel.app/search</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://repelis.vercel.app/terror</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://repelis.vercel.app/comunidad</loc><priority>0.7</priority><changefreq>daily</changefreq></url>
   <url><loc>https://repelis.vercel.app/about</loc><priority>0.5</priority><changefreq>monthly</changefreq></url>
 
   <!-- Películas - Principal -->

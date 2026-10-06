@@ -36,7 +36,7 @@ const Terms       = lazy(() => import('./pages/Terms'))
 const Privacy     = lazy(() => import('./pages/Privacy'))
 const DMCA        = lazy(() => import('./pages/DMCA'))
 const Admin       = lazy(() => import('./pages/Admin'))
-const Mundial     = lazy(() => import('./pages/Mundial'))
+const Terror      = lazy(() => import('./pages/Terror'))
 const CinesCerca  = lazy(() => import('./pages/CinesCerca'))
 const Download    = lazy(() => import('./pages/Download'))
 const MiLista     = lazy(() => import('./pages/MiLista'))
@@ -145,8 +145,8 @@ export default function App() {
             {/* Admin (gateado con PIN) */}
             <Route path="/admin"   element={<Admin />} />
 
-            {/* Deportes */}
-            <Route path="/mundial" element={<Mundial />} />
+            {/* Sesión de terror (Halloween) */}
+            <Route path="/terror" element={<Terror />} />
 
             {/* Biblioteca personal */}
             <Route path="/mi-lista" element={<MiLista />} />

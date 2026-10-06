@@ -126,6 +126,35 @@ export const getMoviesByGenre = (genreId, page = 1) =>
   api.get('/discover/movie', { params: { with_genres: genreId, sort_by: 'popularity.desc', page } })
 
 // ════════════════════════════════════════════════════════════════════════
+//  SESIÓN DE TERROR (Halloween). Keywords: 12339 slasher, 162846 fantasmas, 3358 casa embrujada,
+//  15001 demonios, 9712 posesión, 616 brujas, 10714 asesino serial, 163053 found footage, 295907 terror psicológico
+// ════════════════════════════════════════════════════════════════════════
+const horrorWith = (extra = {}) => (page = 1) =>
+  api.get('/discover/movie', { params: { with_genres: 27, sort_by: 'popularity.desc', 'vote_count.gte': 100, page, ...extra } })
+const horrorKeyword = (kw) => horrorWith({ with_keywords: kw })
+
+export const getHorrorPopular  = horrorWith({ 'vote_count.gte': 200 })
+export const getHorrorTop      = horrorWith({ sort_by: 'vote_average.desc', 'vote_count.gte': 2000 })
+export const getHorrorClassics = horrorWith({ sort_by: 'vote_average.desc', 'vote_count.gte': 500, 'release_date.lte': '1995-12-31' })
+export const getHorrorRecent   = (page = 1) => {
+  const from = new Date(Date.now() - 2 * 365 * 86400000).toISOString().slice(0, 10)
+  return horrorWith({ 'release_date.gte': from, 'vote_count.gte': 150 })(page)
+}
+export const getHorrorSlasher  = horrorKeyword(12339)
+export const getHorrorGhosts   = horrorKeyword('162846|3358')
+export const getHorrorDemons   = horrorKeyword('15001|9712')
+export const getHorrorWitches  = horrorKeyword(616)
+export const getHorrorKiller   = horrorKeyword(10714)
+export const getHorrorFound    = horrorKeyword(163053)
+export const getHorrorPsych    = horrorKeyword(295907)
+export const getHorrorComedy   = horrorWith({ with_genres: '27,35' })
+export const getHorrorZombies  = horrorKeyword(12377)
+export const getHorrorVampires = horrorKeyword(3133)
+// Series "para no dormir": TMDB no tiene género de terror en TV → misterio/fantasía + keywords de terror
+export const getHorrorSeries = (page = 1) =>
+  api.get('/discover/tv', { params: { with_keywords: '12339|162846|15001|9712|616|12377|3133', sort_by: 'popularity.desc', 'vote_count.gte': 50, page } })
+
+// ════════════════════════════════════════════════════════════════════════
 //  TV — endpoints clásicos
 // ════════════════════════════════════════════════════════════════════════
 export const getTrendingTV    = (page = 1) => api.get('/trending/tv/week',   { params: { page } })
