@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, PencilSimple, TrashSimple, Flag, FilmSlate, ListBullets } from '@phosphor-icons/react'
 import { Avatar, LikeButton } from '../../components/Community'
 import ShareButtons from '../../components/ShareButtons'
+import Comments from '../../components/Comments'
 import { IMG_W342 } from '../../api/tmdb'
 import { TAG_LABELS } from '../../lib/socialRules'
 import { social, errorText, ensureAccount, refreshMe } from '../../lib/social'
@@ -130,6 +131,10 @@ export default function ListView() {
               </li>
             ))}
           </ol>
+        )}
+
+        {list.visibility === 'public' && !list.hidden && (
+          <div className="mt-14 max-w-3xl"><Comments target={`list:${list.id}`} title="Comentarios" /></div>
         )}
       </div>
     </motion.main>

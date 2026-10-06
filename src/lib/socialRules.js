@@ -6,7 +6,7 @@
 export const LIMITS = {
   free:    { lists: 3,   items: 50 },
   premium: { lists: 100, items: 200 },
-  title: 80, description: 300, note: 140, bio: 160, report: 200,
+  title: 80, description: 300, note: 140, bio: 160, report: 200, comment: 500,
 }
 
 export const TAGS = ['zapping', 'finde', 'maraton', 'familia', 'clasicos', 'otro']
@@ -34,7 +34,7 @@ export const handleProblem = (handle) => {
 const URL_RE = /(https?:\/\/|www\.|ftp:|[a-z0-9-]{2,}\.(com|net|org|io|me|tv|ly|xyz|site|app|gg|co|ar|es|mx|cl|uy|pe|link|click|top|info|biz|online|store|shop|live|cc|to|vip)\b)/i
 
 export const cleanText = (value, max) =>
-  String(value ?? '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max)
+  (typeof value === 'string' || typeof value === 'number' ? String(value) : '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max)
 
 export const hasLink = (text) => URL_RE.test(String(text ?? ''))
 
@@ -98,6 +98,36 @@ export const validateBio = (bio) => {
   return { value: text }
 }
 
+// ─── Opiniones y comentarios ────────────────────────────────────────────
+const TARGET_RE = /^(list:[A-Za-z0-9_-]{1,40}|(movie|tv):\d{1,9})$/
+
+/** 'list:<id>' | 'movie:<id>' | 'tv:<id>' → { kind, id } o null */
+export const parseTarget = (t) => {
+  const s = String(t ?? '')
+  if (!TARGET_RE.test(s)) return null
+  const [kind, id] = s.split(':')
+  return { kind, id, key: s }
+}
+
+/**
+ * Valida un comentario. En películas/series (opiniones) la calificación 1–5 es opcional.
+ * @returns {{ error: string } | { value: { target, text, rating } }}
+ */
+export const validateComment = (body) => {
+  const target = parseTarget(body?.target)
+  if (!target) return { error: 'bad_request' }
+  const text = cleanText(body?.text, LIMITS.comment)
+  if (text.length < 2) return { error: 'comment_required' }
+  if (hasLink(text)) return { error: 'text_links' }
+  let rating = null
+  if (body?.rating !== undefined && body?.rating !== null && body?.rating !== '') {
+    const r = Math.trunc(Number(body.rating))
+    if (!(r >= 1 && r <= 5) || target.kind === 'list') return { error: 'bad_request' }
+    rating = r
+  }
+  return { value: { target: target.key, text, rating } }
+}
+
 /** Mensajes en español para los códigos de error de la comunidad. */
 export const SOCIAL_ERRORS = {
   handle_invalid: 'El usuario debe tener entre 3 y 20 caracteres: letras minúsculas, números o guión bajo.',
@@ -116,5 +146,7 @@ export const SOCIAL_ERRORS = {
   too_many_requests: 'Demasiadas acciones seguidas. Esperá unos minutos.',
   cannot_follow_self: 'No podés seguirte a vos mismo.',
   already_reported: 'Ya reportaste esta lista. Gracias.',
+  comment_required: 'Escribí tu opinión (mínimo 2 letras).',
+  bad_request: 'Los datos enviados no son válidos.',
 }
 export const socialErrorMessage = (code) => SOCIAL_ERRORS[code] || 'Algo falló. Probá de nuevo en un rato.'

@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import { authenticateSession, isRoot, checkWriteRequest } from './session.js'
 import {
-  LIMITS, planOf, normalizeHandle, handleProblem, cleanText, hasLink, sanitizeItem, validateListInput, validateBio,
+  LIMITS, planOf, normalizeHandle, handleProblem, cleanText, hasLink, sanitizeItem, validateListInput, validateBio, parseTarget, validateComment,
 } from '../../src/lib/socialRules.js'
 
 const HOUR = 3_600_000
@@ -18,6 +18,7 @@ const HANDLE_COOLDOWN_MS = 30 * DAY
 const AUTO_HIDE_REPORTS = 3
 const POPULAR_WINDOW_MS = 60 * DAY
 const FEED_LIMIT = 24
+const COMMENTS_PAGE = 20
 
 const STATUS = {
   not_found: 404, forbidden: 403, list_limit: 403, private_requires_premium: 403, cannot_publish_yet: 403, cannot_follow_self: 400,
@@ -53,6 +54,17 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
   }
 
   const planInfo = (user) => ({ premium: !!user.premium, maxLists: LIMITS[planOf(user)].lists, maxItems: LIMITS[planOf(user)].items })
+
+
+  /** ¿Se puede ver/comentar este destino? Las listas deben ser públicas y no estar ocultas (o ser del que mira). */
+  const targetAccess = async (target, viewer) => {
+    if (target.kind !== 'list') return { ok: true, ownerId: null }
+    const l = await social.getList(target.id)
+    if (!l) return { ok: false }
+    const mine = !!viewer && viewer.id === l.ownerId
+    if (!mine && (l.visibility !== 'public' || l.hidden)) return { ok: false }
+    return { ok: true, ownerId: l.ownerId }
+  }
 
   // ─── Acciones ───────────────────────────────────────────────────────
   const actions = {
@@ -214,6 +226,82 @@ export const createSocialApi = ({ store, social, now = Date.now, rootEmails = []
         lists = await social.queryLists({ sort: 'new', limit: FEED_LIMIT })
       }
       return ok({ kind, lists: await summaries(lists, viewer) })
+    },
+
+    // ─── Opiniones y comentarios (en listas y en películas/series) ───────────
+    'GET comments': async ({ query, viewer }) => {
+      const target = parseTarget(query.target)
+      if (!target) return fail('bad_request', 400)
+      const access = await targetAccess(target, viewer)
+      if (!access.ok) return fail('not_found')
+      const before = Number(query.before) > 0 ? Number(query.before) : Infinity
+      const rows = await social.listComments(target.key, { limit: COMMENTS_PAGE + 1, before })
+      const page = rows.slice(0, COMMENTS_PAGE)
+      const profiles = await social.getProfilesByIds([...new Set(page.map((c) => c.authorId))])
+      const byId = new Map(profiles.map((p) => [p.userId, p]))
+      const viewerIsRoot = !!viewer && isRoot(viewer, rootEmails)
+      const mine = viewer ? await social.findUserComment(viewer.id, target.key) : null
+      return ok({
+        target: target.key,
+        summary: await social.commentSummary(target.key),
+        comments: page.map((c) => ({
+          id: c.id, text: c.text, rating: c.rating || null, createdAt: c.createdAt, edited: !!c.edited,
+          author: ownerShape(byId.get(c.authorId)),
+          mine: !!viewer && c.authorId === viewer.id,
+          canDelete: !!viewer && (c.authorId === viewer.id || access.ownerId === viewer.id || viewerIsRoot),
+        })),
+        hasMore: rows.length > COMMENTS_PAGE,
+        viewer: { hasComment: !!mine, comment: mine ? { id: mine.id, text: mine.text, rating: mine.rating || null } : null },
+      })
+    },
+
+    'POST comment': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (!canPublish(viewer)) return fail('cannot_publish_yet')
+      const profile = await social.getProfile(viewer.id)
+      if (!profile) return fail('profile_required')
+      if (await limited(`soc:comment:${viewer.id}`, 20, HOUR)) return fail('too_many_requests')
+
+      const checked = validateComment(body)
+      if (checked.error) return fail(checked.error, 400)
+      const { target: key, text, rating } = checked.value
+      const target = parseTarget(key)
+      const access = await targetAccess(target, viewer)
+      if (!access.ok) return fail('not_found')
+
+      // Una opinión por persona y por película/serie (volver a opinar la reemplaza). En listas se puede comentar varias veces.
+      if (target.kind !== 'list') {
+        const prev = await social.findUserComment(viewer.id, key)
+        if (prev) {
+          const saved = await social.updateComment(prev.id, { text, rating, updatedAt: now(), edited: true, hidden: prev.hidden })
+          return ok({ comment: { id: saved.id, text: saved.text, rating: saved.rating || null }, updated: true })
+        }
+      }
+      const saved = await social.addComment({ target: key, authorId: viewer.id, text, rating, createdAt: now(), updatedAt: now() })
+      return ok({ comment: { id: saved.id, text: saved.text, rating: saved.rating || null }, updated: false })
+    },
+
+    'POST comment-delete': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      const c = await social.getComment(String(body.id || ''))
+      if (!c) return fail('not_found')
+      const target = parseTarget(c.target)
+      const access = target ? await targetAccess(target, viewer) : { ok: false }
+      const allowed = c.authorId === viewer.id || access.ownerId === viewer.id || isRoot(viewer, rootEmails)
+      if (!allowed) return fail('forbidden')
+      await social.deleteComment(c.id)
+      return ok()
+    },
+
+    'POST comment-report': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (await limited(`soc:report:${viewer.id}`, 20, HOUR)) return fail('too_many_requests')
+      const c = await social.getComment(String(body.id || ''))
+      if (!c || c.hidden) return fail('not_found')
+      if (c.authorId === viewer.id) return fail('forbidden')
+      const { added, distinct } = await social.addReport({ listId: `c:${c.id}`, reporter: viewer.id, reason: cleanText(body.reason, LIMITS.report), at: now() })
+      if (distinct >= AUTO_HIDE_REPORTS) await social.updateComment(c.id, { hidden: true })
+      return ok({ reported: true, already: !added })
     },
 
     'POST report': async ({ body, viewer }) => {

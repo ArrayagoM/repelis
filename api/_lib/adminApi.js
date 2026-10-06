@@ -79,6 +79,16 @@ export const createAdminApi = ({ store, stats, social = null, rootEmails = [], n
     const rows = await social.reportedLists(50)
     const out = []
     for (const r of rows) {
+      if (String(r.listId).startsWith('c:')) {                          // reporte de un comentario / opinión
+        const c = await social.getComment(String(r.listId).slice(2))
+        if (!c) { await social.clearReports(r.listId); continue }
+        const author = await social.getProfile(c.authorId)
+        out.push({
+          kind: 'comment', commentId: c.id, title: c.text, description: '', owner: author?.handle || '—', itemsCount: 0, target: c.target,
+          hidden: !!c.hidden, reports: r.count, reasons: r.reasons.slice(0, 3), sample: [],
+        })
+        continue
+      }
       const l = await social.getList(r.listId)
       if (!l) { await social.clearReports(r.listId); continue }        // la lista ya no existe
       const owner = await social.getProfile(l.ownerId)
@@ -88,6 +98,19 @@ export const createAdminApi = ({ store, stats, social = null, rootEmails = [], n
       })
     }
     return { status: 200, body: { reports: out } }
+  }
+  if (isModerate && social && body.commentId) {
+    const cid = String(body.commentId)
+    const c = await social.getComment(cid)
+    if (!c) return { status: 404, body: { error: 'not_found' } }
+    switch (body.decision) {
+      case 'hide': await social.updateComment(cid, { hidden: true }); break
+      case 'unhide': await social.updateComment(cid, { hidden: false }); break
+      case 'dismiss': await social.clearReports(`c:${cid}`); await social.updateComment(cid, { hidden: false }); break
+      case 'delete': await social.deleteComment(cid); break
+      default: return { status: 400, body: { error: 'bad_request' } }
+    }
+    return { status: 200, body: { ok: true } }
   }
   if (isModerate && social) {
     const id = String(body.listId || '')

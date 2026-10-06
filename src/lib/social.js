@@ -50,6 +50,14 @@ export const social = {
     return r
   },
   report: (id, reason) => request('report', { method: 'POST', body: { id, reason } }),
+  comments: (target, before) => request('comments', { query: { target, before } }),
+  postComment: async (body) => {
+    const r = await request('comment', { method: 'POST', body })
+    if (r.ok && !r.data.updated) pulseEvent('comment_created')
+    return r
+  },
+  deleteComment: (id) => request('comment-delete', { method: 'POST', body: { id } }),
+  reportComment: (id, reason) => request('comment-report', { method: 'POST', body: { id, reason } }),
 }
 
 // ─── Mi perfil y mis listas (cacheado, se refresca al cambiar algo) ─────

@@ -10,7 +10,8 @@ export const createMemorySocial = () => {
   const lists = new Map()        // id → lista
   const likes = new Set()        // `${userId}|${listId}`
   const follows = new Map()      // `${follower}|${followee}` → { follower, followee, at }
-  const reports = new Map()      // `${listId}|${reporter}` → { listId, reporter, reason, at }
+  const reports = new Map()      // `${listId}|${reporter}` → { listId, reporter, reason, at }  (listId = 'c:<id>' para comentarios)
+  const comments = new Map()     // id → comentario
   let seq = 0
   const clone = (x) => (x ? structuredClone(x) : null)
 
@@ -49,6 +50,7 @@ export const createMemorySocial = () => {
     },
     async deleteList(id) {
       lists.delete(String(id))
+      for (const c of [...comments.values()]) if (c.target === `list:${id}`) { comments.delete(c.id); for (const k of [...reports.keys()]) if (k.startsWith(`c:${c.id}|`)) reports.delete(k) }
       for (const k of [...likes]) if (k.endsWith(`|${id}`)) likes.delete(k)
       for (const k of [...reports.keys()]) if (k.startsWith(`${id}|`)) reports.delete(k)
     },
@@ -77,6 +79,22 @@ export const createMemorySocial = () => {
     async followingIds(a) { return [...follows.values()].filter((f) => f.follower === String(a)).slice(0, MAX_FOLLOWING).map((f) => f.followee) },
     async countFollowers(b) { return [...follows.values()].filter((f) => f.followee === String(b)).length },
     async countFollowing(a) { return [...follows.values()].filter((f) => f.follower === String(a)).length },
+
+    // Comentarios y opiniones. target = 'list:<id>' | 'movie:<id>' | 'tv:<id>'
+    async addComment(doc) { const id = `c${++seq}`; comments.set(id, { ...structuredClone(doc), id, hidden: false }); return clone(comments.get(id)) },
+    async getComment(id) { return clone(comments.get(String(id))) },
+    async updateComment(id, patch) { const c = comments.get(String(id)); if (!c) return null; Object.assign(c, structuredClone(patch)); return clone(c) },
+    async deleteComment(id) { comments.delete(String(id)); for (const k of [...reports.keys()]) if (k.startsWith(`c:${id}|`)) reports.delete(k) },
+    async findUserComment(userId, target) { return clone([...comments.values()].find((c) => c.target === target && c.authorId === String(userId))) },
+    async listComments(target, { limit = 20, before = Infinity } = {}) {
+      return [...comments.values()].filter((c) => c.target === target && !c.hidden && c.createdAt < before)
+        .sort((a, b) => b.createdAt - a.createdAt).slice(0, limit).map(clone)
+    },
+    async commentSummary(target) {
+      const vis = [...comments.values()].filter((c) => c.target === target && !c.hidden)
+      const rated = vis.filter((c) => c.rating)
+      return { count: vis.length, rated: rated.length, avg: rated.length ? Math.round((rated.reduce((a, c) => a + c.rating, 0) / rated.length) * 10) / 10 : null }
+    },
 
     // Reportes
     async addReport(r) {
@@ -108,6 +126,7 @@ export const createMemorySocial = () => {
       }
       for (const [k, f] of [...follows]) if (f.follower === uid || f.followee === uid) follows.delete(k)
       for (const [k, r] of [...reports]) if (r.reporter === uid) reports.delete(k)
+      for (const c of [...comments.values()]) if (c.authorId === uid) await this.deleteComment(c.id)
       profiles.delete(uid)
     },
 
@@ -117,6 +136,7 @@ export const createMemorySocial = () => {
         profiles: profiles.size, lists: all.filter((l) => l.visibility === 'public').length, privateLists: all.filter((l) => l.visibility === 'private').length,
         likes: likes.size, follows: follows.size, hiddenLists: all.filter((l) => l.hidden).length,
         pendingReports: new Set([...reports.values()].map((r) => r.listId)).size,
+        comments: comments.size,
       }
     },
     async ensureIndexes() {},
@@ -130,9 +150,11 @@ export const createMongoSocial = (db, { ObjectId }) => {
   const likes = db.collection('likes')
   const follows = db.collection('follows')
   const reports = db.collection('reports')
+  const comments = db.collection('comments')
 
   const oid = (id) => { try { return new ObjectId(String(id)) } catch { return null } }
   const toList = (d) => { if (!d) return null; const { _id, ...rest } = d; return { ...rest, id: String(_id) } }
+  const toComment = (d) => { if (!d) return null; const { _id, ...rest } = d; return { ...rest, id: String(_id) } }
   const toProfile = (d) => { if (!d) return null; const { _id, ...rest } = d; return { ...rest, userId: String(_id) } }
   const isDup = (e) => e?.code === 11000
 
@@ -166,7 +188,12 @@ export const createMongoSocial = (db, { ObjectId }) => {
     async deleteList(id) {
       const _id = oid(id)
       if (!_id) return
-      await Promise.all([lists.deleteOne({ _id }), likes.deleteMany({ listId: String(id) }), reports.deleteMany({ listId: String(id) })])
+      const cs = await comments.find({ target: `list:${id}` }, { projection: { _id: 1 } }).toArray()
+      await Promise.all([
+        lists.deleteOne({ _id }), likes.deleteMany({ listId: String(id) }), reports.deleteMany({ listId: String(id) }),
+        comments.deleteMany({ target: `list:${id}` }),
+        cs.length ? reports.deleteMany({ listId: { $in: cs.map((c) => `c:${c._id}`) } }) : null,
+      ])
     },
     async listsByOwner(ownerId) { return (await lists.find({ ownerId: String(ownerId) }).sort({ updatedAt: -1 }).limit(200).toArray()).map(toList) },
     async countListsByOwner(ownerId) { return lists.countDocuments({ ownerId: String(ownerId) }) },
@@ -198,6 +225,32 @@ export const createMongoSocial = (db, { ObjectId }) => {
     async countFollowers(b) { return follows.countDocuments({ followee: String(b) }) },
     async countFollowing(a) { return follows.countDocuments({ follower: String(a) }) },
 
+    async addComment(doc) {
+      const { insertedId } = await comments.insertOne({ ...doc, hidden: false })
+      return toComment({ ...doc, _id: insertedId, hidden: false })
+    },
+    async getComment(id) { const _id = oid(id); return _id ? toComment(await comments.findOne({ _id })) : null },
+    async updateComment(id, patch) { const _id = oid(id); return _id ? toComment(await comments.findOneAndUpdate({ _id }, { $set: patch }, { returnDocument: 'after' })) : null },
+    async deleteComment(id) {
+      const _id = oid(id)
+      if (!_id) return
+      await Promise.all([comments.deleteOne({ _id }), reports.deleteMany({ listId: `c:${id}` })])
+    },
+    async findUserComment(userId, target) { return toComment(await comments.findOne({ target, authorId: String(userId) })) },
+    async listComments(target, { limit = 20, before = Infinity } = {}) {
+      const filter = { target, hidden: false }
+      if (Number.isFinite(before)) filter.createdAt = { $lt: before }
+      return (await comments.find(filter).sort({ createdAt: -1 }).limit(limit).toArray()).map(toComment)
+    },
+    async commentSummary(target) {
+      const [row] = await comments.aggregate([
+        { $match: { target, hidden: false } },
+        { $group: { _id: null, count: { $sum: 1 }, rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } }, sum: { $sum: { $ifNull: ['$rating', 0] } } } },
+      ]).toArray()
+      if (!row) return { count: 0, rated: 0, avg: null }
+      return { count: row.count, rated: row.rated, avg: row.rated ? Math.round((row.sum / row.rated) * 10) / 10 : null }
+    },
+
     async addReport(r) {
       let added = true
       try { await reports.insertOne({ _id: `${r.listId}|${r.reporter}`, ...r }) } catch (e) { if (isDup(e)) added = false; else throw e }
@@ -222,19 +275,21 @@ export const createMongoSocial = (db, { ObjectId }) => {
         likes.deleteMany({ userId: uid }),
         follows.deleteMany({ $or: [{ follower: uid }, { followee: uid }] }),
         reports.deleteMany({ reporter: uid }),
+        comments.deleteMany({ authorId: uid }),
         profiles.deleteOne({ _id: uid }),
       ])
     },
 
     async stats() {
-      const [pr, pub, priv, lk, fl, hid, pend] = await Promise.all([
+      const [pr, pub, priv, lk, fl, hid, pend, cm] = await Promise.all([
         profiles.estimatedDocumentCount(),
         lists.countDocuments({ visibility: 'public' }), lists.countDocuments({ visibility: 'private' }),
         likes.estimatedDocumentCount(), follows.estimatedDocumentCount(),
         lists.countDocuments({ hidden: true }),
         reports.distinct('listId').then((a) => a.length),
+        comments.estimatedDocumentCount(),
       ])
-      return { profiles: pr, lists: pub, privateLists: priv, likes: lk, follows: fl, hiddenLists: hid, pendingReports: pend }
+      return { profiles: pr, lists: pub, privateLists: priv, likes: lk, follows: fl, hiddenLists: hid, pendingReports: pend, comments: cm }
     },
 
     async ensureIndexes() {
@@ -248,6 +303,9 @@ export const createMongoSocial = (db, { ObjectId }) => {
         follows.createIndex({ follower: 1 }),
         follows.createIndex({ followee: 1 }),
         reports.createIndex({ listId: 1 }),
+        comments.createIndex({ target: 1, hidden: 1, createdAt: -1 }),
+        comments.createIndex({ target: 1, authorId: 1 }),
+        comments.createIndex({ authorId: 1 }),
       ])
     },
   }

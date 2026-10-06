@@ -14,6 +14,7 @@ import PlayerPrefetch from '../../components/PlayerPrefetch'
 import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
 import AddToList from '../../components/AddToList'
+import Comments from '../../components/Comments'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
 import CinemaTickets from '../../components/CinemaTickets'
@@ -302,6 +303,8 @@ export default function MovieDetail() {
             </div>
           </motion.section>
         )}
+
+        <Comments target={`movie:${data.id}`} />
 
         {/* ── Similar Movies ── */}
         {similar.length > 0 && (

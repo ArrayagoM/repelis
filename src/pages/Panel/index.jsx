@@ -402,10 +402,12 @@ function CommunitySection({ stats }) {
   }, [])
   useEffect(() => { load() }, [load])
 
-  const decide = async (listId, decision) => {
-    if (decision === 'delete' && !window.confirm('¿Borrar esta lista para siempre?')) return
-    setBusy(listId)
-    await postJson('/api/admin/moderate', { listId, decision })
+  const decide = async (r, decision) => {
+    const isComment = r.kind === 'comment'
+    const id = isComment ? r.commentId : r.listId
+    if (decision === 'delete' && !window.confirm(isComment ? '¿Borrar este comentario para siempre?' : '¿Borrar esta lista para siempre?')) return
+    setBusy(id)
+    await postJson('/api/admin/moderate', isComment ? { commentId: id, decision } : { listId: id, decision })
     setBusy('')
     load()
   }
@@ -436,9 +438,11 @@ function CommunitySection({ stats }) {
           : (
             <ul className="space-y-3">
               {reports.map((r) => (
-                <li key={r.listId} className="p-4 rounded-xl bg-surface border border-white/[0.06] space-y-2">
+                <li key={r.commentId || r.listId} className="p-4 rounded-xl bg-surface border border-white/[0.06] space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link to={`/lista/${r.listId}`} className="font-semibold text-chalk hover:text-gold mr-auto">{r.title}</Link>
+                    {r.kind === 'comment'
+                      ? <span className="font-semibold text-chalk mr-auto break-words min-w-0">“{r.title}” <span className="text-muted font-normal text-xs">comentario en {r.target}</span></span>
+                      : <Link to={`/lista/${r.listId}`} className="font-semibold text-chalk hover:text-gold mr-auto">{r.title}</Link>}
                     <span className="text-xs text-muted font-mono">@{r.owner} · {r.itemsCount} títulos · {r.reports} reportes</span>
                     {r.hidden && <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px]">oculta</span>}
                   </div>
@@ -446,9 +450,9 @@ function CommunitySection({ stats }) {
                   {r.sample.length > 0 && <p className="text-muted/70 text-xs">Incluye: {r.sample.join(', ')}</p>}
                   {r.reasons.length > 0 && <ul className="text-xs text-amber-200/90 list-disc pl-4">{r.reasons.map((x, i) => <li key={i}>{x}</li>)}</ul>}
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <button disabled={busy === r.listId} onClick={() => decide(r.listId, 'dismiss')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-emerald-400/40">Está bien (descartar)</button>
-                    {!r.hidden && <button disabled={busy === r.listId} onClick={() => decide(r.listId, 'hide')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-amber-400/40">Ocultar</button>}
-                    <button disabled={busy === r.listId} onClick={() => decide(r.listId, 'delete')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">Borrar</button>
+                    <button disabled={busy === (r.commentId || r.listId)} onClick={() => decide(r, 'dismiss')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-emerald-400/40">Está bien (descartar)</button>
+                    {!r.hidden && <button disabled={busy === (r.commentId || r.listId)} onClick={() => decide(r, 'hide')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-amber-400/40">Ocultar</button>}
+                    <button disabled={busy === (r.commentId || r.listId)} onClick={() => decide(r, 'delete')} className="px-3.5 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">Borrar</button>
                   </div>
                 </li>
               ))}

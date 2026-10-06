@@ -25,7 +25,7 @@ const KEY_RE = /^(movie|tv):\d{1,9}$/
 const COUNTRY_RE = /^[A-Z]{2}$/
 export const PLATFORMS = new Set(['web', 'pwa', 'android-app', 'ios-app', 'desktop-app', 'tv'])
 export const PAGES = new Set(['home', 'movie', 'tv', 'search', 'catalog', 'mi-lista', 'cuenta', 'calendario', 'cines', 'descargar', 'legal', 'comunidad', 'other'])
-export const EVENTS = new Set(['gate_shown_watch', 'gate_shown_list', 'signup', 'signup_gate', 'login', 'donate_shown', 'donate_click', 'list_created', 'list_liked', 'followed'])
+export const EVENTS = new Set(['gate_shown_watch', 'gate_shown_list', 'signup', 'signup_gate', 'login', 'donate_shown', 'donate_click', 'list_created', 'list_liked', 'followed', 'comment_created'])
 
 // Robots y herramientas automáticas (buscadores, vistas previas de links, monitores, scripts): no son personas
 export const BOT_RE = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|facebookexternalhit|embedly|preview|monitor|uptime|pingdom|curl|wget|python-requests|httpclient|go-http|axios|node-fetch|okhttp|java\//i

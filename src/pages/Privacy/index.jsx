@@ -104,9 +104,9 @@ export default function Privacy() {
               dispositivo (sigue en tu cuenta) para que nadie más la vea en un equipo compartido.
             </p>
             <p className="mt-3">
-              <strong className="text-chalk/85">Comunidad.</strong> Si elegís un @usuario y publicás listas, el @usuario, tu nombre, tu bio y tus listas públicas
+              <strong className="text-chalk/85">Comunidad.</strong> Si elegís un @usuario y publicás listas u opiniones, el @usuario, tu nombre, tu bio, tus listas públicas y tus opiniones y comentarios
               son <strong className="text-chalk/85">visibles para cualquiera</strong>, incluso sin cuenta. Tus me gusta y a quién seguís se usan para mostrar contadores y tu pestaña
-              "Siguiendo"; no se publican como lista. No se muestra tu mail. Al borrar tu cuenta se eliminan también tu perfil, tus listas, tus me gusta, tus seguimientos y tus reportes.
+              "Siguiendo"; no se publican como lista. No se muestra tu mail. Al borrar tu cuenta se eliminan también tu perfil, tus listas, tus opiniones y comentarios, tus me gusta, tus seguimientos y tus reportes.
             </p>
           </Section>
 
