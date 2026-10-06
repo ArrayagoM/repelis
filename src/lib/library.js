@@ -71,6 +71,7 @@ export const toLibItem = (raw, type) => {
     date: raw.release_date || raw.first_air_date || raw.date || null,
     genres,
     ...(raw.number_of_seasons ? { totalSeasons: raw.number_of_seasons } : {}),
+    ...(raw.vote_average != null ? { rating: raw.vote_average, votes: raw.vote_count, pop: raw.popularity } : {}),
   }
 }
 

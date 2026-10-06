@@ -10,6 +10,7 @@ import {
   changePassword, deleteAccount, syncNow, errorMessage,
 } from '../../lib/auth'
 import { useDonations, isSupporter } from '../../lib/donations'
+import { safeRedirect } from '../../lib/access'
 import { useSEO } from '../../lib/useSEO'
 
 const inputCls = 'w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-chalk text-sm placeholder:text-muted/50 focus:outline-none focus:border-gold/50 transition-colors'
@@ -59,7 +60,9 @@ const Message = ({ kind = 'error', children }) => (
 
 // ─── Ingresar / Crear cuenta / Olvidé mi contraseña ─────────────────────
 function AuthForm({ mail, googleClientId }) {
-  const [mode, setMode] = useState('login')       // 'login' | 'register' | 'forgot'
+  const [params] = useSearchParams()
+  const volver = safeRedirect(params.get('volver'))   // a dónde volver después de ingresar (ej. la película que quería ver)
+  const [mode, setMode] = useState(params.get('modo') === 'registro' ? 'register' : 'login')   // 'login' | 'register' | 'forgot'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -76,7 +79,7 @@ function AuthForm({ mail, googleClientId }) {
     const r = await loginWithGoogle(credential)
     setBusy(false)
     if (!r.ok) return setError(errorMessage(r.error))
-    navigate('/mi-lista')
+    navigate(volver || '/mi-lista')
   }
 
   const submit = async (e) => {
@@ -94,7 +97,7 @@ function AuthForm({ mail, googleClientId }) {
     const r = mode === 'register' ? await register({ email, password, name }) : await login({ email, password })
     setBusy(false)
     if (!r.ok) return setError(errorMessage(r.error))
-    navigate('/mi-lista')
+    navigate(volver || '/mi-lista')
   }
 
   const titles = { login: 'Ingresar', register: 'Crear cuenta', forgot: 'Recuperar contraseña' }

@@ -12,6 +12,9 @@ import { getNetworkInfo } from '../../lib/network'
 import { getServerHistory, reportServerFailure } from '../../lib/serverHealth'
 import { getTVSeason } from '../../api/tmdb'
 import { useLibrary } from '../../lib/library'
+import { useAuth } from '../../lib/auth'
+import { canUsePersonal } from '../../lib/access'
+import AccessGate from '../AccessGate'
 import { nextTarget, shouldOfferNext } from '../../lib/nextEpisode'
 import NextEpisodeCard from '../NextEpisodeCard'
 import { showToast } from '../../lib/toast'
@@ -83,8 +86,11 @@ const usePreconnect = (active) => {
 // ─────────────────────────────────────────────────────────────────────────
 export default function PlayerModal() {
   const dispatch = useDispatch()
-  const { isOpen, movieId, title, mediaType, season: initSeason, episode: initEpisode, totalSeasons, item: playerItem, runtimeMin } =
+  const { isOpen, movieId, title, mediaType, season: initSeason, episode: initEpisode, totalSeasons, item: playerItem, runtimeMin, locked } =
     useSelector((s) => s.player)
+  const auth = useAuth()
+  // Títulos muy calificados/populares: para darles play hace falta cuenta gratis (si el servicio de cuentas falla, se deja ver)
+  const gated = isOpen && locked && (auth.status === 'out' || auth.status === 'loading')
 
   // El orden de SOURCES se calcula UNA vez por apertura. Después aplicamos
   // un "smart skip": los servidores con <30% uptime histórico van AL FINAL
@@ -145,6 +151,7 @@ export default function PlayerModal() {
     season: localSeason,
     episode: localEpisode,
     runtimeMin,
+    persist: canUsePersonal(auth.status),
   })
   useWindowFocusGuard(isOpen && sources[srcIdx]?.sandbox === null)
 
@@ -339,7 +346,8 @@ export default function PlayerModal() {
 
   return (
     <AnimatePresence>
-      {isOpen && movieId && (
+      {isOpen && movieId && gated && <AccessGate key="gate" title={title} onClose={handleClose} />}
+      {isOpen && movieId && !gated && (
         <motion.div
           key="bg"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

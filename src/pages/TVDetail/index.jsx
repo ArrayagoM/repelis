@@ -15,6 +15,7 @@ import ShareButtons from '../../components/ShareButtons'
 import ListButton from '../../components/ListButton'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
+import { GuestLockNote } from '../../components/AccessGate'
 import { isUpcoming } from '../../lib/releaseStatus'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
@@ -207,6 +208,8 @@ export default function TVDetail() {
             {data.overview && (
               <p className="text-chalk/80 text-base leading-relaxed max-w-[65ch]">{data.overview}</p>
             )}
+
+            {!isUpcoming(data) && <GuestLockNote item={toLibItem(data, 'tv')} />}
 
             {/* CTAs */}
             <div className="flex flex-wrap gap-3">

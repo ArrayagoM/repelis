@@ -22,6 +22,7 @@ import { AchievementWatcher } from './components/Achievements'
 import DonatePrompt from './components/DonatePrompt'
 import { SupporterWatcher } from './components/Supporter'
 import { initAuth } from './lib/auth'
+import { AccountPromptHost } from './components/AccessGate'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -82,6 +83,7 @@ export default function App() {
       <AchievementWatcher />
       <SupporterWatcher />
       <DonatePrompt />
+      <AccountPromptHost />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />

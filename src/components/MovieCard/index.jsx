@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion } from 'framer-motion'
-import { Play, Star, CalendarBlank, TelevisionSimple } from '@phosphor-icons/react'
+import { Play, Star, CalendarBlank, TelevisionSimple, LockKey } from '@phosphor-icons/react'
 import { IMG_W342, IMG_W500 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
@@ -10,6 +10,8 @@ import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
 import { toLibItem } from '../../lib/library'
 import ListButton from '../ListButton'
 import ReminderButton from '../ReminderButton'
+import { useAuth } from '../../lib/auth'
+import { requiresAccount } from '../../lib/access'
 
 // Capacidades detectadas UNA vez (cacheado). En low-end:
 //   - poster más chico (w342 vs w500)
@@ -24,6 +26,7 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   const cardRef  = useRef(null)
   const [tilt,    setTilt]    = useState({ x: 0, y: 0 })
   const [hovered, setHovered] = useState(false)
+  const auth = useAuth()
 
   const isTV = mediaType === 'tv' || movie?.media_type === 'tv' || movie?.first_air_date !== undefined
 
@@ -45,6 +48,9 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   // Películas sin estrenar NO están en ningún servidor. Lo marcamos.
   const upcoming  = !isTV && isUpcoming(movie)
   const daysLeft  = upcoming ? daysUntilRelease(movie) : null
+
+  // Sin sesión, los más calificados/populares piden cuenta para reproducirse (se ven y se buscan igual)
+  const guestLocked = auth.status === 'out' && !upcoming && requiresAccount(toLibItem(movie, isTV ? 'tv' : 'movie'))
 
   const handleMouseMove = (e) => {
     if (LOW_END) return                       // sin tilt en red lenta — ahorra paint
@@ -180,10 +186,16 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
         {/* Metadata */}
         <div className="p-3 space-y-0.5">
           <p className="font-semibold text-sm leading-tight truncate text-chalk">{title}</p>
-          {year && (
-            <div className="flex items-center gap-1.5 text-muted text-xs">
-              <CalendarBlank size={10} />
-              <span className="font-mono">{year}</span>
+          {(year || guestLocked) && (
+            <div className="flex items-center justify-between gap-1.5 text-muted text-xs">
+              {year ? (
+                <span className="flex items-center gap-1.5"><CalendarBlank size={10} /><span className="font-mono">{year}</span></span>
+              ) : <span />}
+              {guestLocked && (
+                <span title="Para darle play necesitás una cuenta gratis" className="flex items-center gap-1 text-gold/90 text-[10px] font-semibold">
+                  <LockKey size={10} weight="fill" /> Cuenta
+                </span>
+              )}
             </div>
           )}
         </div>

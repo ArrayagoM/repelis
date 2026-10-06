@@ -10,6 +10,7 @@ import { NewEpisodesRow } from '../../components/NewEpisodes'
 import ForYouRow from '../../components/ForYouRow'
 import { CinemaBanner } from '../../components/CinemaTickets'
 import { useLibrary, continueWatching } from '../../lib/library'
+import { usePersonal } from '../../lib/auth'
 import {
   fetchTrending, fetchPopular, fetchTopRated, fetchNowPlaying, fetchUpcoming, fetchClassics, fetchAnimeMovies,
   fetchTrendingTV, fetchPopularTV, fetchTopRatedTV, fetchAiringTodayTV, fetchAnime, fetchKDrama,
@@ -27,6 +28,7 @@ export default function Home() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const lib = useLibrary()
+  const personal = usePersonal()   // Mi lista, Continuar viendo, recomendadas y capítulos nuevos: solo con cuenta
   const hasContinue = useMemo(() => continueWatching(lib).length > 0, [lib])
 
   useSEO({
@@ -126,10 +128,10 @@ export default function Home() {
         </div>
 
         {/* ── TU ESPACIO ── */}
-        {hasContinue && <ContinueRow />}
-        <NewEpisodesRow />
-        <ForYouRow />
-        {lib.list.length > 0 && <MyListRow limit={20} onViewAll={() => navigate('/mi-lista')} />}
+        {personal && hasContinue && <ContinueRow />}
+        {personal && <NewEpisodesRow />}
+        {personal && <ForYouRow />}
+        {personal && lib.list.length > 0 && <MyListRow limit={20} onViewAll={() => navigate('/mi-lista')} />}
 
         {/* ── TOP 10 ── */}
         <Top10Row title="Top 10 películas hoy" badge="Hoy" movies={top10Movies.results}

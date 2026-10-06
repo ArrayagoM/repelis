@@ -41,6 +41,8 @@ const SEEN_RE = /^(movie|tv):\d+$/
 const arr = (v) => (Array.isArray(v) ? v : [])
 const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {})
 
+const optNum = (key, v) => (v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) ? { [key]: Math.round(Number(v) * 10) / 10 } : {})
+
 const baseItem = (x) => {
   if (!x || !isType(x.type)) return null
   const id = Math.trunc(num(x.id, NaN))
@@ -54,6 +56,9 @@ const baseItem = (x) => {
     date: str(x.date, 10),
     genres: arr(x.genres).map((g) => Math.trunc(num(g, NaN))).filter(Number.isFinite).slice(0, 10),
     ...(x.totalSeasons ? { totalSeasons: Math.max(1, Math.trunc(num(x.totalSeasons, 1))) } : {}),
+    ...optNum('rating', x.rating),     // puntaje de TMDB: decide si para reproducirlo hace falta cuenta (lib/access.js)
+    ...optNum('votes', x.votes),
+    ...optNum('pop', x.pop),
   }
 }
 

@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react'
 import PosterStrip from '../PosterStrip'
 import { getLibrary, useLibrary } from '../../lib/library'
+import { usePersonal } from '../../lib/auth'
 import { loadForYou, pickSeeds } from '../../lib/forYou'
 
 /** "Recomendadas para vos": a partir de lo último que viste y guardaste. Sin seeds, no aparece. */
 export default function ForYouRow() {
   const lib = useLibrary()
+  const personal = usePersonal()
   const [recs, setRecs] = useState([])
   // Solo recalculamos si cambian las semillas (no con cada tick de progreso)
   const sig = pickSeeds(lib).map((s) => `${s.type}:${s.id}`).join(',')
 
   useEffect(() => {
-    if (!sig) { setRecs([]); return undefined }
+    if (!sig || !personal) { setRecs([]); return undefined }
     let cancelled = false
     loadForYou(getLibrary()).then((r) => { if (!cancelled) setRecs(r) })
     return () => { cancelled = true }
-  }, [sig])
+  }, [sig, personal])
 
   const items = recs.map((r) => ({
     key: `${r.media}:${r.id}`,

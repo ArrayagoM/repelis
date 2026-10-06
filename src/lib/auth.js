@@ -11,6 +11,7 @@ import { getLibrary, replaceLibrary, subscribe as subscribeLibrary } from './lib
 import { mergeLibraries, libraryFingerprint, emptyLibrary } from './libraryMerge'
 import { getDonations, adoptSupporterSince } from './donations'
 import { showToast } from './toast'
+import { canUsePersonal } from './access'
 
 const API = '/api/auth'
 const DEBOUNCE_MS = 4000          // espera tras un cambio antes de subir
@@ -25,6 +26,18 @@ const set = (patch) => { state = { ...state, ...patch }; listeners.forEach((fn) 
 export const getAuth = () => state
 export const subscribeAuth = (fn) => { listeners.add(fn); return () => listeners.delete(fn) }
 export const useAuth = () => useSyncExternalStore(subscribeAuth, getAuth, getAuth)
+
+/** ¿Este usuario puede usar Mi lista / Continuar viendo y demás funciones con cuenta? */
+export const usePersonal = () => canUsePersonal(useAuth().status)
+
+/** Espera (máx. 3 s) a que se sepa si hay sesión, para no tratar como invitado a quien recién abrió la app. */
+export const whenAuthSettled = (timeoutMs = 3000) => new Promise((resolve) => {
+  if (state.status !== 'loading') return resolve(state.status)
+  const done = () => { off(); clearTimeout(t); resolve(state.status === 'loading' ? 'unavailable' : state.status) }
+  const off = subscribeAuth(() => { if (state.status !== 'loading') done() })
+  const t = setTimeout(done, timeoutMs)
+  return undefined
+})
 
 /** Para tests. */
 export const __resetAuth = () => {

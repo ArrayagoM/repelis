@@ -4,12 +4,14 @@ import { Fire } from '@phosphor-icons/react'
 import { useLibrary, getLibrary, markAchievementsSeen } from '../../lib/library'
 import { computeAchievements, computeStreak, newlyUnlocked } from '../../lib/achievements'
 import { showToast } from '../../lib/toast'
+import { usePersonal } from '../../lib/auth'
 
 /** Chip 🔥 con los días de racha (Navbar). Aparece desde 2 días seguidos. */
 export function StreakChip() {
   const lib = useLibrary()
+  const personal = usePersonal()
   const { current } = useMemo(() => computeStreak(lib.days), [lib.days])
-  if (current < 2) return null
+  if (!personal || current < 2) return null
   return (
     <Link to="/mi-lista#logros" title={`${current} días seguidos viendo algo`} aria-label={`Racha de ${current} días`}
       className="hidden lg:flex items-center gap-1 h-8 px-2.5 rounded-full bg-orange-500/15 border border-orange-400/30 text-orange-300 text-xs font-bold hover:bg-orange-500/25 transition-all">
@@ -22,7 +24,9 @@ export function StreakChip() {
 /** Avisa (una sola vez) cada logro nuevo. No renderiza nada. */
 export function AchievementWatcher() {
   const lib = useLibrary()
+  const personal = usePersonal()
   useEffect(() => {
+    if (!personal) return
     // Estado fresco (no el de este render): evita avisar dos veces en modo estricto
     const fresh = newlyUnlocked(getLibrary())
     if (!fresh.length) return
@@ -31,7 +35,7 @@ export function AchievementWatcher() {
       icon: a.icon, title: `Logro desbloqueado: ${a.title}`, text: a.desc,
       actionLabel: 'Ver mis logros', to: '/mi-lista#logros', ttl: 8000,
     }), i * 600))
-  }, [lib])
+  }, [lib, personal])
   return null
 }
 

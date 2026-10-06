@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { requiresAccount } from '../../lib/access'
 
 const playerSlice = createSlice({
   name: 'player',
@@ -12,6 +13,7 @@ const playerSlice = createSlice({
     totalSeasons: 1,
     item:         null,   // título normalizado (toLibItem) para Continuar viendo
     runtimeMin:   0,
+    locked:       false,  // el título pide cuenta para reproducirse (ver lib/access.js)
   },
   reducers: {
     openPlayer(state, action) {
@@ -24,6 +26,7 @@ const playerSlice = createSlice({
       state.totalSeasons = action.payload.totalSeasons || 1
       state.item         = action.payload.item         || null
       state.runtimeMin   = action.payload.runtimeMin   || 0
+      state.locked       = requiresAccount(action.payload.item)
     },
     closePlayer(state) {
       state.isOpen       = false
@@ -35,6 +38,7 @@ const playerSlice = createSlice({
       state.totalSeasons = 1
       state.item         = null
       state.runtimeMin   = 0
+      state.locked       = false
     },
     setEpisode(state, action) {
       state.season  = action.payload.season

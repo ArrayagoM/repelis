@@ -1,6 +1,9 @@
 import { Plus, Check, BookmarkSimple } from '@phosphor-icons/react'
 import { useLibrary, toggleList, isInList } from '../../lib/library'
 import { showToast } from '../../lib/toast'
+import { whenAuthSettled } from '../../lib/auth'
+import { canUsePersonal } from '../../lib/access'
+import { requestAccount } from '../../lib/accountPrompt'
 
 /**
  * "Mi lista": agrega/quita un título. `item` = toLibItem(...)
@@ -12,8 +15,10 @@ export default function ListButton({ item, variant = 'full', className = '' }) {
   if (!item?.id) return null
   const inList = isInList(lib, item.type, item.id)
 
-  const onClick = (e) => {
+  const onClick = async (e) => {
     e.stopPropagation()
+    // Mi lista es con cuenta (si el servicio de cuentas no está disponible, sigue local)
+    if (!canUsePersonal(await whenAuthSettled())) { requestAccount({ reason: 'list', title: item.title }); return }
     const added = toggleList(item)
     if (added) {
       showToast({ icon: '✅', title: 'Agregado a Mi lista', text: item.title, actionLabel: 'Ver mi lista', to: '/mi-lista', ttl: 4000, tone: 'green' })

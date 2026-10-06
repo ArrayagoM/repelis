@@ -3,6 +3,25 @@
 Ingreso con **Google** (principal) y con mail y contraseña (alternativa). Sirve para sincronizar **Mi lista, Continuar viendo, avisos, logros y Supporter**
 entre dispositivos. Sin cuenta, todo sigue funcionando igual (guardado en el dispositivo).
 
+## Qué se ve libre y qué pide cuenta
+
+**Siempre libre (sin registrarse):** buscar, ver listados y fichas, el Top 10, el calendario, los cines, y **reproducir** cualquier título que no sea de los "más calificados o populares".
+
+**Pide cuenta gratis:**
+- **Reproducir** los títulos más calificados o más populares (regla en `src/lib/access.js`, calculada con los datos de TMDB, sin listas armadas a mano):
+  - Películas: nota ≥ 7,5 con ≥ 1000 votos, **o** popularidad ≥ 150.
+  - Series: nota ≥ 7,5 con ≥ 1000 votos, **o** popularidad ≥ 500 (las series usan otra escala).
+- **Mi lista** (el botón +), **Continuar viendo**, recomendadas, capítulos nuevos y logros.
+
+Sin cuenta, esos títulos muestran un candado "Cuenta" en la tarjeta y, al darles play, un aviso con el botón de Google y los accesos a crear cuenta o ingresar (no se carga el video).
+Lo que alguien ya tenía guardado en el dispositivo se **suma a su cuenta** al registrarse.
+
+Si el servicio de cuentas no responde (`unavailable`), **nada se bloquea**: todo se ve y las funciones siguen locales.
+Los umbrales son números en `ACCESS_RULES`: cambiarlos es editar una línea.
+
+> Es un límite de cortesía del lado del navegador: el video lo sirven reproductores de terceros, así que una persona técnica puede saltearlo.
+> Sirve para invitar a registrarse, no como seguridad.
+
 ## Cómo funciona
 
 - **Backend:** una función de Vercel (`api/auth/[action].js`, Node) + **MongoDB Atlas**.

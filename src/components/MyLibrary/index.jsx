@@ -36,7 +36,7 @@ export function ContinueRow() {
         season,
         episode,
         totalSeasons: h.totalSeasons || 1,
-        item: { id: h.id, type: h.type, title: h.title, poster: h.poster, backdrop: h.backdrop, date: h.date, genres: h.genres || [], totalSeasons: h.totalSeasons },
+        item: { id: h.id, type: h.type, title: h.title, poster: h.poster, backdrop: h.backdrop, date: h.date, genres: h.genres || [], totalSeasons: h.totalSeasons, rating: h.rating, votes: h.votes, pop: h.pop },
         runtimeMin: h.runtimeMin,
       })),
       onRemove: () => removeHistory(h.type, h.id),

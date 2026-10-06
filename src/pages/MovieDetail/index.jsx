@@ -16,6 +16,7 @@ import ListButton from '../../components/ListButton'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
 import CinemaTickets from '../../components/CinemaTickets'
+import { GuestLockNote } from '../../components/AccessGate'
 import CafecitoButton from '../../components/CafecitoButton'
 import LanguagesInfo from '../../components/LanguagesInfo'
 import DubInfo from '../../components/DubInfo'
@@ -208,6 +209,8 @@ export default function MovieDetail() {
               </div>
             )}
             {movieUpcoming && <ReminderButton item={toLibItem(data, 'movie')} />}
+
+            {!movieUpcoming && <GuestLockNote item={toLibItem(data, 'movie')} />}
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-3">

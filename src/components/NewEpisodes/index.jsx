@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux'
 import PosterStrip from '../PosterStrip'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { getLibrary, useLibrary } from '../../lib/library'
+import { usePersonal } from '../../lib/auth'
 import { loadNewEpisodes } from '../../lib/newEpisodes'
 import { dateLabel } from '../../lib/reminders'
 import { showToast } from '../../lib/toast'
@@ -19,15 +20,17 @@ const markToasted = (k) => {
 /** Hook: series seguidas con episodio nuevo o por salir. */
 export const useNewEpisodes = () => {
   const lib = useLibrary()
+  const personal = usePersonal()
   const [items, setItems] = useState([])
   // Solo reconsultamos cuando cambian las series seguidas (no con cada tick de progreso)
   const sig = [...lib.history, ...lib.list].filter((x) => x.type === 'tv').map((x) => x.id).sort().join(',')
 
   useEffect(() => {
+    if (!personal) { setItems([]); return undefined }
     let cancelled = false
     loadNewEpisodes(getLibrary()).then((r) => { if (!cancelled) setItems(r) })
     return () => { cancelled = true }
-  }, [sig])
+  }, [sig, personal])
 
   return items
 }
@@ -56,7 +59,7 @@ export function NewEpisodesRow() {
         season: info.season,
         episode: info.episode,
         totalSeasons: show.totalSeasons || info.season,
-        item: { id: show.id, type: 'tv', title: show.title, poster: show.poster, backdrop: show.backdrop, date: show.date, genres: show.genres || [], totalSeasons: show.totalSeasons },
+        item: { id: show.id, type: 'tv', title: show.title, poster: show.poster, backdrop: show.backdrop, date: show.date, genres: show.genres || [], totalSeasons: show.totalSeasons, rating: show.rating, votes: show.votes, pop: show.pop },
       })) : undefined,
     }
   })
