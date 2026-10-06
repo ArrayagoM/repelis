@@ -9,45 +9,14 @@
 // minuto exacto del video. El progreso es una ESTIMACIÓN por tiempo reproducido.
 // ─────────────────────────────────────────────────────────────────────────
 import { useSyncExternalStore } from 'react'
+import { emptyLibrary, normalizeLibrary, LIST_MAX, HISTORY_MAX, REMINDERS_MAX, DAYS_MAX } from './libraryMerge'
 
 const KEY = 'lifehigh:library:v1'
-const LIST_MAX = 200
-const HISTORY_MAX = 60
-const REMINDERS_MAX = 100
-const DAYS_MAX = 400
 // Una vez visto este % de la duración, lo damos por terminado
 export const FINISHED_RATIO = 0.9
 
-const empty = () => ({
-  v: 1,
-  list: [],
-  history: [],
-  reminders: [],
-  days: [],            // días con actividad: 'YYYY-MM-DD' (hora local)
-  daily: {},           // { 'YYYY-MM-DD': ['tv:1', 'movie:2'] } últimos días (maratonista)
-  seen: {},            // { 'movie:1': 1 } títulos distintos vistos alguna vez
-  genres: {},          // { '28': 3 } cuántos títulos vistos por género
-  minutes: 0,          // minutos totales reproducidos
-  achSeen: [],         // logros ya mostrados
-})
-
-const sanitize = (raw) => {
-  const base = empty()
-  if (!raw || typeof raw !== 'object') return base
-  return {
-    ...base,
-    ...raw,
-    list: Array.isArray(raw.list) ? raw.list : [],
-    history: Array.isArray(raw.history) ? raw.history : [],
-    reminders: Array.isArray(raw.reminders) ? raw.reminders : [],
-    days: Array.isArray(raw.days) ? raw.days : [],
-    daily: raw.daily && typeof raw.daily === 'object' ? raw.daily : {},
-    seen: raw.seen && typeof raw.seen === 'object' ? raw.seen : {},
-    genres: raw.genres && typeof raw.genres === 'object' ? raw.genres : {},
-    achSeen: Array.isArray(raw.achSeen) ? raw.achSeen : [],
-    minutes: Number(raw.minutes) || 0,
-  }
-}
+const empty = emptyLibrary
+const sanitize = normalizeLibrary
 
 const read = () => {
   try { return sanitize(JSON.parse(localStorage.getItem(KEY) || 'null')) } catch { return empty() }
@@ -71,6 +40,9 @@ export const getLibrary = () => state
 
 /** React: re-renderiza cuando cambia la biblioteca. */
 export const useLibrary = () => useSyncExternalStore(subscribe, getLibrary, getLibrary)
+
+/** Reemplaza la biblioteca completa (la usa la sincronización con la cuenta). */
+export const replaceLibrary = (next) => commit(sanitize(next))
 
 /** Solo para tests: vuelve a leer desde localStorage. */
 export const reloadLibrary = () => { state = read(); listeners.forEach((fn) => fn()) }
@@ -111,7 +83,11 @@ export const toggleList = (item) => {
   if (!item?.id) return false
   const lib = state
   if (isInList(lib, item.type, item.id)) {
-    commit({ ...lib, list: lib.list.filter((x) => !(x.type === item.type && x.id === item.id)) })
+    commit({
+      ...lib,
+      list: lib.list.filter((x) => !(x.type === item.type && x.id === item.id)),
+      tombs: { ...lib.tombs, [`list:${keyOf(item.type, item.id)}`]: Date.now() },
+    })
     return false
   }
   commit({ ...lib, list: trim([{ ...item, addedAt: Date.now() }, ...lib.list], LIST_MAX) })
@@ -172,7 +148,11 @@ export const recordWatch = (item, { season = 1, episode = 1, runtimeMin = 0, sec
 
 export const removeHistory = (type, id) => {
   const lib = state
-  commit({ ...lib, history: lib.history.filter((h) => !(h.type === type && h.id === Number(id))) })
+  commit({
+    ...lib,
+    history: lib.history.filter((h) => !(h.type === type && h.id === Number(id))),
+    tombs: { ...lib.tombs, [`hist:${keyOf(type, Number(id))}`]: Date.now() },
+  })
 }
 
 /** Progreso 0..1 estimado del episodio/película actual. */
@@ -205,7 +185,11 @@ export const toggleReminder = (item) => {
   if (!item?.id) return false
   const lib = state
   if (isReminded(lib, item.type, item.id)) {
-    commit({ ...lib, reminders: lib.reminders.filter((r) => !(r.type === item.type && r.id === item.id)) })
+    commit({
+      ...lib,
+      reminders: lib.reminders.filter((r) => !(r.type === item.type && r.id === item.id)),
+      tombs: { ...lib.tombs, [`rem:${keyOf(item.type, item.id)}`]: Date.now() },
+    })
     return false
   }
   commit({ ...lib, reminders: trim([{ ...item, addedAt: Date.now(), notified: false }, ...lib.reminders], REMINDERS_MAX) })

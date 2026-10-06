@@ -40,6 +40,12 @@ export const isSupporter = (s = state) => !!s.supporterSince
 
 export const markSupporter = () => commit({ ...state, supporterSince: state.supporterSince || Date.now(), dismissals: 0 })
 export const unmarkSupporter = () => commit({ ...state, supporterSince: null })
+/** Al iniciar sesión: conserva la fecha de Supporter más antigua entre el dispositivo y la cuenta. */
+export const adoptSupporterSince = (ts) => {
+  const t = Number(ts)
+  if (!Number.isFinite(t) || t <= 0) return
+  if (!state.supporterSince || t < state.supporterSince) commit({ ...state, supporterSince: t, dismissals: 0 })
+}
 
 /** ¿Mostramos el pedido tras esta sesión de reproducción? Puro. */
 export const shouldShowPrompt = ({ seconds, state: s = state, now = Date.now() }) => {

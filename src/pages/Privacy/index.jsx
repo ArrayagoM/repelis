@@ -28,9 +28,10 @@ export default function Privacy() {
         <article className="space-y-7 text-muted text-sm leading-relaxed">
           <Section title="Resumen rápido (TL;DR)">
             <ul className="list-disc list-inside space-y-1 marker:text-gold/60">
-              <li>No tenemos cuentas, no pedimos email ni datos personales.</li>
+              <li>Las cuentas son <strong className="text-chalk/85">opcionales</strong>: podés usar todo el sitio sin registrarte y sin dar ningún dato.</li>
+              <li>Si creás una cuenta, guardamos tu mail y tu biblioteca (lista, historial, avisos) para sincronizarla. Podés borrarla cuando quieras.</li>
               <li>No usamos Google Analytics, Meta Pixel ni trackers de publicidad.</li>
-              <li>Lo único que guardamos es en <strong className="text-chalk/85">tu</strong> dispositivo, no en nuestros servers.</li>
+              <li>Sin cuenta, lo que guardamos queda en <strong className="text-chalk/85">tu</strong> dispositivo, no en nuestros servers.</li>
               <li>Cuando reproducís, el video va directo entre vos y el servidor de terceros.</li>
             </ul>
           </Section>
@@ -56,8 +57,8 @@ export default function Privacy() {
               </li>
             </ul>
             <p className="mt-3 text-chalk/80">
-              <strong>Lo que NUNCA guardamos:</strong> tu IP cruda, tu nombre, tu email, tus contraseñas,
-              ni nada que pueda re-identificarte personalmente.
+              <strong>Sin cuenta, NUNCA guardamos:</strong> tu IP cruda, tu nombre, tu email ni nada que pueda
+              re-identificarte personalmente. Con cuenta, ver la sección 3 ("Tu cuenta").
             </p>
           </Section>
 
@@ -69,12 +70,35 @@ export default function Privacy() {
               <li><code>repelis:speed:v1</code> — medición de velocidad de los servidores (cacheado 6h).</li>
               <li><code>repelis:errors:v1</code> — últimos 20 errores técnicos para debug.</li>
               <li><code>repelis:extConfirm:v1</code> — flag de "ya viste el disclaimer de pestaña externa".</li>
+              <li><code>lifehigh:library:v1</code> — tu lista, lo que estás viendo (con progreso estimado), avisos de estreno, racha y logros.</li>
+              <li><code>lifehigh:donations:v1</code> — cuándo te mostramos el pedido de apoyo y si tocaste "Ya doné".</li>
             </ul>
             Podés limpiarlos en cualquier momento desde tu DevTools (Application → Local Storage) o
             borrando los datos del sitio en la configuración de tu navegador.
           </Section>
 
-          <Section title="3. Service Worker y cache">
+          <Section title="3. Tu cuenta (opcional)">
+            Crear una cuenta es voluntario y sirve para sincronizar tu biblioteca entre dispositivos. Si la creás, guardamos:
+            <ul className="list-disc list-inside mt-2 space-y-1 marker:text-gold/60">
+              <li>Tu <strong className="text-chalk/85">mail</strong> y, si querés, tu <strong className="text-chalk/85">nombre</strong>.</li>
+              <li>Tu <strong className="text-chalk/85">contraseña</strong>, nunca en texto: solo un hash irreversible (scrypt). Ni nosotros podemos verla.</li>
+              <li>Tu <strong className="text-chalk/85">biblioteca</strong>: Mi lista, historial con progreso estimado, avisos de estreno, racha, logros y si sos Supporter.</li>
+              <li>Tus <strong className="text-chalk/85">sesiones abiertas</strong>: fecha, tipo de navegador y un identificador del que solo guardamos el hash.</li>
+              <li>Contadores temporales anti-abuso (intentos de ingreso), con la IP convertida en un hash. Se borran solos en minutos u horas.</li>
+            </ul>
+            <p className="mt-3">
+              Los datos se guardan en <strong className="text-chalk/85">MongoDB Atlas</strong> (región São Paulo, Brasil). Si el servicio de mails está
+              activo, tu mail se usa solo para confirmar la cuenta y recuperar la contraseña, a través de <strong className="text-chalk/85">Resend</strong>.
+              No vendemos, alquilamos ni compartimos tus datos, y no los usamos para publicidad.
+            </p>
+            <p className="mt-3">
+              <strong className="text-chalk/85">Podés eliminar tu cuenta</strong> cuando quieras desde <Link to="/cuenta" className="text-gold hover:underline">Mi cuenta</Link>:
+              se borran tu mail, tu contraseña y tu biblioteca de nuestros servidores. Al cerrar sesión, tu biblioteca se borra de ese
+              dispositivo (sigue en tu cuenta) para que nadie más la vea en un equipo compartido.
+            </p>
+          </Section>
+
+          <Section title="4. Service Worker y cache">
             Para que la app cargue rápido offline, registramos un Service Worker que guarda en cache:
             <ul className="list-disc list-inside mt-2 space-y-1 marker:text-gold/60">
               <li>Los archivos estáticos de la app (HTML, JS, CSS).</li>
@@ -84,7 +108,7 @@ export default function Privacy() {
             Este cache vive en tu navegador, no en nuestros servers.
           </Section>
 
-          <Section title="4. Servicios de terceros">
+          <Section title="5. Servicios de terceros">
             <p className="mb-2">Life High usa tres tipos de terceros:</p>
             <ul className="list-disc list-inside space-y-1.5 marker:text-gold/60">
               <li><strong className="text-chalk/85">TMDB</strong> — provee metadatos (títulos, sinopsis, pósters). Su <a href="https://www.themoviedb.org/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">política de privacidad acá</a>.</li>
@@ -93,29 +117,31 @@ export default function Privacy() {
             </ul>
           </Section>
 
-          <Section title="5. Cookies">
-            Life High no setea cookies propias. Los terceros embebidos sí pueden setear cookies en su
-            dominio, fuera de nuestro control.
+          <Section title="6. Cookies">
+            Sin cuenta, Life High no setea cookies propias. Si iniciás sesión, usamos <strong className="text-chalk/85">una sola cookie</strong> (<code className="font-mono text-xs">lh_session</code>)
+            para mantenerte conectado: es técnica, httpOnly (los scripts de la página no pueden leerla) y dura 30 días o hasta que cierres sesión.
+            Los terceros embebidos sí pueden setear cookies en su dominio, fuera de nuestro control.
           </Section>
 
-          <Section title="6. Niños y menores">
+          <Section title="7. Niños y menores">
             Life High indexa contenido de TMDB que puede no ser adecuado para menores. No hay un filtro
             de edad. Si sos padre/madre/tutor, te recomendamos usar las opciones de control parental de
             tu navegador o sistema operativo.
           </Section>
 
-          <Section title="7. Cambios en esta política">
+          <Section title="8. Cambios en esta política">
             Si actualizamos esta política, vas a ver una nueva fecha en la parte superior. Cambios
             sustanciales se anuncian en la página Sobre Life High.
           </Section>
 
-          <Section title="8. Tus derechos">
-            Como no recolectamos datos, no tenemos información tuya para corregir, exportar o eliminar.
-            Si querés borrar todo lo que hay en tu navegador relacionado con Life High, limpiá los datos
-            del sitio desde la configuración de privacidad de tu browser.
+          <Section title="9. Tus derechos">
+            Sin cuenta, no tenemos información tuya: para borrar lo que hay en tu navegador, limpiá los datos del sitio desde la
+            configuración de privacidad. Con cuenta, podés <strong className="text-chalk/85">acceder</strong> a lo que guardamos desde Mi cuenta,
+            <strong className="text-chalk/85"> cambiar tu contraseña</strong> y <strong className="text-chalk/85">eliminar todo</strong> en cualquier momento.
+            Para otras consultas (corrección, exportación), escribinos por los canales de contacto.
           </Section>
 
-          <Section title="9. Contacto">
+          <Section title="10. Contacto">
             Para consultas sobre privacidad, escribí a TinTech a través de los canales listados en <Link to="/about" className="text-gold hover:underline">la página Sobre Life High</Link>.
           </Section>
         </article>

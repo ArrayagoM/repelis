@@ -21,6 +21,7 @@ import { NewEpisodesWatcher } from './components/NewEpisodes'
 import { AchievementWatcher } from './components/Achievements'
 import DonatePrompt from './components/DonatePrompt'
 import { SupporterWatcher } from './components/Supporter'
+import { initAuth } from './lib/auth'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -38,6 +39,7 @@ const CinesCerca  = lazy(() => import('./pages/CinesCerca'))
 const Download    = lazy(() => import('./pages/Download'))
 const MiLista     = lazy(() => import('./pages/MiLista'))
 const Calendario  = lazy(() => import('./pages/Calendario'))
+const Cuenta      = lazy(() => import('./pages/Cuenta'))
 
 function RouteFallback() {
   return (
@@ -57,6 +59,9 @@ export default function App() {
   const location = useLocation()
   const [donateOpen, setDonateOpen] = useState(false)
   const [lowEnd, setLowEnd] = useState(false)
+
+  // Cuenta opcional: ¿hay sesión abierta? (si hay, se sincroniza la biblioteca)
+  useEffect(() => { initAuth() }, [])
 
   // Setea low-end mode → CSS apaga noise-overlay y otros lujos visuales
   useEffect(() => {
@@ -136,6 +141,9 @@ export default function App() {
             {/* Biblioteca personal */}
             <Route path="/mi-lista" element={<MiLista />} />
             <Route path="/calendario" element={<Calendario />} />
+            <Route path="/cuenta" element={<Cuenta />} />
+            <Route path="/cuenta/restablecer" element={<Cuenta view="reset" />} />
+            <Route path="/cuenta/verificar" element={<Cuenta view="verify" />} />
 
             {/* Servicios al usuario */}
             <Route path="/cines-cerca" element={<CinesCerca />} />

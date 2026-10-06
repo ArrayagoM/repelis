@@ -5,9 +5,11 @@ import { ContinueRow, MyListRow, RemindersRow } from '../../components/MyLibrary
 import { AchievementsPanel } from '../../components/Achievements'
 import { useLibrary, continueWatching } from '../../lib/library'
 import { useSEO } from '../../lib/useSEO'
+import { useAuth } from '../../lib/auth'
 
 export default function MiLista() {
   const lib = useLibrary()
+  const auth = useAuth()
   useSEO({ title: 'Mi lista', description: 'Tus películas y series guardadas y lo que estás viendo en Life High.' })
   const hasContinue = continueWatching(lib).length > 0
   const hasList = lib.list.length > 0
@@ -17,9 +19,25 @@ export default function MiLista() {
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-28 pb-24">
       <div className="max-w-7xl mx-auto px-6 md:px-12 mb-10">
         <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-chalk">Mi espacio</h1>
-        <p className="text-muted mt-2 max-w-xl text-sm leading-relaxed">
-          Se guarda en este dispositivo, sin cuenta ni contraseña. Si borrás los datos del navegador, se borra.
-        </p>
+        {auth.status === 'in' ? (
+          <p className="text-muted mt-2 max-w-xl text-sm leading-relaxed">
+            Sincronizado con tu cuenta <span className="text-chalk">{auth.user.email}</span>: lo ves igual en todos tus dispositivos.
+          </p>
+        ) : (
+          <p className="text-muted mt-2 max-w-xl text-sm leading-relaxed">
+            Se guarda en este dispositivo. Si borrás los datos del navegador, se borra.
+          </p>
+        )}
+        {auth.status === 'out' && (
+          <div className="mt-5 max-w-xl flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-gold/10 border border-gold/25">
+            <p className="flex-1 min-w-[14rem] text-chalk text-sm leading-snug">
+              <strong>Creá tu cuenta gratis</strong> y llevá tu lista, lo que estabas viendo y tus avisos a cualquier dispositivo.
+            </p>
+            <Link to="/cuenta" className="px-5 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi transition-colors">
+              Ingresar o crear cuenta
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="space-y-12">

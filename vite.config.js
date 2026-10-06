@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { devAuthApi } from './scripts/dev-api.js'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), devAuthApi()],
   build: {
     target: 'es2020',
     minify: 'esbuild',

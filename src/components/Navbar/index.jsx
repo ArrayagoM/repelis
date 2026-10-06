@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle } from '@phosphor-icons/react'
 import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
 import { StreakChip } from '../Achievements'
 import { SupporterBadge } from '../Supporter'
+import { useAuth } from '../../lib/auth'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
@@ -129,7 +130,27 @@ const MEGA_MENU = {
   },
 }
 
+const authLabel = (auth) => {
+  if (auth.status === 'in') return auth.user?.name ? `Mi cuenta · ${auth.user.name}` : 'Mi cuenta'
+  return auth.status === 'unavailable' ? 'Mi cuenta' : 'Ingresar o crear cuenta'
+}
+
+// Acceso a la cuenta: círculo con la inicial si hay sesión, ícono si no. Se oculta si las cuentas no están disponibles.
+function AccountLink() {
+  const auth = useAuth()
+  if (auth.status === 'unavailable') return null
+  const initial = (auth.user?.name || auth.user?.email || '').trim().charAt(0).toUpperCase()
+  return (
+    <Link to="/cuenta" title={authLabel(auth)} aria-label={authLabel(auth)}
+      className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-full border transition-all text-xs font-bold ${
+        auth.status === 'in' ? 'bg-gold text-void border-gold' : 'bg-white/5 border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40'}`}>
+      {auth.status === 'in' && initial ? initial : <UserCircle size={16} weight="fill" />}
+    </Link>
+  )
+}
+
 export default function Navbar({ onDonateClick }) {
+  const auth = useAuth()
   const [scrolled,    setScrolled]    = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
   const [searchOpen,  setSearchOpen]  = useState(false)
@@ -247,6 +268,7 @@ export default function Navbar({ onDonateClick }) {
               <SoccerBall size={14} weight="fill" />
             </Link>
 
+            <AccountLink />
             <StreakChip />
             <SupporterBadge className="hidden lg:flex" />
 
@@ -393,6 +415,10 @@ export default function Navbar({ onDonateClick }) {
               <Link to="/cines-cerca" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
                 <MapPin size={16} weight="fill" className="text-gold" /> Cines cerca
+              </Link>
+              <Link to="/cuenta" onClick={() => setMenuOpen(false)}
+                className="col-span-2 flex items-center gap-2 px-4 py-3 rounded-xl bg-gold/10 border border-gold/30 text-gold text-sm font-semibold">
+                <UserCircle size={16} weight="fill" /> {authLabel(auth)}
               </Link>
             </div>
 
