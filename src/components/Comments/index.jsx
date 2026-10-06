@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, ChatCircleText, Trash, Flag } from '@phosphor-icons/react'
+import HeartButton from '../HeartButton'
+import { seedReactions } from '../../lib/reactions'
 import { Avatar } from '../Community'
 import { LIMITS } from '../../lib/socialRules'
 import { social, errorText, ensureAccount, useMe } from '../../lib/social'
@@ -34,7 +36,7 @@ export default function Comments({ target, title = 'Opiniones de la comunidad' }
   const withRating = !target.startsWith('list:')
   const auth = useAuth()
   const me = useMe()
-  const [state, setState] = useState({ loading: true, error: '', comments: [], summary: null, hasMore: false, mine: null })
+  const [state, setState] = useState({ loading: true, error: '', comments: [], summary: null, hasMore: false, mine: null, likes: null })
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [sending, setSending] = useState(false)
@@ -47,13 +49,17 @@ export default function Comments({ target, title = 'Opiniones de la comunidad' }
     const r = await social.comments(target, before)
     if (!r.ok) { setState((s) => ({ ...s, loading: false, error: errorText(r.error) })); return }
     setState((s) => ({
-      loading: false, error: '', summary: r.data.summary, hasMore: r.data.hasMore, mine: r.data.viewer.comment,
+      loading: false, error: '', summary: r.data.summary, hasMore: r.data.hasMore, mine: r.data.viewer.comment, likes: r.data.likes,
       comments: more ? [...s.comments, ...r.data.comments] : r.data.comments,
     }))
+    seedReactions([
+      ...(r.data.likes ? [[target, r.data.likes]] : []),
+      ...r.data.comments.map((c) => [`c:${c.id}`, { count: c.likes || 0, liked: !!c.liked }]),
+    ])
     if (!more && r.data.viewer.comment && withRating) { setText(r.data.viewer.comment.text); setRating(r.data.viewer.comment.rating || 0) }
   }, [target, state.comments, withRating])
 
-  useEffect(() => { setState({ loading: true, error: '', comments: [], summary: null, hasMore: false, mine: null }); setText(''); setRating(0) }, [target])
+  useEffect(() => { setState({ loading: true, error: '', comments: [], summary: null, hasMore: false, mine: null, likes: null }); setText(''); setRating(0) }, [target])
   useEffect(() => { load() }, [target, auth.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasProfile = !!me.data?.profile
@@ -95,6 +101,7 @@ export default function Comments({ target, title = 'Opiniones de la comunidad' }
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <ChatCircleText size={20} className="text-gold" />
         <h2 className="font-display font-bold text-xl text-chalk mr-auto">{title}</h2>
+        {state.likes && <HeartButton k={target} label="esta película o serie" />}
         {summary && summary.count > 0 && (
           <span className="flex items-center gap-2 text-sm text-muted">
             {withRating && summary.avg ? <><Stars value={summary.avg} /><strong className="text-chalk">{summary.avg}</strong> · </> : null}
@@ -149,6 +156,7 @@ export default function Comments({ target, title = 'Opiniones de la comunidad' }
                 </div>
                 <p className="mt-3 text-sm text-chalk/90 leading-relaxed whitespace-pre-line break-words">{c.text}</p>
                 <div className="mt-3 flex items-center gap-4 text-xs">
+                  <HeartButton k={`c:${c.id}`} label={withRating ? 'esta opinión' : 'este comentario'} compact />
                   {c.canDelete && <button onClick={() => remove(c)} className="inline-flex items-center gap-1 text-muted hover:text-red-300"><Trash size={13} /> Borrar</button>}
                   {!c.mine && <button onClick={() => { setReporting(reporting === c.id ? null : c.id); setReason('') }} className="inline-flex items-center gap-1 text-muted hover:text-chalk"><Flag size={13} /> Reportar</button>}
                 </div>

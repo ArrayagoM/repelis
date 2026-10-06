@@ -186,3 +186,67 @@ describe('reportes y moderación de comentarios', () => {
     expect([401, 403, 404]).toContain(r.status)
   })
 })
+
+describe('me gusta en películas, series y comentarios', () => {
+  it('se da y se quita me gusta a una película, con contador y estado por persona', async () => {
+    const ana = await withProfile('ana'), bea = await withProfile('bea')
+    expect((await post('react', { key: 'movie:603', on: true }, H)).status).toBe(401)
+    expect((await post('react', { key: 'movie:603', on: true }, ana.h)).body).toEqual({ liked: true, likes: 1 })
+    expect((await post('react', { key: 'movie:603', on: true }, ana.h)).body.likes).toBe(1)        // no se duplica
+    expect((await post('react', { key: 'movie:603', on: true }, bea.h)).body.likes).toBe(2)
+    const r = await get('comments', { target: 'movie:603' }, ana.h)
+    expect(r.body.likes).toEqual({ count: 2, liked: true })
+    expect((await get('comments', { target: 'movie:603' })).body.likes).toEqual({ count: 2, liked: false })   // sin sesión
+    expect((await post('react', { key: 'movie:603', on: false }, ana.h)).body).toEqual({ liked: false, likes: 1 })
+    expect((await get('comments', { target: 'tv:1396' })).body.likes.count).toBe(0)
+  })
+
+  it('claves inválidas se rechazan (las listas usan su propio me gusta)', async () => {
+    const ana = await withProfile('ana')
+    for (const key of ['', 'list:abc', 'user:1', 'movie:x', { $ne: 1 }, null, 'c:inexistente']) {
+      expect([400, 404]).toContain((await post('react', { key, on: true }, ana.h)).status)
+    }
+  })
+
+  it('me gusta en un comentario: cuenta, avisa a su autor y se borra con el comentario', async () => {
+    const ana = await withProfile('ana'), bea = await withProfile('bea')
+    const cid = (await post('comment', { target: 'movie:603', text: 'Una joya', rating: 5 }, ana.h)).body.comment.id
+    expect((await post('react', { key: `c:${cid}`, on: true }, bea.h)).body).toEqual({ liked: true, likes: 1 })
+    const r = await get('comments', { target: 'movie:603' }, bea.h)
+    expect(r.body.comments[0]).toMatchObject({ likes: 1, liked: true })
+    const notes = (await get('notifications', {}, ana.h)).body.items
+    expect(notes.find((n) => n.type === 'like')).toMatchObject({ text: 'A @bea le gustó tu opinión', link: '/movie/603' })
+    await post('react', { key: `c:${cid}`, on: true }, ana.h)           // el autor puede dar like al suyo, sin aviso a sí mismo
+    expect((await get('notifications', {}, ana.h)).body.items.filter((n) => n.type === 'like')).toHaveLength(1)
+    await post('comment-delete', { id: cid }, ana.h)
+    expect((await social.countLikesMany([`c:${cid}`])).get(`c:${cid}`)).toBe(0)
+  })
+
+  it('no se puede dar me gusta a un comentario oculto ni de una lista oculta', async () => {
+    const ana = await withProfile('ana'), bea = await withProfile('bea')
+    const id = await mkList(ana)
+    const cid = (await post('comment', { target: `list:${id}`, text: 'Hola' }, ana.h)).body.comment.id
+    await social.updateList(id, { hidden: true })
+    expect((await post('react', { key: `c:${cid}`, on: true }, bea.h)).status).toBe(404)
+    await social.updateList(id, { hidden: false })
+    await social.updateComment(cid, { hidden: true })
+    expect((await post('react', { key: `c:${cid}`, on: true }, bea.h)).status).toBe(404)
+  })
+
+  it('borrar la cuenta deja la suma de me gusta ajena intacta y limpia los de esa persona', async () => {
+    const ana = await withProfile('ana'), bea = await withProfile('bea')
+    await post('react', { key: 'movie:603', on: true }, ana.h)
+    await post('react', { key: 'movie:603', on: true }, bea.h)
+    await social.deleteUserData(ana.user.id)
+    expect((await get('comments', { target: 'movie:603' })).body.likes.count).toBe(1)
+  })
+})
+
+describe('only=likes', () => {
+  it('devuelve solo los me gusta de la película, liviano', async () => {
+    const ana = await withProfile('ana')
+    await post('react', { key: 'movie:9', on: true }, ana.h)
+    const r = await get('comments', { target: 'movie:9', only: 'likes' }, ana.h)
+    expect(r.body).toEqual({ target: 'movie:9', likes: { count: 1, liked: true } })
+  })
+})

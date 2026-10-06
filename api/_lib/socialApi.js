@@ -311,6 +311,10 @@ export const createSocialApi = ({ store, social, push = null, now = Date.now, ro
       if (!target) return fail('bad_request', 400)
       const access = await targetAccess(target, viewer)
       if (!access.ok) return fail('not_found')
+      if (query.only === 'likes' && target.kind !== 'list') {
+        const [counts, liked] = await Promise.all([social.countLikesMany([target.key]), viewer ? social.likedSet(viewer.id, [target.key]) : new Set()])
+        return ok({ target: target.key, likes: { count: counts.get(target.key) || 0, liked: liked.has(target.key) } })
+      }
       const before = Number(query.before) > 0 ? Number(query.before) : Infinity
       const rows = await social.listComments(target.key, { limit: COMMENTS_PAGE + 1, before })
       const page = rows.slice(0, COMMENTS_PAGE)
@@ -318,11 +322,18 @@ export const createSocialApi = ({ store, social, push = null, now = Date.now, ro
       const byId = new Map(profiles.map((p) => [p.userId, p]))
       const viewerIsRoot = !!viewer && isRoot(viewer, rootEmails)
       const mine = viewer ? await social.findUserComment(viewer.id, target.key) : null
+      // Me gusta del destino (película/serie) y de cada comentario
+      const likeKeys = [target.key, ...page.map((c) => `c:${c.id}`)]
+      const [likeCounts, likedSet] = await Promise.all([
+        social.countLikesMany(likeKeys), viewer ? social.likedSet(viewer.id, likeKeys) : new Set(),
+      ])
       return ok({
         target: target.key,
+        likes: target.kind === 'list' ? null : { count: likeCounts.get(target.key) || 0, liked: likedSet.has(target.key) },
         summary: await social.commentSummary(target.key),
         comments: page.map((c) => ({
           id: c.id, text: c.text, rating: c.rating || null, createdAt: c.createdAt, edited: !!c.edited,
+          likes: likeCounts.get(`c:${c.id}`) || 0, liked: likedSet.has(`c:${c.id}`),
           author: ownerShape(byId.get(c.authorId)),
           mine: !!viewer && c.authorId === viewer.id,
           canDelete: !!viewer && (c.authorId === viewer.id || access.ownerId === viewer.id || viewerIsRoot),
@@ -360,6 +371,32 @@ export const createSocialApi = ({ store, social, push = null, now = Date.now, ro
         await notify(access.ownerId, { type: 'comment', key: `cm:${saved.id}`, text: `@${profile.handle} comentó en «${l?.title || 'tu lista'}»`, link: `/lista/${target.id}`, actorId: viewer.id })
       }
       return ok({ comment: { id: saved.id, text: saved.text, rating: saved.rating || null }, updated: false })
+    },
+
+    // Me gusta en una película/serie ('movie:603', 'tv:1396') o en un comentario ('c:<id>'). Las listas usan 'like'.
+    'POST react': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      if (await limited(`soc:like:${viewer.id}`, 200, HOUR)) return fail('too_many_requests')
+      const key = String(body.key ?? '')
+      let comment = null
+      if (key.startsWith('c:')) {
+        comment = await social.getComment(key.slice(2))
+        if (!comment || comment.hidden) return fail('not_found')
+        const t = parseTarget(comment.target)
+        if (!t || !(await targetAccess(t, viewer)).ok) return fail('not_found')
+      } else {
+        const t = parseTarget(key)
+        if (!t || t.kind === 'list') return fail('bad_request', 400)
+      }
+      if (body.on === false) await social.removeLike(viewer.id, key)
+      else if (await social.addLike(viewer.id, key) && comment) {
+        const me = await handleOf(viewer.id)
+        const target = parseTarget(comment.target)
+        const link = target.kind === 'list' ? `/lista/${target.id}` : `/${target.kind}/${target.id}`
+        if (me) await notify(comment.authorId, { type: 'like', key: `lk:${key}:${viewer.id}`, text: `A @${me} le gustó tu ${target.kind === 'list' ? 'comentario' : 'opinión'}`, link, actorId: viewer.id })
+      }
+      const counts = await social.countLikesMany([key])
+      return ok({ liked: body.on !== false, likes: counts.get(key) || 0 })
     },
 
     'POST comment-delete': async ({ body, viewer }) => {

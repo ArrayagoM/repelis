@@ -56,7 +56,13 @@ export const social = {
   setPrefs: (prefs) => request('notify-prefs', { method: 'POST', body: prefs }),
   pushSubscribe: (subscription) => request('push-subscribe', { method: 'POST', body: { subscription } }),
   pushUnsubscribe: (endpoint) => request('push-unsubscribe', { method: 'POST', body: { endpoint } }),
+  react: async (key, on) => {
+    const r = await request('react', { method: 'POST', body: { key, on } })
+    if (r.ok && on && key.startsWith('c:')) pulseEvent('list_liked')
+    return r
+  },
   comments: (target, before) => request('comments', { query: { target, before } }),
+  titleLikes: (target) => request('comments', { query: { target, only: 'likes' } }),
   postComment: async (body) => {
     const r = await request('comment', { method: 'POST', body })
     if (r.ok && !r.data.updated) pulseEvent('comment_created')

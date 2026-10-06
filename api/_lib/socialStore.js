@@ -72,6 +72,8 @@ export const createMemorySocial = () => {
     // Likes
     async addLike(userId, listId) { const k = `${userId}|${listId}`; if (likes.has(k)) return false; likes.add(k); return true },
     async removeLike(userId, listId) { return likes.delete(`${userId}|${listId}`) },
+    /** Me gusta por clave (listas, títulos 'movie:603', comentarios 'c:<id>') → Map clave → cantidad */
+    async countLikesMany(keys) { const out = new Map(keys.map((k) => [k, 0])); for (const k of likes) { const key = k.slice(k.indexOf('|') + 1); if (out.has(key)) out.set(key, out.get(key) + 1) } return out },
     async likedSet(userId, listIds) { return new Set(listIds.filter((id) => likes.has(`${userId}|${id}`))) },
 
     // Seguidores
@@ -86,7 +88,7 @@ export const createMemorySocial = () => {
     async addComment(doc) { const id = `c${++seq}`; comments.set(id, { ...structuredClone(doc), id, hidden: false }); return clone(comments.get(id)) },
     async getComment(id) { return clone(comments.get(String(id))) },
     async updateComment(id, patch) { const c = comments.get(String(id)); if (!c) return null; Object.assign(c, structuredClone(patch)); return clone(c) },
-    async deleteComment(id) { comments.delete(String(id)); for (const k of [...reports.keys()]) if (k.startsWith(`c:${id}|`)) reports.delete(k) },
+    async deleteComment(id) { comments.delete(String(id)); for (const k of [...reports.keys()]) if (k.startsWith(`c:${id}|`)) reports.delete(k); for (const k of [...likes]) if (k.endsWith(`|c:${id}`)) likes.delete(k) },
     async findUserComment(userId, target) { return clone([...comments.values()].find((c) => c.target === target && c.authorId === String(userId))) },
     async listComments(target, { limit = 20, before = Infinity } = {}) {
       return [...comments.values()].filter((c) => c.target === target && !c.hidden && c.createdAt < before)
@@ -234,6 +236,13 @@ export const createMongoSocial = (db, { ObjectId }) => {
       catch (e) { if (isDup(e)) return false; throw e }
     },
     async removeLike(userId, listId) { return (await likes.deleteOne({ _id: `${userId}|${listId}` })).deletedCount > 0 },
+    async countLikesMany(keys) {
+      const out = new Map(keys.map((k) => [k, 0]))
+      if (!keys.length) return out
+      const rows = await likes.aggregate([{ $match: { listId: { $in: keys } } }, { $group: { _id: '$listId', n: { $sum: 1 } } }]).toArray()
+      for (const r of rows) out.set(r._id, r.n)
+      return out
+    },
     async likedSet(userId, listIds) {
       if (!listIds.length) return new Set()
       return new Set((await likes.find({ userId: String(userId), listId: { $in: listIds.map(String) } }).toArray()).map((l) => l.listId))
@@ -258,7 +267,7 @@ export const createMongoSocial = (db, { ObjectId }) => {
     async deleteComment(id) {
       const _id = oid(id)
       if (!_id) return
-      await Promise.all([comments.deleteOne({ _id }), reports.deleteMany({ listId: `c:${id}` })])
+      await Promise.all([comments.deleteOne({ _id }), reports.deleteMany({ listId: `c:${id}` }), likes.deleteMany({ listId: `c:${id}` })])
     },
     async findUserComment(userId, target) { return toComment(await comments.findOne({ target, authorId: String(userId) })) },
     async listComments(target, { limit = 20, before = Infinity } = {}) {
