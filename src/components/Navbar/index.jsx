@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, SoccerBall, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp } from '@phosphor-icons/react'
 import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
@@ -149,6 +149,18 @@ function AccountLink() {
   )
 }
 
+// Solo el fundador (root) ve este acceso; el servidor igual vuelve a verificar el permiso en cada pedido
+function PanelLink() {
+  const auth = useAuth()
+  if (!auth.user?.root) return null
+  return (
+    <Link to="/panel" title="Panel del fundador" aria-label="Panel del fundador"
+      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/25 transition-all">
+      <ChartLineUp size={16} weight="bold" />
+    </Link>
+  )
+}
+
 export default function Navbar({ onDonateClick }) {
   const auth = useAuth()
   const [scrolled,    setScrolled]    = useState(false)
@@ -268,6 +280,7 @@ export default function Navbar({ onDonateClick }) {
               <SoccerBall size={14} weight="fill" />
             </Link>
 
+            <PanelLink />
             <AccountLink />
             <StreakChip />
             <SupporterBadge className="hidden lg:flex" />
@@ -416,6 +429,12 @@ export default function Navbar({ onDonateClick }) {
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
                 <MapPin size={16} weight="fill" className="text-gold" /> Cines cerca
               </Link>
+              {auth.user?.root && (
+                <Link to="/panel" onClick={() => setMenuOpen(false)}
+                  className="col-span-2 flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-sm font-semibold">
+                  <ChartLineUp size={16} weight="bold" /> Panel del fundador
+                </Link>
+              )}
               <Link to="/cuenta" onClick={() => setMenuOpen(false)}
                 className="col-span-2 flex items-center gap-2 px-4 py-3 rounded-xl bg-gold/10 border border-gold/30 text-gold text-sm font-semibold">
                 <UserCircle size={16} weight="fill" /> {authLabel(auth)}

@@ -1,7 +1,8 @@
 // Lista rankeada con barra de proporción, etiqueta y valor.
 // Serie única → sin leyenda. Un solo hue por lista.
 //
-// props.items: [{ label, value, hint? }]
+// props.items: [{ label, value, hint?, icon? }]
+// props.format: (value) => texto a mostrar (por defecto, el número tal cual)
 // props.accent: 'gold' | 'sky' | 'emerald' | 'purple' | 'blue'
 const ACCENTS = {
   gold:    { bar: 'bg-gold/25',    text: 'text-gold' },
@@ -11,7 +12,7 @@ const ACCENTS = {
   blue:    { bar: 'bg-blue-500/25', text: 'text-blue-300' },
 }
 
-export default function BarList({ items = [], accent = 'gold', max, emptyLabel = 'Sin datos aún' }) {
+export default function BarList({ items = [], accent = 'gold', max, emptyLabel = 'Sin datos aún', format = (v) => v }) {
   const total = max ?? Math.max(1, ...items.map((i) => i.value))
   const a = ACCENTS[accent] || ACCENTS.gold
 
@@ -35,7 +36,7 @@ export default function BarList({ items = [], accent = 'gold', max, emptyLabel =
                 <span className="text-chalk text-xs truncate">{it.label}</span>
                 {it.hint && <span className="text-muted/40 text-[10px] font-mono flex-shrink-0">{it.hint}</span>}
               </span>
-              <span className={`${a.text} text-xs font-mono font-bold flex-shrink-0`}>{it.value}</span>
+              <span className={`${a.text} text-xs font-mono font-bold flex-shrink-0`}>{format(it.value)}</span>
             </div>
           </div>
         )

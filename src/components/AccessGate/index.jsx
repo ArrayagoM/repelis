@@ -7,6 +7,7 @@ import GoogleButton from '../GoogleButton'
 import { useAuth, loginWithGoogle, errorMessage } from '../../lib/auth'
 import { requiresAccount, canUsePersonal } from '../../lib/access'
 import { useAccountPrompt, dismissAccountPrompt } from '../../lib/accountPrompt'
+import { pulseEvent, markGateShown } from '../../lib/pulse'
 
 const PERKS = [
   'Mirás cualquier título, incluso los más calificados y populares',
@@ -24,6 +25,11 @@ export default function AccessGate({ title, onClose, reason = 'watch' }) {
   const location = useLocation()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    pulseEvent(reason === 'list' ? 'gate_shown_list' : 'gate_shown_watch')
+    markGateShown()
+  }, [reason])
 
   const onGoogle = async (credential) => {
     if (busy) return

@@ -55,6 +55,12 @@ export default function Privacy() {
                 <strong className="text-chalk/85">Hash anónimo de sesión</strong> (UA + idioma + día) para contar
                 visitantes únicos sin guardar ningún identificador persistente. Expira a los 7 días.
               </li>
+              <li>
+                <strong className="text-chalk/85">Latido de actividad</strong>: mientras tenés la app abierta, cada 1–2 minutos
+                se envía un identificador <strong>aleatorio que cambia todos los días</strong>, la página en la que estás (agrupada: "inicio", "película"…),
+                la plataforma (navegador, app instalada…), si tenés cuenta (sí/no) y, si estás reproduciendo, qué título. Sirve para contar cuántas personas están
+                conectadas, qué se mira más y cuánto tiempo en total. <strong>No se asocia a tu mail, a tu cuenta ni a tu historial</strong>, y no incluye tu IP.
+              </li>
             </ul>
             <p className="mt-3 text-chalk/80">
               <strong>Sin cuenta, NUNCA guardamos:</strong> tu IP cruda, tu nombre, tu email ni nada que pueda

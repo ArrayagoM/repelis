@@ -23,6 +23,7 @@ import DonatePrompt from './components/DonatePrompt'
 import { SupporterWatcher } from './components/Supporter'
 import { initAuth } from './lib/auth'
 import { AccountPromptHost } from './components/AccessGate'
+import PulseReporter from './components/PulseReporter'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -41,6 +42,7 @@ const Download    = lazy(() => import('./pages/Download'))
 const MiLista     = lazy(() => import('./pages/MiLista'))
 const Calendario  = lazy(() => import('./pages/Calendario'))
 const Cuenta      = lazy(() => import('./pages/Cuenta'))
+const Panel       = lazy(() => import('./pages/Panel'))
 
 function RouteFallback() {
   return (
@@ -84,6 +86,7 @@ export default function App() {
       <SupporterWatcher />
       <DonatePrompt />
       <AccountPromptHost />
+      <PulseReporter />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
       <PlayerModal />
@@ -143,6 +146,7 @@ export default function App() {
             {/* Biblioteca personal */}
             <Route path="/mi-lista" element={<MiLista />} />
             <Route path="/calendario" element={<Calendario />} />
+            <Route path="/panel" element={<Panel />} />
             <Route path="/cuenta" element={<Cuenta />} />
             <Route path="/cuenta/restablecer" element={<Cuenta view="reset" />} />
             <Route path="/cuenta/verificar" element={<Cuenta view="verify" />} />

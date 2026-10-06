@@ -8,6 +8,7 @@ import {
 import { DONATE_OPTIONS } from '../DonateModal'
 import DonateGoal from '../DonateGoal'
 import { showToast } from '../../lib/toast'
+import { pulseEvent } from '../../lib/pulse'
 
 /**
  * Pedido de donación DESPUÉS de ver algo (no antes de reproducir).
@@ -21,14 +22,14 @@ export default function DonatePrompt() {
       const seconds = e.detail?.seconds || 0
       if (!shouldShowPrompt({ seconds, state: getDonations() })) return
       // Pequeña pausa: que el usuario vuelva a la página antes de pedirle algo
-      setTimeout(() => { recordPromptShown(); setOpen(true) }, 1200)
+      setTimeout(() => { recordPromptShown(); setOpen(true); pulseEvent('donate_shown') }, 1200)
     }
     window.addEventListener(WATCH_END_EVENT, onEnd)
     return () => window.removeEventListener(WATCH_END_EVENT, onEnd)
   }, [])
 
   const dismiss = () => { recordPromptDismissed(); setOpen(false) }
-  const donate = () => { recordPromptDonate(); setOpen(false) }
+  const donate = () => { recordPromptDonate(); pulseEvent('donate_click'); setOpen(false) }
   const already = () => {
     markSupporter(); setOpen(false)
     showToast({ icon: '💛', title: '¡Gracias por apoyar Life High!', text: 'Ya no te vamos a pedir más. Te dejamos la insignia Supporter.', ttl: 7000 })

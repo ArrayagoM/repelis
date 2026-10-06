@@ -2,6 +2,8 @@
 //   · createMemoryStore()  → tests y desarrollo local (sin base)
 //   · createMongoStore()   → producción (MongoDB Atlas)
 //
+import { createMongoStats } from './statsStore.js'
+
 // Interfaz (todo async). Los usuarios salen con `id` (string); los tiempos son milisegundos.
 
 const emailTaken = () => Object.assign(new Error('email_taken'), { code: 'email_taken' })
@@ -53,6 +55,18 @@ export const createMemoryStore = () => {
       if (!cur || cur.resetAt <= now) { rate.set(key, { count: 1, resetAt: now + windowMs }); return 1 }
       cur.count += 1
       return cur.count
+    },
+    async userStats(sinceMs) {
+      const all = [...users.values()]
+      return {
+        total: all.length,
+        google: all.filter((u) => u.googleSub).length,
+        password: all.filter((u) => u.passHash).length,
+        verified: all.filter((u) => u.emailVerified).length,
+        supporters: all.filter((u) => u.supporterSince).length,
+        createdSince: all.filter((u) => u.createdAt >= sinceMs).map((u) => u.createdAt),
+        recent: all.sort((a, b) => b.createdAt - a.createdAt).slice(0, 10).map((u) => ({ email: u.email, name: u.name, google: !!u.googleSub, createdAt: u.createdAt })),
+      }
     },
     async ensureIndexes() {},
   }
@@ -129,9 +143,27 @@ export const createMongoStore = (db, { ObjectId }) => {
       return 1
     },
 
+    async userStats(sinceMs) {
+      const [total, google, password, verified, supporters, recent, since] = await Promise.all([
+        users.estimatedDocumentCount(),
+        users.countDocuments({ googleSub: { $type: 'string' } }),
+        users.countDocuments({ passHash: { $type: 'string' } }),
+        users.countDocuments({ emailVerified: true }),
+        users.countDocuments({ supporterSince: { $gt: 0 } }),
+        users.find({}, { projection: { email: 1, name: 1, googleSub: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(10).toArray(),
+        users.find({ createdAt: { $gte: sinceMs } }, { projection: { createdAt: 1 } }).limit(20000).toArray(),
+      ])
+      return {
+        total, google, password, verified, supporters,
+        createdSince: since.map((u) => u.createdAt),
+        recent: recent.map((u) => ({ email: u.email, name: u.name, google: !!u.googleSub, createdAt: u.createdAt })),
+      }
+    },
+
     async ensureIndexes() {
       await Promise.all([
         users.createIndex({ email: 1 }, { unique: true }),
+        users.createIndex({ createdAt: -1 }),
         users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: 'string' } } }),
         users.createIndex({ verifyHash: 1 }, { sparse: true }),
         users.createIndex({ resetHash: 1 }, { sparse: true }),
@@ -146,8 +178,8 @@ export const createMongoStore = (db, { ObjectId }) => {
 // ─── Conexión (cacheada entre invocaciones de la función) ───────────────
 let cached = null
 
-/** null si no hay MONGODB_URI configurada (las cuentas quedan deshabilitadas, el sitio sigue andando). */
-export const getStore = (env = process.env) => {
+/** {store, stats} o null si no hay MONGODB_URI (las cuentas y el panel quedan deshabilitados, el sitio sigue andando). */
+export const getBackend = (env = process.env) => {
   const uri = env.MONGODB_URI
   if (!uri) return null
   if (!cached) {
@@ -155,10 +187,15 @@ export const getStore = (env = process.env) => {
       const { MongoClient, ObjectId } = await import('mongodb')
       const client = new MongoClient(uri, { maxPoolSize: 5, serverSelectionTimeoutMS: 8000 })
       await client.connect()
-      const store = createMongoStore(client.db(env.MONGODB_DB || 'lifehigh'), { ObjectId })
-      await store.ensureIndexes()
-      return store
+      const db = client.db(env.MONGODB_DB || 'lifehigh')
+      const store = createMongoStore(db, { ObjectId })
+      const stats = createMongoStats(db)
+      await Promise.all([store.ensureIndexes(), stats.ensureIndexes()])
+      return { store, stats }
     })().catch((e) => { cached = null; throw e })   // si falla, el próximo pedido reintenta
   }
   return cached
 }
+
+export const getStore = (env = process.env) => getBackend(env)?.then((b) => b.store) ?? null
+export const getStats = (env = process.env) => getBackend(env)?.then((b) => b.stats) ?? null

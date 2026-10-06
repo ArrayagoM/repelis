@@ -7,6 +7,11 @@
 import { createAuthApi } from '../api/_lib/authApi.js'
 import { createMemoryStore } from '../api/_lib/stores.js'
 import { getGoogleKeys, verifyGoogleIdToken } from '../api/_lib/google.js'
+import { createMemoryStats } from '../api/_lib/statsStore.js'
+import { createPulse } from '../api/_lib/pulse.js'
+import { createAdminApi } from '../api/_lib/adminApi.js'
+import { parseRootEmails } from '../api/_lib/session.js'
+import { seedDemoStats } from './dev-seed.js'
 
 const readJson = (req) => new Promise((resolve) => {
   const chunks = []
@@ -36,7 +41,31 @@ export const devAuthApi = () => ({
           if (kind !== 'fake' || !sub || !email) throw new Error('google_invalid')
           return { sub, email: email.toLowerCase(), name: name || '', picture: null }
         }
-    const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle })
+    // Fundador de desarrollo: ROOT_EMAILS del entorno, o root@dev.test (se prueba con la credencial falsa "fake:1:root@dev.test:Fundador")
+    const rootEmails = parseRootEmails(process.env.ROOT_EMAILS).length ? parseRootEmails(process.env.ROOT_EMAILS) : ['root@dev.test']
+    const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle, rootEmails })
+
+    // Estadísticas en memoria (con 7 días de datos de DEMOSTRACIÓN; DEV_SEED=0 para arrancar vacío)
+    const stats = createMemoryStats()
+    if (process.env.DEV_SEED !== '0') seedDemoStats({ stats }).catch((e) => console.error('[dev-seed]', e?.message))
+    const pulse = createPulse({ stats })
+    const admin = createAdminApi({ store, stats, rootEmails })
+
+    const send = (res, out) => {
+      res.statusCode = out.status
+      res.setHeader('Content-Type', 'application/json')
+      res.setHeader('Cache-Control', 'no-store')
+      res.end(JSON.stringify(out.body))
+    }
+    server.middlewares.use('/api/pulse', async (req, res) => {
+      if (req.method !== 'POST') return send(res, { status: 405, body: { error: 'method_not_allowed' } })
+      send(res, await pulse({ body: await readJson(req), headers: req.headers }))
+    })
+    server.middlewares.use('/api/admin', async (req, res) => {
+      const url = new URL(req.url || '/', 'http://localhost')
+      const action = url.pathname.replace(/^\/+/, '').split('/')[0]
+      send(res, await admin({ method: req.method, action, headers: req.headers, query: { days: url.searchParams.get('days') } }))
+    })
 
     server.middlewares.use('/api/auth', async (req, res) => {
       const action = (req.url || '').split('?')[0].replace(/^\/+/, '').split('/')[0]

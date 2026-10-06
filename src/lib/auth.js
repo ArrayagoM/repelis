@@ -12,6 +12,7 @@ import { mergeLibraries, libraryFingerprint, emptyLibrary } from './libraryMerge
 import { getDonations, adoptSupporterSince } from './donations'
 import { showToast } from './toast'
 import { canUsePersonal } from './access'
+import { pulseEvent, gateShownRecently } from './pulse'
 
 const API = '/api/auth'
 const DEBOUNCE_MS = 4000          // espera tras un cambio antes de subir
@@ -174,6 +175,7 @@ export const register = async ({ email, password, name }) => {
     body: { email, password, name, library: getLibrary(), supporterSince: getDonations().supporterSince || undefined },
   })
   if (!res.ok) return { ok: false, error: res.data.error || 'server_error' }
+  pulseEvent(gateShownRecently() ? 'signup_gate' : 'signup')
   await enter(res.data)
   return { ok: true, mailSent: !!res.data.mailSent }
 }
@@ -185,6 +187,7 @@ export const loginWithGoogle = async (credential) => {
     body: { credential, library: getLibrary(), supporterSince: getDonations().supporterSince || undefined },
   })
   if (!res.ok) return { ok: false, error: res.data.error || 'server_error' }
+  pulseEvent(res.data.created ? (gateShownRecently() ? 'signup_gate' : 'signup') : 'login')
   await enter(res.data)
   return { ok: true, created: !!res.data.created }
 }
@@ -192,6 +195,7 @@ export const loginWithGoogle = async (credential) => {
 export const login = async ({ email, password }) => {
   const res = await request('login', { method: 'POST', body: { email, password } })
   if (!res.ok) return { ok: false, error: res.data.error || 'server_error' }
+  pulseEvent('login')
   await enter(res.data)
   return { ok: true }
 }

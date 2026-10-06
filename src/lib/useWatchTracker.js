@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { recordWatch } from './library'
+import { setWatching } from './watchState'
 
 const TICK_SECONDS = 10
 // Para el aviso de donación: ver al menos esto (en segundos) cuenta como "vio algo"
@@ -14,6 +15,13 @@ export function useWatchTracker({ active, playing, item, season, episode, runtim
   const sessionSec = useRef(0)
   const latest = useRef({})
   latest.current = { item, season, episode, runtimeMin, persist }
+
+  // Para las estadísticas en vivo: "esta pestaña está viendo X" (el servidor calcula el tiempo)
+  useEffect(() => {
+    if (!active || !playing || !item?.id) { setWatching(null); return undefined }
+    setWatching({ key: `${item.type}:${item.id}`, title: item.title, type: item.type })
+    return () => setWatching(null)
+  }, [active, playing, item?.id, item?.type, item?.title])
 
   // Tick mientras se reproduce
   useEffect(() => {

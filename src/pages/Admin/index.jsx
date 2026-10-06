@@ -18,6 +18,7 @@ import {
 import { getErrors, subscribe as subscribeErrors, clearErrors } from '../../lib/errorMonitor'
 import { pingAll, getServerHistory, clearServerHistory } from '../../lib/serverHealth'
 import { SOURCES } from '../../lib/playerSources'
+import { useAuth } from '../../lib/auth'
 
 const TABS = [
   { id: 'overview',  label: 'Resumen',    Icon: ChartBar },
@@ -33,8 +34,10 @@ export default function Admin() {
   const navigate = useNavigate()
   const [authed, setAuthed]   = useState(adminIsAuthed())
   const [tab,    setTab]      = useState('overview')
+  const { user } = useAuth()
 
-  if (!authed) return <PinGate onSuccess={() => setAuthed(true)} />
+  // El fundador (root) entra con su cuenta, sin PIN. Los demás siguen con el PIN de siempre.
+  if (!authed && !user?.root) return <PinGate onSuccess={() => setAuthed(true)} />
 
   return (
     <motion.main

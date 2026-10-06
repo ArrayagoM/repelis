@@ -22,6 +22,28 @@ Los umbrales son números en `ACCESS_RULES`: cambiarlos es editar una línea.
 > Es un límite de cortesía del lado del navegador: el video lo sirven reproductores de terceros, así que una persona técnica puede saltearlo.
 > Sirve para invitar a registrarse, no como seguridad.
 
+## Panel del fundador (`/panel`)
+
+Solo para cuentas **root**: las que tienen su mail en la variable `ROOT_EMAILS` de Vercel (varios separados por coma) **y verificado**.
+Para cualquier otra persona la página y la API responden "404" (ni confirman que existe). El permiso se decide siempre en el servidor.
+
+Muestra, en hora de Argentina y con rango Hoy / 7 / 30 días:
+- **En vivo** (se actualiza solo cada 15 s): conectados ahora, cuántos están viendo algo, qué títulos, con cuenta vs sin cuenta, países y plataformas.
+- **Resumen**: visitantes, páginas vistas, **horas vistas**, reproducciones, tiempo medio por reproducción, tiempo en el sitio, registros nuevos (con variación contra el período anterior).
+- **Lo más visto** por tiempo y por cantidad de reproducciones, horas pico, países, dispositivos, plataformas, páginas, miembros vs invitados.
+- **Cuentas**: totales, Google vs mail, verificados, supporters, registros por día y últimos registros (mails enmascarados).
+- **Embudo**: cuántos vieron el aviso "creá tu cuenta", cuántos se registraron desde ahí (conversión) y los pedidos de apoyo.
+
+Cómo se mide (todo anónimo): cada pestaña manda un "latido" a `/api/pulse` (cada 60 s mirando y cada 120 s navegando, para cuidar el cupo de 1 M de invocaciones/mes del plan gratuito de Vercel) con un id aleatorio que **cambia cada día**,
+la página agrupada, la plataforma, si es miembro (sí/no) y qué título mira. El **tiempo de visualización lo calcula el servidor** como la diferencia
+entre latidos consecutivos del mismo título (con tope), no lo que declare el navegador. No se guarda IP ni mail. El tráfico del fundador no se cuenta.
+Los datos viven en MongoDB (`presence` se borra sola en 1 h; `stats_daily` un documento por día; `stats_titles` se borra a los 120 días).
+
+Limitaciones: los números son **indicativos** (cualquiera puede mandar latidos falsos) y "visitantes" se suma día por día (el id rota a diario).
+Las apps nativas de React Native todavía no mandan latidos.
+
+También entra al panel técnico `/admin` sin PIN.
+
 ## Cómo funciona
 
 - **Backend:** una función de Vercel (`api/auth/[action].js`, Node) + **MongoDB Atlas**.
@@ -45,6 +67,7 @@ Los umbrales son números en `ACCESS_RULES`: cambiarlos es editar una línea.
 | `GOOGLE_CLIENT_ID` | Recomendada | Client ID de Google (termina en `.apps.googleusercontent.com`). Es **público**; no hay "client secret" en este flujo. Sin ella no aparece el botón de Google. |
 | `RESEND_API_KEY` | No* | Clave de [Resend](https://resend.com) (gratis). *Sin ella no hay mails: no se puede confirmar el mail ni recuperar la contraseña. |
 | `MAIL_FROM` | No | Remitente, ej. `Life High <avisos@tudominio.com>`. Sin dominio verificado en Resend solo se puede mandar a tu propio mail (`onboarding@resend.dev`). |
+| `ROOT_EMAILS` | Para el panel | Mails de los fundadores/administradores, separados por coma (ej. `tu@gmail.com`). Solo funcionan si el mail está verificado (con Google siempre lo está). |
 | `SITE_URL` | No | URL pública para los enlaces de los mails (por defecto `https://repelis.vercel.app`). Poné `https://lifehigh.site` cuando el dominio funcione. |
 
 Cargalas en **Production, Preview y Development** y hacé **Redeploy**.

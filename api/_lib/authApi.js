@@ -11,6 +11,7 @@
 //  · recuperación/verificación con tokens de un solo uso que vencen
 // ─────────────────────────────────────────────────────────────────────────
 import { hashPassword, verifyPassword, dummyHash, newToken, sha256 } from './passwords.js'
+import { COOKIE, authenticateSession, isRoot } from './session.js'
 import { normalizeLibrary, mergeLibraries, emptyLibrary } from '../../src/lib/libraryMerge.js'
 
 const MIN = 60_000
@@ -22,7 +23,6 @@ const VERIFY_TTL_MS = DAY
 const RESET_TTL_MS = HOUR
 const MAX_SESSIONS_PER_USER = 10
 const MAX_LIBRARY_BYTES = 300_000
-const COOKIE = 'lh_session'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const WEAK = new Set(['12345678', '123456789', '1234567890', '11111111', '00000000', 'password', 'password1', 'qwertyui', 'qwerty123', 'contraseña', 'contrasena', 'abcd1234', 'iloveyou', '87654321'])
@@ -40,7 +40,7 @@ export const passwordProblem = (pw, email = '') => {
   return null
 }
 
-const publicUser = (u) => ({
+const publicUser = (u, root = false) => ({
   id: u.id,
   email: u.email,
   name: u.name || '',
@@ -49,16 +49,8 @@ const publicUser = (u) => ({
   createdAt: u.createdAt,
   hasPassword: !!u.passHash,     // las cuentas creadas con Google no tienen contraseña
   google: !!u.googleSub,
+  root,                          // fundador: ve el panel de estadísticas (decidido por el servidor)
 })
-
-const parseCookies = (header = '') => {
-  const out = {}
-  for (const part of String(header).split(';')) {
-    const i = part.indexOf('=')
-    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim())
-  }
-  return out
-}
 
 const buildCookie = (value, { maxAgeSec, secure }) =>
   `${COOKIE}=${value}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAgeSec}${secure ? '; Secure' : ''}`
@@ -66,7 +58,7 @@ const buildCookie = (value, { maxAgeSec, secure }) =>
 /**
  * @param {{ store, mailer?: {sendVerify, sendReset}|null, secureCookies?: boolean, now?: () => number }} deps
  */
-export const createAuthApi = ({ store, mailer = null, secureCookies = true, now = Date.now, googleClientId = '', verifyGoogle = null }) => {
+export const createAuthApi = ({ store, mailer = null, secureCookies = true, now = Date.now, googleClientId = '', verifyGoogle = null, rootEmails = [] }) => {
   const reply = (status, body, cookies) => ({ status, body, cookies })
   const fail = (status, error) => reply(status, { error })
   const ok = (body = { ok: true }, cookies) => reply(200, body, cookies)
@@ -98,16 +90,8 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
   const clearCookie = () => buildCookie('', { maxAgeSec: 0, secure: secureCookies })
 
   /** Usuario de la sesión actual (o null). Borra sesiones vencidas. */
-  const authenticate = async (headers) => {
-    const token = parseCookies(headers.cookie)[COOKIE]
-    if (!token || token.length > 100) return null
-    const id = sha256(token)
-    const s = await store.getSession(id)
-    if (!s) return null
-    if (s.expiresAt <= now()) { await store.deleteSession(id); return null }
-    const user = await store.findUserById(s.userId)
-    return user ? { user, sessionId: id } : null
-  }
+  const authenticate = (headers) => authenticateSession({ store, headers, now: now() })
+  const pub = (u) => publicUser(u, isRoot(u, rootEmails))
 
   const sendVerification = async (user) => {
     if (!mailer) return false
@@ -156,7 +140,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       }
       const cookie = await startSession(user.id, headers)
       const mailSent = await sendVerification(user)
-      return ok({ user: publicUser(user), library, mailSent }, [cookie])
+      return ok({ user: pub(user), library, mailSent }, [cookie])
     },
 
     'POST login': async ({ body, headers, ip }) => {
@@ -174,7 +158,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       // Limitamos las sesiones abiertas por usuario (cada login nuevo)
       if ((await store.countSessions(user.id)) >= MAX_SESSIONS_PER_USER) await store.deleteSessionsOfUser(user.id)
       const cookie = await startSession(user.id, headers)
-      return ok({ user: publicUser(user), library: normalizeLibrary(user.library) }, [cookie])
+      return ok({ user: pub(user), library: normalizeLibrary(user.library) }, [cookie])
     },
 
     // Ingreso / registro con Google (si el mail ya tenía cuenta, se vincula)
@@ -213,7 +197,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
 
       if ((await store.countSessions(user.id)) >= MAX_SESSIONS_PER_USER) await store.deleteSessionsOfUser(user.id)
       const cookie = await startSession(user.id, headers)
-      return ok({ user: publicUser(user), library: normalizeLibrary(user.library), created }, [cookie])
+      return ok({ user: pub(user), library: normalizeLibrary(user.library), created }, [cookie])
     },
 
     'POST logout': async ({ headers }) => {
@@ -225,7 +209,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
     'GET me': async ({ headers }) => {
       const auth = await authenticate(headers)
       if (!auth) return fail(401, 'not_authenticated')
-      return ok({ user: publicUser(auth.user), library: normalizeLibrary(auth.user.library) })
+      return ok({ user: pub(auth.user), library: normalizeLibrary(auth.user.library) })
     },
 
     // Sincroniza: fusiona la copia del dispositivo con la de la cuenta y devuelve el resultado
