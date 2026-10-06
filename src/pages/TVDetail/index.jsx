@@ -16,6 +16,7 @@ import ListButton from '../../components/ListButton'
 import AddToList from '../../components/AddToList'
 import Comments from '../../components/Comments'
 import TitleLike from '../../components/TitleLike'
+import RoomButton from '../../components/RoomButton'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
 import { GuestLockNote } from '../../components/AccessGate'
@@ -235,6 +236,7 @@ export default function TVDetail() {
               <ListButton item={toLibItem(data, 'tv')} />
               <AddToList item={toLibItem(data, 'tv')} />
               <TitleLike target={`tv:${data.id}`} title={data.name} />
+              <RoomButton item={toLibItem(data, 'tv')} />
               {!isUpcoming(data) && <WatchTogether title={data.name} type="tv" id={Number(id)} runtimeMin={data.episode_run_time?.[0] || 0} />}
               <ShareButtons title={data.name} description={data.tagline || ''} />
             </div>

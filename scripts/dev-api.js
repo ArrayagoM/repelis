@@ -14,6 +14,8 @@ import { parseRootEmails } from '../api/_lib/session.js'
 import { seedDemoStats } from './dev-seed.js'
 import { createMemorySocial } from '../api/_lib/socialStore.js'
 import { createSocialApi } from '../api/_lib/socialApi.js'
+import { createMemoryRooms } from '../api/_lib/roomsStore.js'
+import { createRoomsApi } from '../api/_lib/roomsApi.js'
 
 const readJson = (req) => new Promise((resolve) => {
   const chunks = []
@@ -46,7 +48,8 @@ export const devAuthApi = () => ({
     // Fundador de desarrollo: ROOT_EMAILS del entorno, o root@dev.test (se prueba con la credencial falsa "fake:1:root@dev.test:Fundador")
     const rootEmails = parseRootEmails(process.env.ROOT_EMAILS).length ? parseRootEmails(process.env.ROOT_EMAILS) : ['root@dev.test']
     const social = createMemorySocial()
-    const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle, rootEmails, onUserDeleted: (id) => social.deleteUserData(id) })
+    const rooms = createMemoryRooms()
+    const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle, rootEmails, onUserDeleted: async (id) => { await social.deleteUserData(id); await rooms.deleteUserData(id) } })
 
     // Estadísticas en memoria. Arrancan VACÍAS. Con DEV_SEED=1 se cargan 7 días de datos INVENTADOS y el panel lo avisa con un cartel rojo.
     const stats = createMemoryStats()
@@ -75,6 +78,13 @@ export const devAuthApi = () => ({
       const action = url.pathname.replace(/^\/+/, '').split('/')[0]
       const body = req.method === 'POST' ? await readJson(req) : {}
       send(res, await admin({ method: req.method, action, headers: req.headers, query: { days: url.searchParams.get('days') }, body }))
+    })
+    const roomsApi = createRoomsApi({ store, social, rooms, rootEmails })
+    server.middlewares.use('/api/rooms', async (req, res) => {
+      const url = new URL(req.url || '/', 'http://localhost')
+      const action = url.pathname.replace(/^\/+/, '').split('/')[0]
+      const body = req.method === 'POST' ? await readJson(req) : {}
+      send(res, await roomsApi({ method: req.method, action, headers: req.headers, body, query: Object.fromEntries(url.searchParams) }))
     })
     server.middlewares.use('/api/social', async (req, res) => {
       const url = new URL(req.url || '/', 'http://localhost')

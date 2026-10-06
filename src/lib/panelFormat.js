@@ -45,7 +45,7 @@ export const PLATFORM_LABELS = {
 export const DEVICE_LABELS = { mobile: 'Celular', tablet: 'Tablet', desktop: 'Computadora' }
 export const PAGE_LABELS = {
   home: 'Inicio', movie: 'Fichas de películas', tv: 'Fichas de series', search: 'Búsqueda', catalog: 'Catálogos y géneros',
-  'mi-lista': 'Mi lista', cuenta: 'Cuenta', calendario: 'Calendario', cines: 'Cines', descargar: 'Descargas', legal: 'Legales', comunidad: 'Comunidad', other: 'Otras',
+  'mi-lista': 'Mi lista', cuenta: 'Cuenta', calendario: 'Calendario', cines: 'Cines', descargar: 'Descargas', legal: 'Legales', comunidad: 'Comunidad', salas: 'Salas', other: 'Otras',
 }
 
 /** Hace cuánto, en texto corto. */

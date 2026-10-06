@@ -106,7 +106,7 @@ export default function Privacy() {
             <p className="mt-3">
               <strong className="text-chalk/85">Comunidad.</strong> Si elegís un @usuario y publicás listas u opiniones, el @usuario, tu nombre, tu bio, tus listas públicas y tus opiniones y comentarios
               son <strong className="text-chalk/85">visibles para cualquiera</strong>, incluso sin cuenta. Tus me gusta y a quién seguís se usan para mostrar contadores y tu pestaña
-              "Siguiendo"; no se publican como lista. No se muestra tu mail. Al borrar tu cuenta se eliminan también tu perfil, tus listas, tus opiniones y comentarios, tus me gusta, tus seguimientos y tus reportes.
+              "Siguiendo"; no se publican como lista. No se muestra tu mail. <strong className="text-chalk/85">Salas.</strong> El chat de una sala lo ven las personas que están dentro (se muestra tu @usuario), no se graba nada más y los mensajes se borran 24 horas después de que la sala termina. Al borrar tu cuenta se eliminan también tus salas y tus mensajes, tu perfil, tus listas, tus opiniones y comentarios, tus me gusta, tus seguimientos y tus reportes.
             </p>
           </Section>
 

@@ -61,6 +61,7 @@ export default function Terms() {
               <li>Las opiniones y comentarios son tuyos y de nadie más: nada de spoilers sin aviso, insultos, acoso ni spam.</li>
               <li>Podés reportar una lista, una opinión o un comentario; cuando varias personas distintas lo reportan se oculta automáticamente hasta que se revise.</li>
               <li>Podemos ocultar o eliminar listas y suspender perfiles que incumplan estas reglas, sin aviso previo.</li>
+              <li>En las Salas (chat en vivo) rigen las mismas reglas: sin links, insultos, acoso ni spam. El anfitrión puede sacar a quien las incumpla y nosotros podemos cerrar una sala.</li>
               <li>Vos seguís siendo autor de tus listas; nos das permiso para mostrarlas dentro de Life High mientras estén publicadas. Si las borrás, dejan de mostrarse.</li>
             </ul>
           </Section>

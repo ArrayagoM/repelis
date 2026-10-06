@@ -38,6 +38,8 @@ const DMCA        = lazy(() => import('./pages/DMCA'))
 const Admin       = lazy(() => import('./pages/Admin'))
 const Terror      = lazy(() => import('./pages/Terror'))
 const Avisos      = lazy(() => import('./pages/Avisos'))
+const Salas       = lazy(() => import('./pages/Salas'))
+const Sala        = lazy(() => import('./pages/Sala'))
 const CinesCerca  = lazy(() => import('./pages/CinesCerca'))
 const Download    = lazy(() => import('./pages/Download'))
 const MiLista     = lazy(() => import('./pages/MiLista'))
@@ -160,6 +162,8 @@ export default function App() {
             <Route path="/u/:handle" element={<Profile />} />
             <Route path="/perfil" element={<MyProfile />} />
             <Route path="/avisos" element={<Avisos />} />
+            <Route path="/salas" element={<Salas />} />
+            <Route path="/sala/:code" element={<Sala />} />
             <Route path="/cuenta" element={<Cuenta />} />
             <Route path="/cuenta/restablecer" element={<Cuenta view="reset" />} />
             <Route path="/cuenta/verificar" element={<Cuenta view="verify" />} />

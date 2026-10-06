@@ -140,6 +140,16 @@ Para activarlos:
 2. Resend → API Keys → crear una clave (permiso *Sending access*, dominio `lifehigh.site`) y cargarla en Vercel como `RESEND_API_KEY` (Production).
 3. Variables opcionales: `MAIL_FROM`, `MAIL_REPLY_TO`, `SITE_URL`.
 
+## Salas (cine digital) — fase 1
+
+`/salas` (crear / entrar con enlace o código / mis salas) y `/sala/<código>`. Cada sala tiene un código de 7 caracteres, un anfitrión, una película opcional y un horario opcional con **cuenta regresiva común** (el reloj del cliente se alinea con el del servidor). Hasta 12 personas, chat, 6 reacciones animadas, lista de conectados y, para el anfitrión, cambiar horario, sacar gente y cerrar (el fundador también puede cerrar/sacar).
+
+- **Cada quien reproduce la película en su pantalla** (los reproductores son de terceros y no se pueden sincronizar): la sala sirve para coordinar y charlar. La voz es la fase 2.
+- **API:** `api/rooms/[action].js` → `api/_lib/roomsApi.js`; datos en `rooms`, `room_messages`, `room_members` (`roomsStore.js`); reglas compartidas en `src/lib/roomRules.js`.
+- **Transporte:** consultas frecuentes (`POST sync`, que además es el latido de presencia): 2,5 s con charla, 5 s en calma, 15 s con la pestaña oculta. Es lo que más gasta del plan gratis de Vercel: si crece, cambiar `useRoom` por un servicio de tiempo real (Ably/LiveKit) sin tocar el resto.
+- **Límites:** 3 salas abiertas por persona, 5 creaciones/hora, 8 mensajes cada 10 s, 300 caracteres, sin links, una sala vive 12 h y se borra con todo 24 h después.
+- Borrar la cuenta borra sus salas, su presencia y sus mensajes.
+
 ## Probar
 
 - **Local:** `npm run dev` incluye una API de cuentas **en memoria** (`scripts/dev-api.js`); los mails se imprimen en la terminal.

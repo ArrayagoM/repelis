@@ -7,7 +7,7 @@
 
 import { createAuthApi } from '../_lib/authApi.js'
 import { createMailer } from '../_lib/mailer.js'
-import { getStore, getSocial } from '../_lib/stores.js'
+import { getStore, getSocial, getRooms } from '../_lib/stores.js'
 import { parseRootEmails } from '../_lib/session.js'
 import { getGoogleKeys, verifyGoogleIdToken } from '../_lib/google.js'
 
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     : null
 
   const api = createAuthApi({ store, mailer: createMailer(process.env), secureCookies: true, googleClientId, verifyGoogle, rootEmails: parseRootEmails(process.env.ROOT_EMAILS),
-    onUserDeleted: async (id) => (await getSocial()).deleteUserData(id) })
+    onUserDeleted: async (id) => { await (await getSocial()).deleteUserData(id); await (await getRooms()).deleteUserData(id) } })
   const out = await api({ method: req.method, action, headers: req.headers, body, ip: clientIp(req) })
   return send(res, out.status, out.body, out.cookies)
 }

@@ -49,6 +49,7 @@ export const pageGroup = (pathname = '/') => {
   if (p === '/cines-cerca') return 'cines'
   if (['/descargar', '/apk', '/tv'].includes(p)) return 'descargar'
   if (['/about', '/terms', '/privacy', '/dmca'].includes(p)) return 'legal'
+  if (p === '/salas' || p.startsWith('/sala/')) return 'salas'
   if (p.startsWith('/comunidad') || p.startsWith('/lista') || p.startsWith('/u/') || p === '/perfil') return 'comunidad'
   return 'catalog'                                                             // populares, géneros, series, anime…
 }

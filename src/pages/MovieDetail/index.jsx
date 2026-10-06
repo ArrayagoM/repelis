@@ -16,6 +16,7 @@ import ListButton from '../../components/ListButton'
 import AddToList from '../../components/AddToList'
 import Comments from '../../components/Comments'
 import TitleLike from '../../components/TitleLike'
+import RoomButton from '../../components/RoomButton'
 import ReminderButton from '../../components/ReminderButton'
 import WatchTogether from '../../components/WatchTogether'
 import CinemaTickets from '../../components/CinemaTickets'
@@ -254,6 +255,7 @@ export default function MovieDetail() {
               <ListButton item={toLibItem(data, 'movie')} />
               <AddToList item={toLibItem(data, 'movie')} />
               <TitleLike target={`movie:${data.id}`} title={data.title} />
+              <RoomButton item={toLibItem(data, 'movie')} />
               {!movieUpcoming && <WatchTogether title={data.title} type="movie" id={data.id} runtimeMin={data.runtime || 0} />}
               <ShareButtons title={data.title} description={data.tagline || ''} />
             </div>
