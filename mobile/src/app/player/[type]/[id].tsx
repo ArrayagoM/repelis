@@ -10,6 +10,7 @@ import { EmbedPlayer } from '@/components/EmbedPlayer'
 import { FocusPressable } from '@/components/FocusPressable'
 import type { MediaType } from '@/api/types'
 import { useLayout } from '@/lib/layout'
+import { setWatching } from '@/lib/pulse'
 import { buildUrl, getOrderedSources, loadRememberedSource, rememberSource } from '@/lib/playerSources'
 import { colors, radius } from '@/theme'
 
@@ -84,6 +85,13 @@ export default function PlayerScreen() {
     const t = setTimeout(() => setShowTip(false), TIP_MS)
     return () => clearTimeout(t)
   }, [])
+
+  // Para las estadísticas en vivo: "esta persona está mirando X" (el servidor calcula el tiempo)
+  useEffect(() => {
+    if (phase !== 'playing') return
+    setWatching({ key: `${mediaType}:${id}`, title: String(title ?? '').slice(0, 120) })
+    return () => setWatching(null)
+  }, [phase, mediaType, id, title])
 
   const onLoaded = useCallback(() => setPhase((p) => (p === 'loading' ? 'ready' : p)), [])
   const onPlaying = useCallback(() => {

@@ -123,6 +123,23 @@ Perfiles con @usuario, listas públicas (zapping, plan de finde, maratón…), m
 - **Borrar cuenta** elimina también perfil, listas, me gusta, seguimientos y reportes de esa persona.
 - **Probar contra Mongo real** (base temporal que se borra sola): `$env:MONGODB_URI = "<uri>"; node scripts/smoke-social.mjs`.
 
+## Opiniones, avisos, push y resumen por mail
+
+- **Opiniones y comentarios:** en cada película/serie (una opinión por persona, con estrellas 1–5 opcionales) y en cada lista pública (varios comentarios). Mismas reglas que las listas: sin links, cuenta + perfil, 20 por hora, 3 reportes distintos lo ocultan, la dueña de la lista y el fundador pueden borrar. Los reportes de comentarios aparecen junto a los de listas en `/panel`.
+- **Avisos (`/avisos`, campanita en el menú):** alguien te sigue, da me gusta o comenta una lista tuya, o alguien que seguís publica una lista nueva. Duran 60 días. No se repiten (clave única por evento).
+- **Push del navegador (Web Push):** botón en `/avisos`. Variables de Vercel: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (generarlas con `node -e "console.log(require('web-push').generateVAPIDKeys())"`) y opcional `VAPID_SUBJECT`. Sin ellas el push queda apagado y todo lo demás sigue. Las suscripciones vencidas (404/410) se borran solas.
+- **Resumen diario por mail:** opt-in en `/avisos`. Lo manda la tarea programada `/api/cron/digest` (`vercel.json → crons`, 13:00 UTC) y está protegida con `CRON_SECRET`. Solo a mails confirmados y solo si hubo novedades.
+- **Retención (panel):** se guardan solo los *días* en que cada cuenta abrió la app (`seenDays`, ~4 meses). El panel muestra activas hoy/semana/mes, pegajosidad y el retorno al día 1/7/30 por cohorte semanal, sin contar al fundador.
+
+## Mails (info@lifehigh.site)
+
+Plantillas en `api/_lib/emailTemplates.js` (verificar mail, restablecer clave, bienvenida, aviso de cambio de clave, cuenta eliminada, actividad) y envío con Resend en `api/_lib/mailer.js`. Remitente `Life High <info@lifehigh.site>` con responder-a `info@lifehigh.site`.
+
+Para activarlos:
+1. Resend → Domains → `lifehigh.site` (región São Paulo): copiar los 4 registros DNS (DKIM `TXT resend._domainkey`, `CNAME rsend`, `CNAME send`, DMARC `TXT _dmarc`) al DNS del dominio (hoy Namecheap) y tocar *Verify*.
+2. Resend → API Keys → crear una clave (permiso *Sending access*, dominio `lifehigh.site`) y cargarla en Vercel como `RESEND_API_KEY` (Production).
+3. Variables opcionales: `MAIL_FROM`, `MAIL_REPLY_TO`, `SITE_URL`.
+
 ## Probar
 
 - **Local:** `npm run dev` incluye una API de cuentas **en memoria** (`scripts/dev-api.js`); los mails se imprimen en la terminal.

@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Constants from 'expo-constants'
 import { FocusPressable } from '@/components/FocusPressable'
+import { AccountSection } from '@/components/AccountSection'
+import { useLocalSearchParams } from 'expo-router'
 import { useLayout } from '@/lib/layout'
 import { useLanguageMode } from '@/lib/LanguageProvider'
 import { LANGUAGE_MODES, MODE_DESCRIPTIONS, MODE_LABELS } from '@/lib/languageMode'
@@ -16,6 +18,7 @@ export default function MoreScreen() {
   const { gutter } = useLayout()
   const { mode, setMode } = useLanguageMode()
   const version = Constants.expoConfig?.version ?? '1.0.0'
+  const { needAccount } = useLocalSearchParams<{ needAccount?: string }>()
   const [introSound, setIntroSound] = useState(true)
   useEffect(() => {
     loadIntroSoundEnabled().then(setIntroSound)
@@ -27,6 +30,9 @@ export default function MoreScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 8, paddingHorizontal: gutter, paddingBottom: 48 }}
     >
       <Text style={styles.title}>Más</Text>
+
+      <Text style={styles.section}>Mi cuenta</Text>
+      <AccountSection reason={needAccount ? 'Para ver este título necesitás una cuenta gratis. Es rápido y no tiene costo.' : undefined} />
 
       <Text style={styles.section}>Idioma del catálogo</Text>
       {LANGUAGE_MODES.map((m) => {

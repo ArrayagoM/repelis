@@ -11,6 +11,8 @@ import { backdrop, getDetail, getSeason, poster } from '@/api/tmdb'
 import { titleOf, yearOf, type Episode, type MediaType } from '@/api/types'
 import { useAsync } from '@/hooks/useAsync'
 import { useLayout } from '@/lib/layout'
+import { useAuth } from '@/lib/auth'
+import { isLockedForUser } from '@/lib/access'
 import { colors, radius } from '@/theme'
 
 const LANG_NAMES: Record<string, string> = {
@@ -23,6 +25,7 @@ export default function TitleScreen() {
   const mediaType: MediaType = type === 'tv' ? 'tv' : 'movie'
   const insets = useSafeAreaInsets()
   const { width, isTablet, isTV, gutter, rowPosterWidth } = useLayout()
+  const { status: authStatus } = useAuth()
   const { data, loading, error, reload } = useAsync(() => getDetail(mediaType, id), [mediaType, id])
   const [season, setSeason] = useState<number | null>(null)
   const [episodes, setEpisodes] = useState<Episode[]>([])
@@ -93,8 +96,13 @@ export default function TitleScreen() {
     </>
   )
 
+  // Los títulos más calificados o populares piden cuenta gratis para reproducirse (mismas reglas que la web)
+  const locked = isLockedForUser(
+    { type: mediaType, rating: data.vote_average, votes: data.vote_count, pop: data.popularity },
+    authStatus,
+  )
   const play = (s?: number, e?: number) =>
-    router.push({
+    locked ? router.push({ pathname: '/more', params: { needAccount: '1' } }) : router.push({
       pathname: `/player/${mediaType}/${id}`,
       params: { title, ...(s ? { season: String(s), episode: String(e ?? 1), seasons: String(seasons.length) } : {}) },
     })

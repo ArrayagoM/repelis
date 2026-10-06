@@ -76,3 +76,7 @@ nativa vive en `mobile/app.json`, `mobile/app.config.js` y los config plugins.
 - **Windows/macOS** cargan el sitio en vivo (necesitan internet); `.exe` y `.dmg` no están firmados digitalmente, por eso Windows muestra SmartScreen y macOS pide *click derecho → Abrir* (ver guías en `/descargar`).
 - **Descargas offline de películas**: no son posibles. Los videos los sirven iframes de terceros; la app no tiene acceso al archivo de video.
 - Firma de Android: los APK se firman con la clave debug estándar de React Native, así cada versión nueva se instala como actualización. Para una clave propia, generá un keystore y configuralo en `mobile/android/app/build.gradle` vía un config plugin.
+
+## Cuentas y estadísticas en la app (React Native)
+
+La app nativa ahora tiene **Más → Mi cuenta** (mail y contraseña; el ingreso con Google queda en la web), aplica la misma regla que la web (los títulos más calificados/populares piden cuenta gratis para reproducirse) y manda el latido anónimo de estadísticas (`mobile/src/lib/pulse.ts`, plataforma `android-app` / `ios-app` / `tv`). La sesión es la cookie del sitio (`https://lifehigh.site/api/auth`). Pendiente: Mi lista / Continuar viendo sincronizados en la app.
