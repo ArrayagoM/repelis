@@ -11,6 +11,8 @@
 //  · recuperación/verificación con tokens de un solo uso que vencen
 // ─────────────────────────────────────────────────────────────────────────
 import { hashPassword, verifyPassword, dummyHash, newToken, sha256 } from './passwords.js'
+import { withSeenDay } from './retention.js'
+import { dayKey } from './pulse.js'
 import { COOKIE, authenticateSession, isRoot } from './session.js'
 import { normalizeLibrary, mergeLibraries, emptyLibrary } from '../../src/lib/libraryMerge.js'
 
@@ -94,11 +96,25 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
   const authenticate = (headers) => authenticateSession({ store, headers, now: now() })
   const pub = (u) => publicUser(u, isRoot(u, rootEmails))
 
+  /** Anota que hoy esta persona abrió la app (una escritura por día como máximo). Alimenta la retención del panel. */
+  const touchActivity = async (user) => {
+    try {
+      const patch = withSeenDay(user, dayKey(now()))
+      if (patch) { await store.updateUser(user.id, patch); Object.assign(user, patch) }
+    } catch { /* la retención nunca debe romper el ingreso */ }
+  }
+
+  /** Mails informativos (bienvenida, avisos de seguridad): nunca rompen la acción principal. */
+  const notify = async (method, user, extra = {}) => {
+    if (!mailer?.[method]) return
+    try { await mailer[method](user.email, { name: user.name, ...extra }) } catch (e) { console.error(`[auth] mail ${method} falló:`, e?.message) }
+  }
+
   const sendVerification = async (user) => {
     if (!mailer) return false
     const token = newToken()
     await store.updateUser(user.id, { verifyHash: sha256(token), verifyExpires: now() + VERIFY_TTL_MS })
-    try { await mailer.sendVerify(user.email, token); return true } catch { return false }
+    try { await mailer.sendVerify(user.email, token, { name: user.name }); return true } catch { return false }
   }
 
   /** Confirma que quien pide una acción delicada es el dueño: contraseña, o credencial de Google reciente. */
@@ -198,6 +214,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
 
       if ((await store.countSessions(user.id)) >= MAX_SESSIONS_PER_USER) await store.deleteSessionsOfUser(user.id)
       const cookie = await startSession(user.id, headers)
+      if (created) await notify('sendWelcome', user)
       return ok({ user: pub(user), library: normalizeLibrary(user.library), created }, [cookie])
     },
 
@@ -210,6 +227,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
     'GET me': async ({ headers }) => {
       const auth = await authenticate(headers)
       if (!auth) return fail(401, 'not_authenticated')
+      await touchActivity(auth.user)
       return ok({ user: pub(auth.user), library: normalizeLibrary(auth.user.library) })
     },
 
@@ -217,6 +235,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
     'POST sync': async ({ body, headers }) => {
       const auth = await authenticate(headers)
       if (!auth) return fail(401, 'not_authenticated')
+      await touchActivity(auth.user)
       if (JSON.stringify(body.library ?? null).length > MAX_LIBRARY_BYTES) return fail(413, 'library_too_large')
 
       const merged = mergeLibraries(body.library, auth.user.library, { now: now() })
@@ -237,7 +256,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
         if (user && mailer) {
           const token = newToken()
           await store.updateUser(user.id, { resetHash: sha256(token), resetExpires: now() + RESET_TTL_MS })
-          try { await mailer.sendReset(user.email, token) } catch { /* no revelamos fallos al cliente */ }
+          try { await mailer.sendReset(user.email, token, { name: user.name }) } catch { /* no revelamos fallos al cliente */ }
         }
       }
       return ok()   // siempre lo mismo: no revela si el mail existe
@@ -258,6 +277,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
         emailVerified: true,          // recibió el mail: demostró que es suyo
       })
       await store.deleteSessionsOfUser(user.id)   // cierra todas las sesiones abiertas
+      await notify('sendPasswordChanged', user)
       return ok()
     },
 
@@ -267,7 +287,9 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       if (!token || token.length > 100) return fail(400, 'token_invalid')
       const user = await store.findUserByToken('verify', sha256(token), now())
       if (!user) return fail(400, 'token_invalid')
+      const wasVerified = user.emailVerified === true
       await store.updateUser(user.id, { emailVerified: true, verifyHash: undefined, verifyExpires: undefined })
+      if (!wasVerified) await notify('sendWelcome', user)
       return ok()
     },
 
@@ -290,6 +312,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       if (problem) return fail(400, problem)
       await store.updateUser(auth.user.id, { passHash: await hashPassword(body.next) })
       await store.deleteSessionsOfUser(auth.user.id, auth.sessionId)   // cierra las demás sesiones
+      await notify('sendPasswordChanged', auth.user)
       return ok()
     },
 
@@ -299,6 +322,7 @@ export const createAuthApi = ({ store, mailer = null, secureCookies = true, now 
       if (await limited(`del:${auth.user.id}`, 5, HOUR)) return fail(429, 'too_many_requests')
       if (!(await confirmIdentity(auth.user, body))) return fail(401, 'invalid_credentials')
       await store.deleteUser(auth.user.id)
+      await notify('sendAccountDeleted', auth.user)
       // Lo que la persona publicó en la comunidad se borra con su cuenta (si falla, la cuenta ya no existe igual)
       try { await onUserDeleted?.(auth.user.id) } catch (e) { console.error('[auth] no se pudo limpiar la comunidad:', e?.message) }
       return ok({ ok: true }, [clearCookie()])

@@ -9,6 +9,9 @@ let store, mails, clock, api
 const mailer = () => ({
   sendVerify: async (to, token) => { mails.push({ kind: 'verify', to, token }) },
   sendReset: async (to, token) => { mails.push({ kind: 'reset', to, token }) },
+  sendWelcome: async (to, o) => { mails.push({ kind: 'welcome', to, name: o?.name }) },
+  sendPasswordChanged: async (to) => { mails.push({ kind: 'pwchanged', to }) },
+  sendAccountDeleted: async (to) => { mails.push({ kind: 'deleted', to }) },
 })
 
 beforeEach(() => {
@@ -350,5 +353,29 @@ describe('estado', () => {
     const res = await call('POST', 'login', { email: 'ana@mail.com', password: 'una-clave-larga-1' })
     expect(res.status).toBe(500)
     expect(JSON.stringify(res.body)).toBe('{"error":"server_error"}')
+  })
+})
+
+describe('mails informativos', () => {
+  it('bienvenida solo la primera vez que se confirma el mail', async () => {
+    await register()
+    const token = mails.find((m) => m.kind === 'verify').token
+    await call('POST', 'verify', { token })
+    expect(mails.filter((m) => m.kind === 'welcome')).toHaveLength(1)
+    expect(mails.find((m) => m.kind === 'welcome')).toMatchObject({ to: 'ana@mail.com', name: 'Ana' })
+  })
+  it('avisa por mail cuando cambia la contraseña y cuando se borra la cuenta', async () => {
+    const res = await register()
+    const h = withCookie(res)
+    await call('POST', 'password', { current: 'una-clave-larga-1', next: 'otra-clave-larga-2' }, h)
+    expect(mails.some((m) => m.kind === 'pwchanged')).toBe(true)
+    await call('POST', 'delete', { password: 'otra-clave-larga-2' }, h)
+    expect(mails.some((m) => m.kind === 'deleted')).toBe(true)
+  })
+  it('si el servicio de mail falla, la acción igual se completa', async () => {
+    api = createAuthApi({ store, mailer: { sendWelcome: async () => { throw new Error('boom') }, sendVerify: async () => {} }, now: () => clock })
+    await register()
+    const user = await store.findUserByEmail('ana@mail.com')
+    expect(user).toBeTruthy()
   })
 })

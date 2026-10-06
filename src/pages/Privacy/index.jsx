@@ -90,6 +90,7 @@ export default function Privacy() {
               <li>Tu <strong className="text-chalk/85">contraseña</strong>, nunca en texto: solo un hash irreversible (scrypt). Ni nosotros podemos verla.</li>
               <li>Tu <strong className="text-chalk/85">biblioteca</strong>: Mi lista, historial con progreso estimado, avisos de estreno, racha, logros y si sos Supporter.</li>
               <li>Tus <strong className="text-chalk/85">sesiones abiertas</strong>: fecha, tipo de navegador y un identificador del que solo guardamos el hash.</li>
+              <li>Los <strong className="text-chalk/85">días en que abriste la app con tu cuenta</strong> (solo la fecha, sin horas ni páginas), para medir cuánta gente vuelve y mejorar el servicio. Se conservan unos 4 meses.</li>
               <li>Contadores temporales anti-abuso (intentos de ingreso), con la IP convertida en un hash. Se borran solos en minutos u horas.</li>
             </ul>
             <p className="mt-3">

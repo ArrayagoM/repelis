@@ -182,6 +182,7 @@ function PanelBody() {
               </Card>
             </div>
 
+            <RetentionSection data={dash.retention} />
             <AccountsSection users={dash.users} />
             <CommunitySection stats={dash.community} />
           </>
@@ -236,7 +237,7 @@ function LiveSection({ live }) {
 const BigStat = ({ label, value, sub, tone = 'text-chalk' }) => (
   <div className="p-3 rounded-2xl bg-card border border-white/[0.06]">
     <p className="text-muted/70 text-[10px] uppercase tracking-widest font-semibold">{label}</p>
-    <p className={`font-display font-extrabold text-3xl leading-tight ${tone}`}>{fmtInt(value)}</p>
+    <p className={`font-display font-extrabold text-3xl leading-tight ${tone}`}>{typeof value === 'number' ? fmtInt(value) : value}</p>
     {sub && <p className="text-muted/60 text-[11px]">{sub}</p>}
   </div>
 )
@@ -454,6 +455,72 @@ function CommunitySection({ stats }) {
             </ul>
           )}
       </div>
+    </section>
+  )
+}
+
+// ─── Retención: ¿vuelve la gente que se registra? ───────────────────────
+const Pct = ({ v, eligible }) => (v === null || v === undefined
+  ? <span className="text-muted/50" title={eligible ? '' : 'Todavía no pasó el plazo para medirlo'}>—</span>
+  : <span className={v >= 30 ? 'text-emerald-300' : v >= 15 ? 'text-gold' : 'text-red-300'}>{v}%</span>)
+
+function RetentionSection({ data }) {
+  if (!data) return null
+  const { activity, returned, cohorts, users } = data
+  const label = { 1: 'Al día siguiente', 7: 'En la primera semana', 30: 'En el primer mes' }
+  return (
+    <section aria-label="Retención" className="space-y-4">
+      <h2 className="font-display font-bold text-lg text-chalk flex items-center gap-2"><ArrowClockwise size={18} className="text-gold" /> Retención de cuentas</h2>
+      {users === 0 ? (
+        <p className="p-4 rounded-2xl bg-card border border-white/[0.06] text-muted text-sm">
+          Todavía no hay datos de retención: se empiezan a medir desde que las cuentas vuelven a abrir la app. Sin inventar nada.
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <BigStat label="Activas hoy" value={activity.dau} sub="abrieron la app hoy" />
+            <BigStat label="Activas esta semana" value={activity.wau} sub="últimos 7 días" />
+            <BigStat label="Activas este mes" value={activity.mau} sub="últimos 30 días" />
+            <BigStat label="Pegajosidad" value={activity.stickiness === null ? '—' : `${activity.stickiness}%`} sub="activas hoy ÷ activas del mes" />
+          </div>
+          <div className="grid lg:grid-cols-2 gap-5">
+            <Card title="¿Vuelven después de registrarse?" Icon={Users}>
+              <ul className="space-y-3">
+                {returned.map((r) => (
+                  <li key={r.days} className="flex items-baseline gap-3">
+                    <span className="text-chalk text-sm flex-1">{label[r.days]}</span>
+                    <span className="font-display font-extrabold text-2xl"><Pct v={r.pct} eligible={r.eligible} /></span>
+                    <span className="text-muted/60 text-[11px] w-20 text-right">{r.eligible ? `${r.returned} de ${r.eligible}` : 'sin medir aún'}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-muted/60 text-[11px] mt-3">Solo se cuentan cuentas que ya cumplieron el plazo. El día del registro no cuenta como "volver". El fundador no se incluye.</p>
+            </Card>
+            <Card title="Cohortes por semana de registro" Icon={ChartLineUp}>
+              {cohorts.length === 0 ? <p className="text-muted text-sm">Sin registros todavía.</p> : (
+                <table className="w-full text-sm">
+                  <thead><tr className="text-muted text-[11px] uppercase tracking-wide text-left">
+                    <th className="pb-2 font-medium">Semana</th><th className="pb-2 font-medium text-right">Altas</th>
+                    <th className="pb-2 font-medium text-right">Día 1</th><th className="pb-2 font-medium text-right">Semana 1</th><th className="pb-2 font-medium text-right">Mes 1</th>
+                  </tr></thead>
+                  <tbody>
+                    {cohorts.map((c) => (
+                      <tr key={c.week} className="border-t border-white/[0.05]">
+                        <td className="py-2 text-chalk font-mono text-xs">{c.week}</td>
+                        <td className="py-2 text-right text-chalk">{c.size}</td>
+                        <td className="py-2 text-right"><Pct v={c.d1.pct} eligible={c.d1.eligible} /></td>
+                        <td className="py-2 text-right"><Pct v={c.d7.pct} eligible={c.d7.eligible} /></td>
+                        <td className="py-2 text-right"><Pct v={c.d30.pct} eligible={c.d30.eligible} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p className="text-muted/60 text-[11px] mt-3">Semana que empieza el lunes indicado. "—" = todavía no pasó el plazo.</p>
+            </Card>
+          </div>
+        </>
+      )}
     </section>
   )
 }

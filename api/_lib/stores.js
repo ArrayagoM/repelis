@@ -69,6 +69,12 @@ export const createMemoryStore = () => {
         recent: all.sort((a, b) => b.createdAt - a.createdAt).slice(0, 10).map((u) => ({ email: u.email, name: u.name, google: !!u.googleSub, createdAt: u.createdAt })),
       }
     },
+    /** Usuarios para retención: los creados desde `sinceMs` o vistos desde el día `sinceDay` (AAAA-MM-DD). */
+    async activityRows(sinceMs, sinceDay) {
+      return [...users.values()]
+        .filter((u) => u.createdAt >= sinceMs || (u.lastSeenDay && u.lastSeenDay >= sinceDay))
+        .map((u) => ({ email: u.email, createdAt: u.createdAt, seenDays: [...(u.seenDays || [])] }))
+    },
     async ensureIndexes() {},
   }
 }
@@ -161,9 +167,18 @@ export const createMongoStore = (db, { ObjectId }) => {
       }
     },
 
+    async activityRows(sinceMs, sinceDay) {
+      const rows = await users.find(
+        { $or: [{ createdAt: { $gte: sinceMs } }, { lastSeenDay: { $gte: sinceDay } }] },
+        { projection: { email: 1, createdAt: 1, seenDays: 1 } },
+      ).limit(20000).toArray()
+      return rows.map((u) => ({ email: u.email, createdAt: u.createdAt, seenDays: u.seenDays || [] }))
+    },
+
     async ensureIndexes() {
       await Promise.all([
         users.createIndex({ email: 1 }, { unique: true }),
+        users.createIndex({ lastSeenDay: -1 }),
         users.createIndex({ createdAt: -1 }),
         users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: 'string' } } }),
         users.createIndex({ verifyHash: 1 }, { sparse: true }),

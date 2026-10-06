@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import { authenticateSession, isRoot, checkWriteRequest } from './session.js'
 import { dayKey, ONLINE_WINDOW_MS } from './pulse.js'
+import { computeRetention } from './retention.js'
 
 const RANGES = [1, 7, 30]
 
@@ -143,6 +144,11 @@ export const createAdminApi = ({ store, stats, social = null, rootEmails = [], n
     ])
     const tot = totalsOf(dailies)
     const ptot = totalsOf(prevDailies)
+    // Retención: solo cuentas reales (el fundador no cuenta). Usa los días en que cada persona abrió la app con su cuenta.
+    const retentionOf = async () => {
+      const rows = await store.activityRows(t - 90 * 86400000, addDays(today, -31))
+      return computeRetention(rows.filter((u) => !isRoot({ email: u.email, emailVerified: true }, rootEmails)), t)
+    }
 
     const series = dailies.map((d) => ({
       date: d.day || d._id,
@@ -198,6 +204,7 @@ export const createAdminApi = ({ store, stats, social = null, rootEmails = [], n
           watchHoursMembers: round(tot.watchMember / 3600, 3), watchHoursGuests: round(tot.watchGuest / 3600, 3),
         },
         community: social ? await social.stats() : null,
+        retention: await retentionOf(),
         funnel: {
           gateShown, gateShownWatch: num(tot.ev.gate_shown_watch), gateShownList: num(tot.ev.gate_shown_list),
           signupsFromGate: num(tot.ev.signup_gate), signupsOther: num(tot.ev.signup), logins: num(tot.ev.login),
