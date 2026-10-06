@@ -221,6 +221,20 @@ describe('dashboard', () => {
   })
 })
 
+describe('datos de demostración', () => {
+  it('por defecto el panel NO está en modo demostración', async () => {
+    const h = await session(await mkUser({ email: ROOT }))
+    expect((await call('dashboard', h)).body.demo).toBe(false)
+    expect((await call('realtime', h)).body.demo).toBe(false)
+  })
+  it('si el almacenamiento se cargó con datos inventados, la API lo avisa (el panel muestra el cartel rojo)', async () => {
+    stats.demo = true
+    const h = await session(await mkUser({ email: ROOT }))
+    expect((await call('dashboard', h)).body.demo).toBe(true)
+    expect((await call('realtime', h)).body.demo).toBe(true)
+  })
+})
+
 describe('totalsOf', () => {
   it('suma contadores y mapas anidados', () => {
     const t = totalsOf([

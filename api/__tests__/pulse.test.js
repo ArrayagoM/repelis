@@ -179,6 +179,25 @@ describe('tiempo de visualización', () => {
   })
 })
 
+describe('robots', () => {
+  const botUAs = ['Googlebot/2.1', 'Mozilla/5.0 (compatible; bingbot/2.0)', 'facebookexternalhit/1.1', 'curl/8.0', 'python-requests/2.31', 'HeadlessChrome/120', 'Lighthouse', 'UptimeRobot/2.0', 'Vercel Screenshot Preview', '']
+  it('no se cuentan ni como visitantes ni como eventos ni quedan como "conectados"', async () => {
+    for (const ua of botUAs) {
+      await pulse({ body: { k: 'hb', sid: SID, page: 'home', nav: true }, headers: { ...hdr, 'user-agent': ua } })
+      await pulse({ body: { k: 'ev', sid: SID, name: 'signup' }, headers: { ...hdr, 'user-agent': ua } })
+    }
+    expect(g('visitors')).toBeUndefined()
+    expect(g('ev.signup')).toBeUndefined()
+    expect(stats._dump().presence.size).toBe(0)
+  })
+  it('los navegadores reales sí cuentan', async () => {
+    for (const ua of [MOBILE, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Safari/605.1.15 Version/17.0']) {
+      await pulse({ body: { k: 'hb', sid: `real-${ua.length}-padded-0000000`, page: 'home', nav: true }, headers: { ...hdr, 'user-agent': ua } })
+    }
+    expect(g('visitors')).toBe(3)
+  })
+})
+
 describe('eventos', () => {
   it('suman al contador del día', async () => {
     for (const name of ['gate_shown_watch', 'gate_shown_watch', 'signup_gate', 'donate_shown']) {

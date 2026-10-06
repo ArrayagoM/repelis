@@ -39,6 +39,9 @@ la página agrupada, la plataforma, si es miembro (sí/no) y qué título mira. 
 entre latidos consecutivos del mismo título (con tope), no lo que declare el navegador. No se guarda IP ni mail. El tráfico del fundador no se cuenta.
 Los datos viven en MongoDB (`presence` se borra sola en 1 h; `stats_daily` un documento por día; `stats_titles` se borra a los 120 días).
 
+**Sin datos inventados:** en producción el panel solo muestra tráfico real (empieza en cero desde que se publicó; no hay historia anterior). Los datos de demostración existen solo en desarrollo local y únicamente con `DEV_SEED=1`; si están activos, el panel muestra un cartel rojo.
+**Robots:** los buscadores, vistas previas de links y monitores (por su User-Agent) no se cuentan.
+
 Limitaciones: los números son **indicativos** (cualquiera puede mandar latidos falsos) y "visitantes" se suma día por día (el id rota a diario).
 Las apps nativas de React Native todavía no mandan latidos.
 

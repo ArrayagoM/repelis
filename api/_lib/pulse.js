@@ -27,6 +27,10 @@ export const PLATFORMS = new Set(['web', 'pwa', 'android-app', 'ios-app', 'deskt
 export const PAGES = new Set(['home', 'movie', 'tv', 'search', 'catalog', 'mi-lista', 'cuenta', 'calendario', 'cines', 'descargar', 'legal', 'other'])
 export const EVENTS = new Set(['gate_shown_watch', 'gate_shown_list', 'signup', 'signup_gate', 'login', 'donate_shown', 'donate_click'])
 
+// Robots y herramientas automáticas (buscadores, vistas previas de links, monitores, scripts): no son personas
+export const BOT_RE = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|facebookexternalhit|embedly|preview|monitor|uptime|pingdom|curl|wget|python-requests|httpclient|go-http|axios|node-fetch|okhttp|java\//i
+export const isBot = (ua) => !ua || BOT_RE.test(ua)
+
 const cleanText = (s, max) => String(s ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, max)
 
 const decodeSafe = (s) => { try { return decodeURIComponent(s) } catch { return s } }
@@ -39,6 +43,7 @@ export const createPulse = ({ stats, now = Date.now }) => async ({ body, headers
 
   const sid = body.sid
   if (typeof sid !== 'string' || !SID_RE.test(sid)) return bad()
+  if (isBot(headers['user-agent'])) return ok()           // no se cuentan robots (Vercel Analytics tampoco)
   const t = now()
   const day = dayKey(t)
 

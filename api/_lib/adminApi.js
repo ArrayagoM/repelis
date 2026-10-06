@@ -81,6 +81,7 @@ export const createAdminApi = ({ store, stats, rootEmails = [], now = Date.now }
     return {
       status: 200,
       body: {
+        demo: !!stats.demo,
         generatedAt: t,
         online: online.length,
         watching: watching.length,
@@ -135,6 +136,7 @@ export const createAdminApi = ({ store, stats, rootEmails = [], now = Date.now }
     return {
       status: 200,
       body: {
+        demo: !!stats.demo,
         generatedAt: t,
         range: { days: n, from: cur[0], to: today, timezone: 'America/Argentina/Buenos_Aires' },
         totals: {

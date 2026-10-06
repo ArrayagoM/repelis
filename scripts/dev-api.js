@@ -45,9 +45,12 @@ export const devAuthApi = () => ({
     const rootEmails = parseRootEmails(process.env.ROOT_EMAILS).length ? parseRootEmails(process.env.ROOT_EMAILS) : ['root@dev.test']
     const api = createAuthApi({ store, mailer, secureCookies: false, googleClientId, verifyGoogle, rootEmails })
 
-    // Estadísticas en memoria (con 7 días de datos de DEMOSTRACIÓN; DEV_SEED=0 para arrancar vacío)
+    // Estadísticas en memoria. Arrancan VACÍAS. Con DEV_SEED=1 se cargan 7 días de datos INVENTADOS y el panel lo avisa con un cartel rojo.
     const stats = createMemoryStats()
-    if (process.env.DEV_SEED !== '0') seedDemoStats({ stats }).catch((e) => console.error('[dev-seed]', e?.message))
+    if (process.env.DEV_SEED === '1') {
+      stats.demo = true
+      seedDemoStats({ stats }).catch((e) => console.error('[dev-seed]', e?.message))
+    }
     const pulse = createPulse({ stats })
     const admin = createAdminApi({ store, stats, rootEmails })
 

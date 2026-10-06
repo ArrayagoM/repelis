@@ -106,6 +106,12 @@ function PanelBody() {
           </button>
         </header>
 
+        {(dash?.demo || live?.demo) && (
+          <p role="alert" className="p-4 rounded-2xl bg-red-600/20 border-2 border-red-500 text-red-100 text-sm font-bold text-center uppercase tracking-wide">
+            ⚠ Datos de demostración inventados (solo desarrollo). No son tráfico real.
+          </p>
+        )}
+
         {error && <p role="alert" className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm">{error}</p>}
 
         <LiveSection live={live} />
