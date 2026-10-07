@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ROOM_ERRORS } from './roomRules'
 import { socialErrorMessage } from './socialRules'
 import { pulseEvent } from './pulse'
+import { getPlayback, positionForSync } from './playback'
 
 const BASE = '/api/rooms'
 
@@ -43,7 +44,8 @@ export const rooms = {
   voice: (code, patch) => request('voice', { method: 'POST', body: { code, ...patch } }),
   signal: (code, to, data) => request('signal', { method: 'POST', body: { code, to, data } }),
   signals: (code) => request('signals', { method: 'POST', body: { code } }),
-  sync: (code, since) => request('sync', { method: 'POST', body: { code, since } }),
+  sync: (code, since, pos) => request('sync', { method: 'POST', body: { code, since, ...(pos === undefined ? {} : { pos }) } }),
+  countdown: (code, seconds = 8) => request('countdown', { method: 'POST', body: { code, seconds } }),
   say: (code, text) => request('say', { method: 'POST', body: { code, text } }),
   react: (code, emoji) => request('react', { method: 'POST', body: { code, emoji } }),
   update: (code, patch) => request('update', { method: 'POST', body: { code, ...patch } }),
@@ -52,8 +54,9 @@ export const rooms = {
 }
 
 /** Velocidad de consulta según la actividad (ms). Pura para poder probarla. */
-export const pollDelay = ({ hidden, lastActivityAt, now = Date.now() }) => {
+export const pollDelay = ({ hidden, lastActivityAt, watching = false, now = Date.now() }) => {
   if (hidden) return 15_000
+  if (watching) return 2_500                       // mirando la película: hay que enterarse rápido de la cuenta regresiva
   return now - lastActivityAt < 60_000 ? 2_500 : 5_000
 }
 
@@ -83,6 +86,7 @@ export const useRoom = (code, enabled) => {
   const timer = useRef(null)
   const alive = useRef(true)
   const first = useRef(true)
+  const lastPos = useRef(null)          // lo último que mandamos de nuestra posición (para limpiarla una sola vez al cerrar el reproductor)
 
   const apply = useCallback((data) => {
     seq.current = Math.max(seq.current, data.seq || 0)
@@ -109,7 +113,10 @@ export const useRoom = (code, enabled) => {
 
     const loop = async () => {
       if (!alive.current) return
-      const r = await rooms.sync(code, seq.current)
+      const pos = positionForSync(getPlayback())
+      const posArg = pos || (lastPos.current ? null : undefined)
+      const r = await rooms.sync(code, seq.current, posArg)
+      if (r.ok) lastPos.current = pos
       if (!alive.current) return
       if (r.ok) apply(r.data)
       else if (r.error === 'not_member') {
@@ -118,7 +125,7 @@ export const useRoom = (code, enabled) => {
         if (j.ok) apply(j.data); else return setState((s) => ({ ...s, status: 'error', error: j.error }))
       } else if (FATAL.has(r.error)) return setState((s) => ({ ...s, status: 'error', error: r.error }))
       // errores de red o del servidor: seguimos intentando con calma
-      timer.current = setTimeout(loop, r.ok ? pollDelay({ hidden: document.hidden, lastActivityAt: lastActivity.current }) : 8000)
+      timer.current = setTimeout(loop, r.ok ? pollDelay({ hidden: document.hidden, lastActivityAt: lastActivity.current, watching: document.body.classList.contains('player-active') }) : 8000)
     }
 
     setState((s) => ({ ...s, status: 'joining', error: null }))

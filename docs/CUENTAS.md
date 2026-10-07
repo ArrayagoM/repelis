@@ -159,6 +159,14 @@ Llamada de voz dentro de la sala, **WebRTC en malla**: el audio va directo entre
 - **Redes difíciles:** por defecto se usa STUN público (alcanza para la mayoría). Para el ~15 % de redes que bloquean la conexión directa se puede sumar un servidor **TURN** con la variable `ICE_SERVERS` (JSON, `turn:`/`turns:`/`stun:`). `VOICE_DISABLED=1` apaga la voz.
 - **Opcional, no desplegado:** `voice-server/` es un servidor de WebSocket equivalente para tener señalización en tiempo real pura; hoy no hace falta (se puede alojar gratis en Cloudflare Workers o Render si algún día se quiere).
 
+### Ver la película al mismo tiempo (sincronía)
+Los reproductores son de terceros (iframes): **no se pueden controlar desde afuera** (no aceptan pausar ni saltar). Lo que se hace para acercar a todos:
+1. **Arranque a la hora:** si la sala tiene película y horario, a la hora exacta (reloj del servidor) se abre el reproductor solo para todos (casilla "Abrir la película sola", activada por defecto).
+2. **Cuenta regresiva común (8 s):** el anfitrión toca el cronómetro y todos ven "8…1 ¡PLAY!" llegar a cero a la vez (alineada con el reloj del servidor, con pitidos) y dan play juntos. Sirve con cualquier reproductor y también para reanudar después de una pausa.
+3. **Minuto de cada persona:** si el reproductor informa su posición (mensajes `PLAYER_EVENT` con `currentTime`; confirmado en VidLink, ver `src/lib/playback.js`), se envía en cada consulta de la sala y cada quien ve "Sincronizado / +N s / −N s" respecto del anfitrión con instrucciones: "pausá N s" (con cuenta propia) o "llevá tu video al minuto mm:ss".
+- **Límite honesto:** no hay forma de forzar el video ajeno; la precisión depende de la conexión y del servidor de video de cada quien. Si un reproductor no informa el minuto, queda la cuenta regresiva.
+- Posición: `room_members.pos` (vence a los 20 s). Cuenta regresiva: `POST /api/rooms/countdown` (5–15 s, 6 por minuto), guarda `room.sync = { id, at, seconds }`.
+
 ## Probar
 
 - **Local:** `npm run dev` incluye una API de cuentas **en memoria** (`scripts/dev-api.js`); los mails se imprimen en la terminal.

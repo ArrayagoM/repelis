@@ -7,6 +7,7 @@ import {
   SkipForward, SkipBack, ArrowSquareOut, Warning,
 } from '@phosphor-icons/react'
 import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
+import { reportPlayerEvent, clearPlayback } from '../../lib/playback'
 import { getOrderedSources, buildUrl, rememberSource, DEFAULT_ALLOW } from '../../lib/playerSources'
 import { getNetworkInfo } from '../../lib/network'
 import { getServerHistory, reportServerFailure } from '../../lib/serverHealth'
@@ -270,12 +271,13 @@ export default function PlayerModal() {
     const handler = (e) => {
       const d = e.data
       if (!d) return
+      reportPlayerEvent(d)          // minuto de reproducción (para sincronizar las salas)
       const evt = d.event || d.type
       const isPlay = evt === 'play' || evt === 'playing' || evt === 'started' || evt === 'PLAYER_EVENT'
       if (isPlay) lockSuccess(sources[srcIdx]?.id)
     }
     window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
+    return () => { window.removeEventListener('message', handler); clearPlayback() }
   }, [isOpen, srcIdx, sources, lockSuccess])
 
   const onIframeLoad = useCallback(() => {

@@ -14,6 +14,7 @@ import { showToast } from '../../lib/toast'
 import { useSEO } from '../../lib/useSEO'
 import { Avatar } from '../../components/Community'
 import VoiceControls from '../../components/VoiceControls'
+import SyncControls from '../../components/SyncControls'
 import { phaseLabel, useCountdown } from '../../components/RoomBits'
 
 export default function Sala() {
@@ -115,6 +116,8 @@ function RoomView({ code, base }) {
   const [editing, setEditing] = useState(false)
   const [when, setWhen] = useState('')
   const announced = useRef(false)
+  const [autoOpen, setAutoOpen] = useState(() => { try { return localStorage.getItem('lifehigh:room:autoopen') !== '0' } catch { return true } })
+  const toggleAuto = (v) => { setAutoOpen(v); try { localStorage.setItem('lifehigh:room:autoopen', v ? '1' : '0') } catch { /* sin storage */ } }
 
   const url = typeof window !== 'undefined' ? `${window.location.origin}/sala/${code}` : ''
   const waLink = `https://wa.me/?text=${encodeURIComponent(`Sumate a mi sala "${room.title}" en Life High: ${url}`)}`
@@ -122,8 +125,10 @@ function RoomView({ code, base }) {
   useEffect(() => {
     if (room.phase === 'scheduled' && started && !announced.current) {
       announced.current = true
-      showToast({ icon: '🍿', title: '¡Es la hora!', text: 'Dale play a la película.', ttl: 6000, tone: 'green' })
+      showToast({ icon: '🍿', title: '¡Es la hora!', text: autoOpen && room.item?.type === 'movie' ? 'Abrimos la película para que todos arranquen juntos.' : 'Dale play a la película.', ttl: 6000, tone: 'green' })
+      if (autoOpen && room.item?.type === 'movie') watchHere()          // a la hora exacta todos abren el reproductor a la vez
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, room.phase])
 
   const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { /* sin portapapeles */ } }
@@ -178,6 +183,11 @@ function RoomView({ code, base }) {
               </div>
             </div>
           )}
+          {!closed && room.item?.type === 'movie' && (
+            <label className="flex items-center justify-center gap-2 text-xs text-muted cursor-pointer">
+              <input type="checkbox" checked={autoOpen} onChange={(e) => toggleAuto(e.target.checked)} className="accent-[#E8A020]" /> Abrir la película sola a la hora de arranque
+            </label>
+          )}
           {!closed && <p className="text-muted/70 text-xs max-w-md mx-auto">Mientras mirás, la barra de la sala queda abajo para hablar y reaccionar sin tapar la pantalla. Cada quien reproduce la película en su pantalla.</p>}
         </section>
 
@@ -214,6 +224,7 @@ function RoomView({ code, base }) {
       <div className="fixed z-[130] left-1/2 -translate-x-1/2 bottom-4 max-w-[calc(100vw-1rem)]">
         <div className="flex items-center gap-1.5 px-2 py-2 rounded-full bg-card/95 backdrop-blur border border-white/10 shadow-2xl" role="toolbar" aria-label="Controles de la sala">
           <VoiceControls size={40} />
+          <SyncControls size={40} />
           <div className="flex gap-0.5 px-1" role="group" aria-label="Reacciones">
             {EMOJIS.map((e) => <button key={e} onClick={() => !closed && live.react(e)} disabled={closed} aria-label={`Reaccionar ${e}`} className="w-9 h-9 rounded-full text-xl hover:scale-125 transition disabled:opacity-40">{e}</button>)}
           </div>

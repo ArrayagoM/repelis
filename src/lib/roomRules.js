@@ -15,6 +15,18 @@ export const ROOM = {
   maxAheadMs: 14 * 86_400_000,
 }
 
+/** Sincronización de la película: cuenta regresiva común y posición de cada persona (si su reproductor la informa). */
+export const SYNC = { minSeconds: 5, maxSeconds: 15, defaultSeconds: 8, posFreshMs: 20_000, maxPosSeconds: 172_800 }
+
+/** @returns {{ t: number, playing: boolean } | null | undefined}  undefined = no vino; null = limpiar */
+export const normalizePos = (pos) => {
+  if (pos === undefined) return undefined
+  if (pos === null) return null
+  const t = Number(pos?.t)
+  if (!Number.isFinite(t) || t < 0 || t > SYNC.maxPosSeconds) return undefined
+  return { t: Math.round(t * 10) / 10, playing: pos.playing === true }
+}
+
 export const EMOJIS = ['👏', '😂', '😱', '😍', '🍿', '🔥']
 
 const CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'     // sin letras/números que se confunden (0 o, 1 l i)
@@ -90,5 +102,6 @@ export const ROOM_ERRORS = {
   too_fast: 'Vas muy rápido: esperá un segundo entre mensajes.',
   bad_emoji: 'Esa reacción no está disponible.',
   not_host: 'Solo el anfitrión puede hacer eso.',
+  sync_fast: 'Esperá un momento antes de pedir otra cuenta regresiva.',
   cannot_kick_self: 'No podés sacarte a vos mismo: cerrá la sala o salí.',
 }

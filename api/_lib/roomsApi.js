@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import { authenticateSession, isRoot, checkWriteRequest } from './session.js'
 import {
-  ROOM, EMOJIS, normalizeCode, randomCode, CODE_RE, validateRoomInput, validateMessage, roomPhase,
+  ROOM, EMOJIS, SYNC, normalizePos, normalizeCode, randomCode, CODE_RE, validateRoomInput, validateMessage, roomPhase,
 } from '../../src/lib/roomRules.js'
 import { normalizeHandle } from '../../src/lib/socialRules.js'
 
@@ -54,6 +54,7 @@ export const createRoomsApi = ({ store, social, rooms, ice = DEFAULT_ICE, voiceE
       phase: roomPhase(room, t), host: host ? { handle: host.handle, name: host.name } : null,
       online: online.length, maxMembers: ROOM.maxMembers, serverNow: t, voice: { available: !!voiceEnabled },
       isHost: isHostOf(room, viewer), isOwner: !!viewer && room.ownerId === viewer.id,
+      sync: room.sync || null,
     }
   }
 
@@ -66,11 +67,13 @@ export const createRoomsApi = ({ store, social, rooms, ice = DEFAULT_ICE, voiceE
     ])
     return {
       room: info, seq: room.seq,
-      members: online.map((m) => ({ handle: m.handle, name: m.name, host: m.userId === room.ownerId, me: m.userId === viewer.id, voice: voiceOf(m) })),
+      members: online.map((m) => ({ handle: m.handle, name: m.name, host: m.userId === room.ownerId, me: m.userId === viewer.id, voice: voiceOf(m), pos: posOf(m, t) })),
       messages: msgs.map((m) => ({ seq: m.seq, kind: m.kind, handle: m.handle, name: m.name, text: m.text, at: m.at, mine: !!m.userId && m.userId === viewer.id })),
     }
   }
 
+  /** Posición de reproducción informada por su reproductor (solo si es reciente). */
+  const posOf = (m, t) => (m.pos && t - m.pos.at <= SYNC.posFreshMs ? { t: m.pos.t, playing: !!m.pos.playing, at: m.pos.at } : null)
   const voiceOf = (m) => ({ on: !!m.voice?.on, muted: !!m.voice?.muted })
 
   /** Quien habla/entra necesita cuenta, @usuario y poder publicar. Devuelve { profile } o { error }. */
@@ -223,7 +226,8 @@ export const createRoomsApi = ({ store, social, rooms, ice = DEFAULT_ICE, voiceE
       if ((room.kicked || []).includes(viewer.id)) return fail('kicked')
       const m = await rooms.getMember(room.code, viewer.id)
       if (!m) return fail('not_member')
-      await rooms.upsertMember(room.code, { userId: viewer.id, handle: m.handle, name: m.name, lastSeen: now() })
+      const pos = normalizePos(body.pos)
+      await rooms.upsertMember(room.code, { userId: viewer.id, handle: m.handle, name: m.name, lastSeen: now(), ...(pos === undefined ? {} : { pos: pos ? { ...pos, at: now() } : null }) })
       const since = Math.max(0, Math.trunc(Number(body.since)) || 0)
       return ok(await stateFor(room, viewer, since))
     },
@@ -273,6 +277,22 @@ export const createRoomsApi = ({ store, social, rooms, ice = DEFAULT_ICE, voiceE
       const saved = await rooms.updateRoom(room.code, { title, startsAt, item, expiresAt: (startsAt || room.createdAt) + ROOM.lifeMs })
       if (startsAt !== room.startsAt) await system(room.code, startsAt ? 'El anfitrión cambió el horario de arranque' : 'El anfitrión quitó el horario: la sala está abierta')
       return ok({ room: await publicRoom(saved, viewer) })
+    },
+
+    // Anfitrión: cuenta regresiva común ("3, 2, 1… ¡play!"): todos la ven llegar a cero a la vez y dan play juntos.
+    'POST countdown': async ({ body, viewer }) => {
+      if (!viewer) return fail('not_authenticated')
+      const room = await loadRoom(body.code)
+      if (!room) return fail('room_not_found')
+      if (!isHostOf(room, viewer)) return fail('not_host')
+      const phase = roomPhase(room, now())
+      if (phase === 'closed' || phase === 'expired') return fail('room_closed')
+      if (await limited(`room:countdown:${room.code}`, 6, 60_000)) return fail('sync_fast', 429)
+      const seconds = Math.min(SYNC.maxSeconds, Math.max(SYNC.minSeconds, Math.trunc(Number(body.seconds)) || SYNC.defaultSeconds))
+      const sync = { id: (room.sync?.id || 0) + 1, at: now() + seconds * 1000, seconds }
+      await rooms.updateRoom(room.code, { sync })
+      await system(room.code, `Cuenta regresiva de ${seconds} segundos: ¡play juntos!`)
+      return ok({ sync, serverNow: now() })
     },
 
     'POST close': async ({ body, viewer }) => {

@@ -281,3 +281,61 @@ describe('seguridad', () => {
     expect(JSON.stringify(r.body)).toBe('{"error":"server_error"}')
   })
 })
+
+describe('sincronizar la película', () => {
+  it('cada persona puede informar en qué minuto va; los demás lo ven y se limpia al cerrar el reproductor', async () => {
+    const ana = await mkUser('ana'), bea = await mkUser('bea')
+    const { code } = await open(ana)
+    await post('join', { code }, bea.h)
+    await post('sync', { code, since: 0, pos: { t: 125.46, playing: true } }, ana.h)
+    let s = await post('sync', { code, since: 0, pos: { t: 120, playing: false } }, bea.h)
+    const byHandle = Object.fromEntries(s.body.members.map((m) => [m.handle, m.pos]))
+    expect(byHandle.ana).toEqual({ t: 125.5, playing: true, at: clock })
+    expect(byHandle.bea).toMatchObject({ t: 120, playing: false })
+    await post('sync', { code, since: 0, pos: null }, bea.h)                                      // cerró el reproductor
+    s = await post('sync', { code, since: 0 }, ana.h)
+    expect(s.body.members.find((m) => m.handle === 'bea').pos).toBeNull()
+    expect(s.body.members.find((m) => m.handle === 'ana').pos).not.toBeNull()                      // sin "pos" no se pisa lo anterior
+  })
+
+  it('una posición vieja deja de mostrarse y los valores raros se ignoran', async () => {
+    const ana = await mkUser('ana')
+    const { code } = await open(ana)
+    await post('sync', { code, since: 0, pos: { t: 50, playing: true } }, ana.h)
+    clock += 25_000
+    expect((await post('sync', { code, since: 0 }, ana.h)).body.members[0].pos).toBeNull()
+    for (const pos of [{ t: -5 }, { t: 'x' }, { t: 1e9 }, 'texto', { playing: true }]) {
+      await post('sync', { code, since: 0, pos }, ana.h)
+      expect((await post('sync', { code, since: 0 }, ana.h)).body.members[0].pos).toBeNull()
+    }
+  })
+
+  it('el anfitrión lanza una cuenta regresiva común; el resto no puede', async () => {
+    const ana = await mkUser('ana'), bea = await mkUser('bea')
+    const { code } = await open(ana)
+    await post('join', { code }, bea.h)
+    expect((await post('countdown', { code, seconds: 5 }, bea.h)).body.error).toBe('not_host')
+    expect((await post('countdown', { code, seconds: 5 }, H)).status).toBe(401)
+    const r = await post('countdown', { code, seconds: 8 }, ana.h)
+    expect(r.body.sync).toEqual({ id: 1, at: clock + 8000, seconds: 8 })
+    const s = await post('sync', { code, since: 0 }, bea.h)
+    expect(s.body.room.sync).toEqual({ id: 1, at: clock + 8000, seconds: 8 })
+    expect(s.body.messages.some((m) => /Cuenta regresiva de 8 segundos/.test(m.text))).toBe(true)
+    clock += 9000
+    expect((await post('countdown', { code, seconds: 5 }, ana.h)).body.sync.id).toBe(2)             // cada una tiene su número
+  })
+
+  it('los segundos se acotan entre 5 y 15 y se limita la frecuencia', async () => {
+    const ana = await mkUser('ana')
+    const { code } = await open(ana)
+    expect((await post('countdown', { code, seconds: 1 }, ana.h)).body.sync.seconds).toBe(5)
+    expect((await post('countdown', { code, seconds: 99 }, ana.h)).body.sync.seconds).toBe(15)
+    expect((await post('countdown', { code, seconds: 'x' }, ana.h)).body.sync.seconds).toBe(8)
+    let last
+    for (let i = 0; i < 4; i++) last = await post('countdown', { code, seconds: 5 }, ana.h)
+    expect(last.status).toBe(429)
+    await post('close', { code }, ana.h)
+    clock += 61_000
+    expect((await post('countdown', { code, seconds: 5 }, ana.h)).status).toBe(410)
+  })
+})

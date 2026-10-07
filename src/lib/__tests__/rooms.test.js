@@ -7,6 +7,7 @@ describe('cliente de salas', () => {
     expect(pollDelay({ hidden: false, lastActivityAt: now - 5_000, now })).toBe(2500)
     expect(pollDelay({ hidden: false, lastActivityAt: now - 120_000, now })).toBe(5000)
     expect(pollDelay({ hidden: true, lastActivityAt: now, now })).toBe(15000)
+    expect(pollDelay({ hidden: false, lastActivityAt: now - 999_999, watching: true, now })).toBe(2500)
   })
   it('junta mensajes sin repetir, ordenados y acotados', () => {
     const a = [{ seq: 1, text: 'a' }, { seq: 2, text: 'b' }]

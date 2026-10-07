@@ -26,6 +26,7 @@ import { AccountPromptHost } from './components/AccessGate'
 import PulseReporter from './components/PulseReporter'
 import { RoomProvider } from './lib/roomSession'
 import RoomDock, { RoomChatDrawer } from './components/RoomDock'
+import { SyncCountdownOverlay } from './components/SyncControls'
 import Home         from './pages/Home'
 
 // Code splitting — Home eager, resto bajo demanda
@@ -99,6 +100,7 @@ export default function App() {
       <AccountPromptHost />
       <PulseReporter />
       <RoomDock />
+      <SyncCountdownOverlay />
       <RoomChatDrawer />
       {!lowEnd && <div className="noise-overlay" aria-hidden="true" />}
       <Navbar onDonateClick={() => setDonateOpen(true)} />
