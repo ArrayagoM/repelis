@@ -110,6 +110,11 @@ export default function Privacy() {
             </p>
           </Section>
 
+          <Section title="3 bis. Si nos escribís por mail">
+            Si escribís a <strong className="text-chalk/85">info@lifehigh.site</strong>, guardamos tu mensaje (remitente, asunto y texto) solo para leerlo y responderte; lo ve únicamente el fundador del proyecto y se borra a los 6 meses.
+            De los mails que te enviamos (confirmación de cuenta, avisos de seguridad, resúmenes) guardamos el destinatario, el asunto y si fue entregado, nunca su contenido.
+          </Section>
+
           <Section title="4. Service Worker y cache">
             Para que la app cargue rápido offline, registramos un Service Worker que guarda en cache:
             <ul className="list-disc list-inside mt-2 space-y-1 marker:text-gold/60">

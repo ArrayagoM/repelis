@@ -61,10 +61,11 @@ const aggregateTitles = (docs) => {
 }
 const shapeTitle = (t) => ({ key: t.key, title: t.title, type: t.type, hours: round(t.seconds / 3600, 2), minutes: round(t.seconds / 60, 0), plays: t.plays })
 
-export const createAdminApi = ({ store, stats, social = null, rootEmails = [], now = Date.now }) => async ({ method, action, headers = {}, query = {}, body = {} }) => {
+export const createAdminApi = ({ store, stats, social = null, mail = null, rootEmails = [], now = Date.now }) => async ({ method, action, headers = {}, query = {}, body = {} }) => {
   const isModerate = method === 'POST' && action === 'moderate'
-  if (method !== 'GET' && !isModerate) return { status: 405, body: { error: 'method_not_allowed' } }
-  if (isModerate) {
+  const isWrite = isModerate || (method === 'POST' && action === 'mail-delete')
+  if (method !== 'GET' && !isWrite) return { status: 405, body: { error: 'method_not_allowed' } }
+  if (isWrite) {
     const bad = checkWriteRequest(Object.fromEntries(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])))
     if (bad) return { status: bad.status, body: { error: bad.error } }
   }
@@ -73,6 +74,25 @@ export const createAdminApi = ({ store, stats, social = null, rootEmails = [], n
   if (!isRoot(auth.user, rootEmails)) return { status: 404, body: { error: 'not_found' } }
 
   const t = now()
+
+  // ── Correo de info@lifehigh.site (enviados y recibidos) ──────────────
+  if (action === 'mail' && mail) {
+    const dir = query.dir === 'out' ? 'out' : 'in'
+    const limit = Math.min(50, Math.max(1, Math.trunc(Number(query.limit)) || 30))
+    const before = Number(query.before) > 0 ? Number(query.before) : Infinity
+    const [items, stats] = await Promise.all([mail.list({ dir, limit: limit + 1, before }), mail.stats()])
+    return { status: 200, body: { dir, items: items.slice(0, limit), hasMore: items.length > limit, stats, unread: stats.unread } }
+  }
+  if (action === 'mail-item' && mail) {
+    const m = await mail.get(String(query.id || ''))
+    if (!m) return { status: 404, body: { error: 'not_found' } }
+    if (m.dir === 'in' && !m.readAt) { await mail.markRead(m.id, t); m.readAt = t }
+    return { status: 200, body: { item: m } }
+  }
+  if (action === 'mail-delete' && mail) {
+    const ok = await mail.remove(String(body.id || ''))
+    return { status: ok ? 200 : 404, body: ok ? { ok: true } : { error: 'not_found' } }
+  }
 
   // ── Moderación de la comunidad ───────────────────────────────────────
   if (action === 'reports' && social) {
@@ -227,6 +247,7 @@ export const createAdminApi = ({ store, stats, social = null, rootEmails = [], n
           watchHoursMembers: round(tot.watchMember / 3600, 3), watchHoursGuests: round(tot.watchGuest / 3600, 3),
         },
         community: social ? await social.stats() : null,
+        mail: mail ? await mail.stats() : null,
         retention: await retentionOf(),
         funnel: {
           gateShown, gateShownWatch: num(tot.ev.gate_shown_watch), gateShownList: num(tot.ev.gate_shown_list),

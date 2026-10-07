@@ -5,6 +5,7 @@
 import { createMongoStats } from './statsStore.js'
 import { createMongoSocial } from './socialStore.js'
 import { createMongoRooms } from './roomsStore.js'
+import { createMongoMail } from './mailStore.js'
 
 // Interfaz (todo async). Los usuarios salen con `id` (string); los tiempos son milisegundos.
 
@@ -217,8 +218,9 @@ export const getBackend = (env = process.env) => {
       const stats = createMongoStats(db)
       const social = createMongoSocial(db, { ObjectId })
       const rooms = createMongoRooms(db)
-      await Promise.all([store.ensureIndexes(), stats.ensureIndexes(), social.ensureIndexes(), rooms.ensureIndexes()])
-      return { store, stats, social, rooms }
+      const mail = createMongoMail(db, { ObjectId })
+      await Promise.all([store.ensureIndexes(), stats.ensureIndexes(), social.ensureIndexes(), rooms.ensureIndexes(), mail.ensureIndexes()])
+      return { store, stats, social, rooms, mail }
     })().catch((e) => { cached = null; throw e })   // si falla, el próximo pedido reintenta
   }
   return cached

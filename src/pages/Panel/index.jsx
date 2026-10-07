@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ChartLineUp, Users, PlayCircle, Clock, Eye, UserPlus, ArrowClockwise, Television, FilmSlate, Heart, Funnel, Globe, UsersThree, Flag,
+  ChartLineUp, Users, PlayCircle, Clock, Eye, UserPlus, ArrowClockwise, Television, FilmSlate, Heart, Funnel, Globe, UsersThree, Flag, EnvelopeSimple,
 } from '@phosphor-icons/react'
 import AreaChart from '../../components/charts/AreaChart'
+import MailInbox from '../../components/MailInbox'
 import BarList from '../../components/charts/BarList'
 import { useAuth } from '../../lib/auth'
 import { useSEO } from '../../lib/useSEO'
@@ -54,6 +55,8 @@ const postJson = async (path, body) => {
 }
 
 function PanelBody() {
+  const [view, setView] = useState(() => (typeof window !== 'undefined' && window.location.hash === '#correo' ? 'mail' : 'stats'))
+  const [mailUnread, setMailUnread] = useState(null)
   const [days, setDays] = useState(7)
   const [dash, setDash] = useState(null)
   const [live, setLive] = useState(null)
@@ -113,6 +116,16 @@ function PanelBody() {
           </button>
         </header>
 
+        <nav className="flex gap-2" aria-label="Secciones del panel">
+          <button onClick={() => { setView('stats'); window.history.replaceState(null, '', '#') }} aria-pressed={view === 'stats'}
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm font-medium ${view === 'stats' ? 'bg-gold text-void border-gold' : 'glass border-white/10 text-muted hover:text-chalk'}`}><ChartLineUp size={14} /> Estadísticas</button>
+          <button onClick={() => { setView('mail'); window.history.replaceState(null, '', '#correo') }} aria-pressed={view === 'mail'}
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm font-medium ${view === 'mail' ? 'bg-gold text-void border-gold' : 'glass border-white/10 text-muted hover:text-chalk'}`}>
+            <EnvelopeSimple size={14} /> Correo
+            {(mailUnread ?? dash?.mail?.unread) > 0 && <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{mailUnread ?? dash?.mail?.unread}</span>}
+          </button>
+        </nav>
+
         {(dash?.demo || live?.demo) && (
           <p role="alert" className="p-4 rounded-2xl bg-red-600/20 border-2 border-red-500 text-red-100 text-sm font-bold text-center uppercase tracking-wide">
             ⚠ Datos de demostración inventados (solo desarrollo). No son tráfico real.
@@ -121,6 +134,8 @@ function PanelBody() {
 
         {error && <p role="alert" className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm">{error}</p>}
 
+        {view === 'mail' ? <MailInbox onUnread={setMailUnread} /> : (
+          <>
         <LiveSection live={live} />
 
         {loading && !dash ? <SkeletonBlocks /> : dash && (
@@ -193,6 +208,8 @@ function PanelBody() {
           (cada 1–2 min), el id de visitante cambia todos los días (por eso "visitantes" se suma día por día) y tu propio tráfico como fundador no se cuenta.
           No se guarda IP, mail ni historial de nadie en estas estadísticas.
         </p>
+          </>
+        )}
       </div>
     </motion.main>
   )

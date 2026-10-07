@@ -169,6 +169,14 @@ Los reproductores son de terceros (iframes): **no se pueden controlar desde afue
 - **Límite honesto:** no hay forma de forzar el video ajeno; la precisión depende de la conexión y del servidor de video de cada quien. Si un reproductor no informa el minuto, queda la cuenta regresiva.
 - Posición: `room_members.pos` (vence a los 20 s). Cuenta regresiva: `POST /api/rooms/countdown` (5–15 s, 6 por minuto), guarda `room.sync = { id, at, seconds }`.
 
+## Bandeja de correo (info@lifehigh.site) en `/panel → Correo`
+
+Solo la ve el fundador. **Enviados:** cada mail que manda la app (confirmación, restablecer, bienvenida, avisos de seguridad, resumen diario) queda registrado con destinatario, asunto, tipo y estado (enviado / entregado / rebotó / falló). **No** se guarda el cuerpo (los enlaces llevan tokens). **Recibidos:** lo que alguien escribe a `info@lifehigh.site`, con remitente, asunto, texto y adjuntos (nombres), con "sin leer", Responder (abre tu programa de correo) y Borrar. El HTML ajeno se muestra en un iframe aislado (sin scripts ni cargas externas). Se conservan 6 meses.
+
+- **Código:** `api/_lib/mailStore.js` (colección `mail_log`), `api/_lib/mailWebhook.js` (firma Svix + eventos), `api/mail/[action].js` (`POST /api/mail/webhook`), `src/components/MailInbox`.
+- **Para activar los recibidos:** (1) Resend → Domains → `lifehigh.site` → **Enable Receiving** y agregar en el DNS (Namecheap) el registro **MX** que Resend indica; (2) Resend → Webhooks → agregar `https://lifehigh.site/api/mail/webhook` con los eventos `email.received`, `email.sent`, `email.delivered`, `email.bounced`, `email.complained`, `email.delivery_delayed`, `email.failed`; (3) copiar su *Signing secret* (`whsec_…`) a Vercel como `RESEND_WEBHOOK_SECRET`; (4) opcional, para leer el cuerpo dentro del panel: `RESEND_READ_KEY` con una clave de Resend que permita leer mensajes recibidos (si no, se ve quién escribió y el asunto, y el contenido en Resend).
+- Sin firma válida el webhook responde 401 y no hace nada.
+
 ## Probar
 
 - **Local:** `npm run dev` incluye una API de cuentas **en memoria** (`scripts/dev-api.js`); los mails se imprimen en la terminal.

@@ -10,8 +10,9 @@ export default async function handler(req, res) {
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) return res.status(401).json({ error: 'unauthorized' })
   if (!process.env.MONGODB_URI) return res.status(503).json({ error: 'unavailable' })
   try {
-    const { store, social } = await getBackend()
-    const mailer = createMailer(process.env)
+    const { store, social, mail } = await getBackend()
+    const mailer = createMailer(process.env, fetch, { log: (m) => mail.add(m) })
+    await mail.prune(Date.now() - 180 * 86_400_000)                    // la bandeja guarda 6 meses
     const out = await runDigest({ store, social, mailer, site: mailer?.site })
     return res.status(200).json({ ok: true, ...out })
   } catch (e) {

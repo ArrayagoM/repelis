@@ -15,6 +15,8 @@ import { seedDemoStats } from './dev-seed.js'
 import { createMemorySocial } from '../api/_lib/socialStore.js'
 import { createSocialApi } from '../api/_lib/socialApi.js'
 import { createMemoryRooms } from '../api/_lib/roomsStore.js'
+import { createMemoryMail } from '../api/_lib/mailStore.js'
+import { handleEvent } from '../api/_lib/mailWebhook.js'
 import { createRoomsApi } from '../api/_lib/roomsApi.js'
 import { parseIceServers } from '../api/_lib/ice.js'
 
@@ -31,9 +33,16 @@ export const devAuthApi = () => ({
   configureServer(server) {
     const store = createMemoryStore()
     const base = () => `http://localhost:${server.config.server.port || 5173}`
+    const mail = createMemoryMail()
     const mailer = {
-      sendVerify: async (to, token) => console.log(`\n[dev-mail] Confirmar mail de ${to}:\n  ${base()}/cuenta/verificar?token=${token}\n`),
-      sendReset: async (to, token) => console.log(`\n[dev-mail] Restablecer contraseña de ${to}:\n  ${base()}/cuenta/restablecer?token=${token}\n`),
+      sendVerify: async (to, token) => { console.log(`
+[dev-mail] Confirmar mail de ${to}:
+  ${base()}/cuenta/verificar?token=${token}
+`); await mail.add({ dir: 'out', at: Date.now(), to, subject: 'Confirmá tu dirección de email · Life High', kind: 'verificar', status: 'sent' }) },
+      sendReset: async (to, token) => { console.log(`
+[dev-mail] Restablecer contraseña de ${to}:
+  ${base()}/cuenta/restablecer?token=${token}
+`); await mail.add({ dir: 'out', at: Date.now(), to, subject: 'Restablecé tu contraseña · Life High', kind: 'restablecer', status: 'sent' }) },
     }
     // Google: con GOOGLE_CLIENT_ID real en el entorno se verifica de verdad; si no, "Google falso" SOLO para desarrollo:
     // la credencial `fake:<sub>:<mail>:<nombre>` se acepta tal cual (así se prueba el flujo sin una cuenta de Google).
@@ -59,7 +68,7 @@ export const devAuthApi = () => ({
       seedDemoStats({ stats }).catch((e) => console.error('[dev-seed]', e?.message))
     }
     const pulse = createPulse({ stats })
-    const admin = createAdminApi({ store, stats, social, rootEmails })
+    const admin = createAdminApi({ store, stats, social, mail, rootEmails })
     // Push de mentira para desarrollo: acepta suscripciones y cuenta los envíos (no sale nada a la red)
     const devPush = { publicKey: 'dev-vapid-public-key', sent: [], async send(subs, payload) { devPush.sent.push({ subs: subs.length, payload }); return { sent: subs.length, gone: [] } } }
     const socialApi = createSocialApi({ store, social, push: devPush, rootEmails })
@@ -78,9 +87,15 @@ export const devAuthApi = () => ({
       const url = new URL(req.url || '/', 'http://localhost')
       const action = url.pathname.replace(/^\/+/, '').split('/')[0]
       const body = req.method === 'POST' ? await readJson(req) : {}
-      send(res, await admin({ method: req.method, action, headers: req.headers, query: { days: url.searchParams.get('days') }, body }))
+      send(res, await admin({ method: req.method, action, headers: req.headers, query: Object.fromEntries(url.searchParams), body }))
     })
     const roomsApi = createRoomsApi({ store, social, rooms, ice: parseIceServers(process.env.ICE_SERVERS), rootEmails })
+    // Solo desarrollo: simula que Resend avisó de un mail recibido (en producción lo hace el webhook firmado de /api/mail/webhook)
+    server.middlewares.use('/api/dev/inbox', async (req, res) => {
+      const body = await readJson(req)
+      const out = await handleEvent({ type: 'email.received', created_at: new Date().toISOString(), data: body }, { mail })
+      send(res, { status: 200, body: out })
+    })
     server.middlewares.use('/api/rooms', async (req, res) => {
       const url = new URL(req.url || '/', 'http://localhost')
       const action = url.pathname.replace(/^\/+/, '').split('/')[0]
