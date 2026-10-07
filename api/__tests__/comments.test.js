@@ -46,11 +46,12 @@ describe('reglas de comentarios', () => {
 })
 
 describe('opiniones en películas y series', () => {
-  it('leer es libre; opinar requiere cuenta, perfil y mail confirmado o 1 h', async () => {
+  it('leer es libre; opinar requiere cuenta y mail confirmado o 1 h (el perfil se crea solo)', async () => {
     expect((await get('comments', { target: 'movie:603' })).status).toBe(200)
     expect((await post('comment', { target: 'movie:603', text: 'Genial' }, H)).status).toBe(401)
     const noProfile = await mkUser()
-    expect((await post('comment', { target: 'movie:603', text: 'Genial' }, noProfile.h)).body.error).toBe('profile_required')
+    expect((await post('comment', { target: 'movie:603', text: 'Genial' }, noProfile.h)).status).toBe(200)
+    expect(await social.getProfile(noProfile.user.id)).toMatchObject({ handle: expect.stringMatching(/^[a-z0-9_]{3,20}$/) })
     const fresh = await mkUser({ emailVerified: false, createdAt: clock - 60_000 })
     expect((await post('comment', { target: 'movie:603', text: 'Genial' }, fresh.h)).body.error).toBe('cannot_publish_yet')
   })

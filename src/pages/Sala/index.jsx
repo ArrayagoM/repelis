@@ -8,7 +8,6 @@ import { rooms, roomErrorText } from '../../lib/rooms'
 import { EMOJIS, ROOM, extractCode } from '../../lib/roomRules'
 import { useRoomSession } from '../../lib/roomSession'
 import { useAuth } from '../../lib/auth'
-import { useMe } from '../../lib/social'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { showToast } from '../../lib/toast'
 import { useSEO } from '../../lib/useSEO'
@@ -22,9 +21,8 @@ export default function Sala() {
   const { code: raw } = useParams()
   const code = extractCode(raw)
   const auth = useAuth()
-  const me = useMe()
   const s = useRoomSession()
-  const ready = auth.status === 'in' && !!me.data?.profile
+  const ready = auth.status === 'in'
 
   const [info, setInfo] = useState({ loading: true, room: null, error: '' })
   useSEO({ title: info.room ? `Sala: ${info.room.title}` : 'Sala', description: 'Sala de cine digital de Life High', noindex: true })
@@ -61,11 +59,8 @@ export default function Sala() {
           <p className="text-muted text-sm">Sala de @{r.host?.handle || 'alguien'} · {phaseLabel(r)} · {r.online} conectados</p>
           {r.item && <p className="text-chalk/80 text-sm">Película: <strong>{r.item.title}</strong></p>}
           <LockKey size={20} className="text-gold mx-auto mt-2" />
-          {auth.status !== 'in'
-            ? <><p className="text-muted text-sm">Para entrar necesitás una cuenta gratis.</p>
-                <Link to={`/cuenta?modo=registro&volver=/sala/${code}`} className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear cuenta o ingresar</Link></>
-            : <><p className="text-muted text-sm">Elegí tu @usuario para que te vean en la sala.</p>
-                <Link to="/perfil" className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi perfil</Link></>}
+          <p className="text-muted text-sm">Para entrar necesitás una cuenta gratis.</p>
+          <Link to={`/cuenta?modo=registro&volver=/sala/${code}`} className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear cuenta o ingresar</Link>
         </div>
       </main>
     )

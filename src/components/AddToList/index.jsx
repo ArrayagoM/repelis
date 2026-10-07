@@ -35,7 +35,6 @@ export default function AddToList({ item, className = '' }) {
   }
 
   const lists = me.data?.lists || []
-  const hasProfile = !!me.data?.profile
 
   const addTo = async (list) => {
     setBusy(list.id)
@@ -60,12 +59,7 @@ export default function AddToList({ item, className = '' }) {
       </button>
       {open && (
         <div role="menu" className="absolute z-30 left-0 mt-2 w-72 max-h-80 overflow-auto rounded-2xl bg-card border border-white/10 shadow-2xl p-2">
-          {!hasProfile ? (
-            <div className="p-3 text-sm text-muted">
-              Para armar listas primero elegí tu @usuario.
-              <button onClick={() => { setOpen(false); navigate('/perfil') }} className="mt-3 w-full px-4 py-2 rounded-full bg-gold text-void font-bold hover:bg-gold-hi">Crear mi perfil</button>
-            </div>
-          ) : (
+          {(
             <>
               {lists.map((l) => {
                 const already = !!busy && busy === l.id

@@ -21,7 +21,7 @@ export function RoomProvider({ children }) {
   const [code, setCode] = useState(read)
   const [chatOpen, setChatOpen] = useState(false)
   const [unread, setUnread] = useState(0)
-  const ready = auth.status === 'in' && !!me.data?.profile
+  const ready = auth.status === 'in'
   const live = useRoom(code, ready && !!code)
   const voice = useVoice(code, rooms)
 

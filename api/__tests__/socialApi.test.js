@@ -105,9 +105,10 @@ describe('perfil', () => {
 })
 
 describe('listas', () => {
-  it('crear una lista exige perfil', async () => {
-    const { h } = await mkUser()
-    expect((await post('list', listBody(), h)).body.error).toBe('profile_required')
+  it('crear una lista sin perfil lo crea solo (no hay formulario previo)', async () => {
+    const { h, user } = await mkUser()
+    expect((await post('list', listBody(), h)).status).toBe(200)
+    expect(await social.getProfile(user.id)).toBeTruthy()
   })
   it('crea, edita y borra una lista propia', async () => {
     const { h } = await withProfile('ana')

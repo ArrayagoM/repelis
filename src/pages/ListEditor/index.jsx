@@ -121,15 +121,6 @@ export default function ListEditor() {
       </main>
     )
   }
-  if (me.loaded && !me.data?.profile) {
-    return (
-      <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-chalk font-display font-bold text-xl">Primero elegí tu @usuario</p>
-        <p className="text-muted text-sm max-w-sm">Tu perfil es lo que verá la gente al lado de tus listas. Es rápido.</p>
-        <Link to="/perfil" className="px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi perfil</Link>
-      </main>
-    )
-  }
   if (error && editing && !form.title) {
     return <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-3 px-6 text-center"><p className="text-muted text-sm">{error}</p><Link to="/perfil" className="text-gold text-sm hover:underline">Volver a mi perfil</Link></main>
   }

@@ -62,7 +62,6 @@ export default function Comments({ target, title = 'Opiniones de la comunidad' }
   useEffect(() => { setState({ loading: true, error: '', comments: [], summary: null, hasMore: false, mine: null, likes: null }); setText(''); setRating(0) }, [target])
   useEffect(() => { load() }, [target, auth.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasProfile = !!me.data?.profile
   const trimmed = text.trim()
 
   const submit = async (e) => {
@@ -111,11 +110,7 @@ export default function Comments({ target, title = 'Opiniones de la comunidad' }
       </div>
 
       {/* Escribir */}
-      {auth.status === 'in' && !hasProfile && me.loaded ? (
-        <p className="mb-6 p-4 rounded-2xl bg-card border border-white/[0.06] text-sm text-muted">
-          Para opinar, primero elegí tu @usuario. <Link to="/perfil" className="text-gold hover:underline">Crear mi perfil</Link>
-        </p>
-      ) : (
+      {(
         <form onSubmit={submit} className="mb-8 p-4 rounded-2xl bg-card border border-white/[0.06] space-y-3">
           {withRating && <StarPicker value={rating} onChange={setRating} />}
           <label className="block">

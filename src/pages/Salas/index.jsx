@@ -6,7 +6,6 @@ import { searchMulti, IMG_W342 } from '../../api/tmdb'
 import { rooms, roomErrorText } from '../../lib/rooms'
 import { extractCode, ROOM } from '../../lib/roomRules'
 import { useAuth } from '../../lib/auth'
-import { useMe } from '../../lib/social'
 import { useSEO } from '../../lib/useSEO'
 import { phaseLabel } from '../../components/RoomBits'
 
@@ -30,7 +29,6 @@ export default function Salas() {
     description: 'Armá una sala, invitá a tus amigos con un enlace y esperen juntos la hora de arranque con chat y reacciones. Gratis.',
   })
   const auth = useAuth()
-  const me = useMe()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -46,7 +44,7 @@ export default function Salas() {
   const [mine, setMine] = useState(null)
   const alive = useRef(true)
 
-  const ready = auth.status === 'in' && !!me.data?.profile
+  const ready = auth.status === 'in'
 
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   useEffect(() => {
@@ -101,12 +99,6 @@ export default function Salas() {
             <LockKey size={32} className="text-gold mx-auto mb-3" weight="fill" />
             <p className="text-chalk font-display font-bold text-lg">Para crear o entrar a una sala necesitás una cuenta gratis</p>
             <Link to="/cuenta?modo=registro&volver=/salas" className="inline-block mt-4 px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi cuenta</Link>
-          </div>
-        ) : !ready && me.loaded ? (
-          <div className="p-8 rounded-3xl bg-card border border-white/[0.06] text-center">
-            <p className="text-chalk font-display font-bold text-lg">Primero elegí tu @usuario</p>
-            <p className="text-muted text-sm mt-1">Es lo que verán los demás en el chat.</p>
-            <Link to="/perfil" className="inline-block mt-4 px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi perfil</Link>
           </div>
         ) : (
           <div className="grid lg:grid-cols-[1.4fr_1fr] gap-8">

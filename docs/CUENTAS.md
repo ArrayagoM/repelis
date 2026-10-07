@@ -142,6 +142,8 @@ Para activarlos:
 
 ## Salas (cine digital) — fase 1
 
+**Sin formularios:** en cada ficha de película/serie hay un botón **"Iniciar sala en grupo"** (con cuenta, un toque abre la sala y entra). El **@usuario se crea solo** la primera vez que alguien entra a una sala, opina o arma una lista (`api/_lib/autoProfile.js`: sale del nombre de la cuenta, nunca del mail, único y editable en `/perfil`).
+
 `/salas` (crear / entrar con enlace o código / mis salas) y `/sala/<código>`. Cada sala tiene un código de 7 caracteres, un anfitrión, una película opcional y un horario opcional con **cuenta regresiva común** (el reloj del cliente se alinea con el del servidor). Hasta 12 personas, chat, 6 reacciones animadas, lista de conectados y, para el anfitrión, cambiar horario, sacar gente y cerrar (el fundador también puede cerrar/sacar).
 
 - **Cada quien reproduce la película en su pantalla** (los reproductores son de terceros y no se pueden sincronizar): la sala sirve para coordinar y charlar. La voz es la fase 2.

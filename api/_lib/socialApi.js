@@ -7,6 +7,7 @@
 //  · Moderación: 3 reportes distintos ocultan una lista automáticamente; el fundador revisa desde /panel.
 // ─────────────────────────────────────────────────────────────────────────
 import { authenticateSession, isRoot, checkWriteRequest } from './session.js'
+import { ensureProfile } from './autoProfile.js'
 import {
   LIMITS, planOf, normalizeHandle, handleProblem, cleanText, hasLink, sanitizeItem, validateListInput, validateBio, parseTarget, validateComment,
 } from '../../src/lib/socialRules.js'
@@ -167,8 +168,7 @@ export const createSocialApi = ({ store, social, push = null, now = Date.now, ro
     'POST list': async ({ body, viewer }) => {
       if (!viewer) return fail('not_authenticated')
       if (!canPublish(viewer)) return fail('cannot_publish_yet')
-      const profile = await social.getProfile(viewer.id)
-      if (!profile) return fail('profile_required')
+      const profile = await ensureProfile(social, viewer, now())
       if (await limited(`soc:list:${viewer.id}`, 30, HOUR)) return fail('too_many_requests')
 
       const checked = validateListInput(body, viewer)
@@ -346,8 +346,7 @@ export const createSocialApi = ({ store, social, push = null, now = Date.now, ro
     'POST comment': async ({ body, viewer }) => {
       if (!viewer) return fail('not_authenticated')
       if (!canPublish(viewer)) return fail('cannot_publish_yet')
-      const profile = await social.getProfile(viewer.id)
-      if (!profile) return fail('profile_required')
+      const profile = await ensureProfile(social, viewer, now())
       if (await limited(`soc:comment:${viewer.id}`, 20, HOUR)) return fail('too_many_requests')
 
       const checked = validateComment(body)

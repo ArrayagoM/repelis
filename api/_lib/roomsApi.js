@@ -12,6 +12,7 @@ import {
   ROOM, EMOJIS, SYNC, normalizePos, normalizeCode, randomCode, CODE_RE, validateRoomInput, validateMessage, roomPhase,
 } from '../../src/lib/roomRules.js'
 import { normalizeHandle } from '../../src/lib/socialRules.js'
+import { ensureProfile } from './autoProfile.js'
 
 const HOUR = 3_600_000
 const NEW_ACCOUNT_WAIT_MS = HOUR
@@ -80,8 +81,7 @@ export const createRoomsApi = ({ store, social, rooms, ice = DEFAULT_ICE, voiceE
   const speaker = async (viewer) => {
     if (!viewer) return { error: 'not_authenticated' }
     if (!canPublish(viewer)) return { error: 'cannot_publish_yet' }
-    const profile = await social.getProfile(viewer.id)
-    return profile ? { profile } : { error: 'profile_required' }
+    return { profile: await ensureProfile(social, viewer, now(), rand) }
   }
 
   const memberOf = async (room, viewer) => {

@@ -60,10 +60,13 @@ describe('reglas de salas', () => {
 })
 
 describe('crear y ver una sala', () => {
-  it('crear exige cuenta con @usuario y mail confirmado o 1 h', async () => {
+  it('crear exige cuenta y mail confirmado o 1 h; el @usuario se crea solo', async () => {
     expect((await post('create', { title: 'Cine' }, H)).status).toBe(401)
     const sinPerfil = await mkUser(null)
-    expect((await post('create', { title: 'Cine' }, sinPerfil.h)).body.error).toBe('profile_required')
+    const made = await post('create', { title: 'Cine' }, sinPerfil.h)
+    expect(made.status).toBe(200)
+    expect(made.body.room.host.handle).toMatch(/^[a-z0-9_]{3,20}$/)
+    expect((await social.getProfile(sinPerfil.user.id)).handle).toBe(made.body.room.host.handle)
     const nueva = await mkUser('nueva', { emailVerified: false, createdAt: T0 - 60_000 })
     expect((await post('create', { title: 'Cine' }, nueva.h)).body.error).toBe('cannot_publish_yet')
   })
