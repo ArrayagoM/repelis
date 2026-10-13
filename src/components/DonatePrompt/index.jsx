@@ -9,6 +9,7 @@ import { DONATE_OPTIONS } from '../DonateModal'
 import DonateGoal from '../DonateGoal'
 import { showToast } from '../../lib/toast'
 import { pulseEvent } from '../../lib/pulse'
+import { tt } from '../../lib/i18n'
 
 /**
  * Pedido de donación DESPUÉS de ver algo (no antes de reproducir).
@@ -32,7 +33,7 @@ export default function DonatePrompt() {
   const donate = () => { recordPromptDonate(); pulseEvent('donate_click'); setOpen(false) }
   const already = () => {
     markSupporter(); setOpen(false)
-    showToast({ icon: '💛', title: '¡Gracias por apoyar Life High!', text: 'Ya no te vamos a pedir más. Te dejamos la insignia Supporter.', ttl: 7000 })
+    showToast({ icon: '💛', title: tt("¡Gracias por apoyar Life High!"), text: tt("Ya no te vamos a pedir más. Te dejamos la insignia Supporter."), ttl: 7000 })
   }
 
   return (
@@ -40,10 +41,10 @@ export default function DonatePrompt() {
       {open && (
         <motion.div
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
-          role="dialog" aria-label="Apoyá Life High"
+          role="dialog" aria-label={tt("Apoyá Life High")}
           className="fixed z-[105] left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[26rem] bottom-4 p-4 rounded-2xl bg-[#0E0E18]/97 backdrop-blur border border-gold/30 shadow-[0_24px_64px_rgba(0,0,0,0.7)]"
         >
-          <button onClick={dismiss} aria-label="Cerrar"
+          <button onClick={dismiss} aria-label={tt("Cerrar")}
             className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-muted hover:text-chalk hover:bg-white/5">
             <X size={13} weight="bold" />
           </button>
@@ -52,9 +53,9 @@ export default function DonatePrompt() {
               <Coffee size={18} weight="fill" className="text-void" />
             </span>
             <div>
-              <p className="text-chalk font-display font-bold text-base leading-snug">¿Disfrutaste lo que viste?</p>
+              <p className="text-chalk font-display font-bold text-base leading-snug">{tt("¿Disfrutaste lo que viste?")}</p>
               <p className="text-muted text-xs leading-relaxed mt-1">
-                Life High es gratis y lo mantiene una persona. Si podés, un cafecito ayuda a pagar los servidores.
+                {tt("Life High es gratis y lo mantiene una persona. Si podés, un cafecito ayuda a pagar los servidores.")}
               </p>
             </div>
           </div>
@@ -70,8 +71,8 @@ export default function DonatePrompt() {
             ))}
           </div>
           <div className="flex items-center justify-between mt-3 text-xs">
-            <button onClick={already} className="text-gold/90 hover:text-gold underline underline-offset-2">Ya doné ❤</button>
-            <button onClick={dismiss} className="text-muted hover:text-chalk">Ahora no</button>
+            <button onClick={already} className="text-gold/90 hover:text-gold underline underline-offset-2">{tt("Ya doné ❤")}</button>
+            <button onClick={dismiss} className="text-muted hover:text-chalk">{tt("Ahora no")}</button>
           </div>
         </motion.div>
       )}

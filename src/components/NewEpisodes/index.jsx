@@ -7,6 +7,7 @@ import { usePersonal } from '../../lib/auth'
 import { loadNewEpisodes } from '../../lib/newEpisodes'
 import { dateLabel } from '../../lib/reminders'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 const TOASTED_KEY = 'lifehigh:epToasted:v1'
 const wasToasted = (k) => { try { return (JSON.parse(localStorage.getItem(TOASTED_KEY) || '[]')).includes(k) } catch { return false } }
@@ -47,7 +48,7 @@ export function NewEpisodesRow() {
       key: `${show.id}:${info.season}:${info.episode}`,
       poster: show.poster,
       title: show.title,
-      sub: isNew ? (info.daysAgo === 0 ? `${code} · salió hoy` : `${code} · hace ${info.daysAgo} d`) : `${code} · ${dateLabel(info.date)}`,
+      sub: isNew ? (info.daysAgo === 0 ? tt("{code} · salió hoy", { code: code }) : `${code} · hace ${info.daysAgo} d`) : `${code} · ${dateLabel(info.date)}`,
       chip: isNew ? 'Nuevo' : 'Pronto',
       chipTone: isNew ? 'green' : 'blue',
       playIcon: isNew,
@@ -64,7 +65,7 @@ export function NewEpisodesRow() {
     }
   })
 
-  return <PosterStrip id="nuevos-capitulos" title="Nuevos capítulos" badge="De tus series" badgeTone="green" items={items} />
+  return <PosterStrip id="nuevos-capitulos" title={tt("Nuevos capítulos")} badge={tt("De tus series")} badgeTone="green" items={items} />
 }
 
 /** Aviso global (una sola vez por episodio) cuando una serie que seguís estrenó capítulo. No renderiza nada. */
@@ -77,8 +78,8 @@ export function NewEpisodesWatcher() {
       if (wasToasted(k)) continue
       markToasted(k)
       showToast({
-        icon: '📺', title: `Capítulo nuevo de ${show.title}`, text: `T${info.season} E${info.episode}`,
-        actionLabel: 'Ver serie', to: `/tv/${show.id}`, ttl: 10000, tone: 'green',
+        icon: '📺', title: tt("Capítulo nuevo de {title}", { title: show.title }), text: `T${info.season} E${info.episode}`,
+        actionLabel: tt("Ver serie"), to: `/tv/${show.id}`, ttl: 10000, tone: 'green',
       })
     }
   }, [found])

@@ -4,6 +4,7 @@ import { useAuth, whenAuthSettled } from './auth'
 import { requestAccount } from './accountPrompt'
 import { socialErrorMessage } from './socialRules'
 import { pulseEvent } from './pulse'
+import { tt } from './i18n'
 
 const BASE = '/api/social'
 
@@ -24,7 +25,7 @@ const request = async (action, { method = 'GET', body, query } = {}) => {
   }
 }
 
-export const errorText = (code) => (code === 'network' ? 'No pudimos conectarnos. Revisá tu internet.' : socialErrorMessage(code))
+export const errorText = (code) => (code === 'network' ? tt("No pudimos conectarnos. Revisá tu internet.") : tt(socialErrorMessage(code)))
 
 export const social = {
   feed: (kind) => request('feed', { query: { kind } }),

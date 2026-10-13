@@ -3,6 +3,7 @@ import { useLibrary, toggleReminder, isReminded } from '../../lib/library'
 import { buildIcs, downloadIcs } from '../../lib/ics'
 import { dateLabel, notificationsSupported } from '../../lib/reminders'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 const slug = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
@@ -11,8 +12,8 @@ export const addToCalendar = (item) => {
   const url = typeof window !== 'undefined' ? `${window.location.origin}/${item.type === 'tv' ? 'tv' : 'movie'}/${item.id}` : ''
   downloadIcs(`estreno-${slug(item.title)}`, buildIcs({
     uid: `${item.type}-${item.id}`,
-    title: `Estreno: ${item.title}`,
-    description: 'Estreno recordado desde Life High.',
+    title: tt("Estreno: {title}", { title: item.title }),
+    description: tt("Estreno recordado desde Life High."),
     url,
     date: item.date,
   }))
@@ -38,9 +39,9 @@ export default function ReminderButton({ item, variant = 'full' }) {
     }
     showToast({
       icon: '🔔',
-      title: `Te avisamos cuando se estrene`,
-      text: `${item.title} · ${dateLabel(item.date)}. El aviso aparece cuando abras Life High; para que suene en tu celu, sumalo al calendario.`,
-      actionLabel: 'Agregar al calendario',
+      title: tt("Te avisamos cuando se estrene"),
+      text: tt("{title} · {v2}. El aviso aparece cuando abras Life High; para que suene en tu celu, sumalo al calendario.", { title: item.title, v2: dateLabel(item.date) }),
+      actionLabel: tt("Agregar al calendario"),
       onAction: () => addToCalendar(item),
       ttl: 11000,
       tone: 'blue',
@@ -52,8 +53,8 @@ export default function ReminderButton({ item, variant = 'full' }) {
       <button
         onClick={toggle}
         aria-pressed={on}
-        aria-label={on ? `No avisarme de ${item.title}` : `Avisarme cuando salga ${item.title}`}
-        title={on ? 'Quitar aviso' : 'Avisame cuando salga'}
+        aria-label={on ? tt("No avisarme de {title}", { title: item.title }) : tt("Avisarme cuando salga {title}", { title: item.title })}
+        title={on ? tt("Quitar aviso") : tt("Avisame cuando salga")}
         className={`w-8 h-8 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all duration-200
           ${on ? 'bg-blue-500 text-white border-blue-400' : 'bg-void/70 text-chalk border-white/20 hover:border-blue-400/60 hover:text-blue-300'}`}
       >
@@ -71,14 +72,14 @@ export default function ReminderButton({ item, variant = 'full' }) {
           ${on ? 'bg-blue-500/20 border-blue-400/50 text-blue-200' : 'bg-blue-500/10 border-blue-400/30 text-blue-200 hover:bg-blue-500/20'}`}
       >
         {on ? <BellRinging size={16} weight="fill" /> : <Bell size={16} weight="bold" />}
-        {on ? 'Te vamos a avisar' : 'Avisame cuando salga'}
+        {on ? tt("Te vamos a avisar") : tt("Avisame cuando salga")}
       </button>
       <button
         onClick={(e) => { e.stopPropagation(); addToCalendar(item) }}
         className="flex items-center gap-2 px-5 py-3 rounded-full glass border border-white/10 text-chalk text-sm font-medium hover:border-gold/30 hover:text-gold transition-all duration-300"
       >
         <CalendarPlus size={16} weight="bold" />
-        Agregar al calendario
+        {tt("Agregar al calendario")}
       </button>
     </div>
   )

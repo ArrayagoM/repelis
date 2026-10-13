@@ -1,5 +1,6 @@
 import { dayLabel } from './calendar'
 import { todayStr } from './library'
+import { tt } from './i18n'
 
 const pad = (n) => String(n).padStart(2, '0')
 const addDays = (s, n) => { const [y, m, d] = s.split('-').map(Number); return todayStr(new Date(y, m - 1, d + n)) }
@@ -23,7 +24,7 @@ export const parseWhen = (dateStr, timeStr) => {
 /** Texto para mandar por WhatsApp/Telegram. */
 export const buildInviteMessage = ({ title, when, url, today = todayStr() }) => {
   const day = dayLabel(todayStr(when), today)
-  const dayText = day === 'Hoy' ? 'hoy' : day === 'Mañana' ? 'mañana' : `el ${day.toLowerCase()}`
+  const dayText = day === 'Hoy' ? 'hoy' : day === 'Mañana' ? tt("mañana") : tt("el {v1}", { v1: day.toLowerCase() })
   const time = `${pad(when.getHours())}:${pad(when.getMinutes())}`
-  return `🍿 ¿Vemos "${title}" juntos ${dayText} a las ${time}? Entrá desde acá y dale play a la misma hora: ${url}`
+  return tt("🍿 ¿Vemos \"{title}\" juntos {dayText} a las {time}? Entrá desde acá y dale play a la misma hora: {url}", { title: title, dayText: dayText, time: time, url: url })
 }

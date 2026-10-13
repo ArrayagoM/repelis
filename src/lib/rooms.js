@@ -6,6 +6,7 @@ import { ROOM_ERRORS } from './roomRules'
 import { socialErrorMessage } from './socialRules'
 import { pulseEvent } from './pulse'
 import { getPlayback, positionForSync } from './playback'
+import { tt } from './i18n'
 
 const BASE = '/api/rooms'
 
@@ -25,7 +26,7 @@ const request = async (action, { method = 'GET', body, query } = {}) => {
   }
 }
 
-export const roomErrorText = (code) => (code === 'network' ? 'No pudimos conectarnos. Revisá tu internet.' : ROOM_ERRORS[code] || socialErrorMessage(code))
+export const roomErrorText = (code) => (code === 'network' ? tt("No pudimos conectarnos. Revisá tu internet.") : tt(ROOM_ERRORS[code] || socialErrorMessage(code)))
 
 export const rooms = {
   info: (code) => request('room', { query: { code } }),

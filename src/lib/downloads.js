@@ -1,3 +1,4 @@
+import { tt } from './i18n'
 // Catálogo de descargas de Life High. Los archivos los publica .github/workflows/build-apps.yml
 // en la release fija "app-latest" (y el APK liviano histórico en "apk-latest").
 // Mantener en sync con mobile/src/lib/downloads.ts.
@@ -13,51 +14,51 @@ export const TV_SHORT_LINK = 'repelis.vercel.app/tv.apk'
 export const DOWNLOADS = [
   {
     id: 'android', platform: 'android', icon: 'android', primary: true,
-    label: 'Android — celular y tablet',
-    detail: 'Android 7.0 o superior · APK universal (ARM 32/64 bits, x86_64)',
+    label: tt("Android — celular y tablet"),
+    detail: tt("Android 7.0 o superior · APK universal (ARM 32/64 bits, x86_64)"),
     file: 'lifehigh-android.apk', url: `${RELEASE_BASE}/lifehigh-android.apk`,
   },
   {
     id: 'android-tv', platform: 'tv', icon: 'tv', primary: true,
-    label: 'Android TV · Fire TV · proyector · TV box',
-    detail: 'Se maneja con el control remoto · Android TV / Google TV / Fire OS 7+',
+    label: tt("Android TV · Fire TV · proyector · TV box"),
+    detail: tt("Se maneja con el control remoto · Android TV / Google TV / Fire OS 7+"),
     file: 'lifehigh-android-tv.apk', url: `${RELEASE_BASE}/lifehigh-android-tv.apk`,
   },
   {
     id: 'android-legacy', platform: 'android', icon: 'android', primary: false,
-    label: 'Android — versión liviana',
-    detail: 'Android 7.0+ · ~6 MB · para equipos con poca memoria o proyectores justos',
+    label: tt("Android — versión liviana"),
+    detail: tt("Android 7.0+ · ~6 MB · para equipos con poca memoria o proyectores justos"),
     file: 'lifehigh.apk', url: `${LEGACY_RELEASE_BASE}/lifehigh.apk`,
   },
   {
     id: 'ios', platform: 'ios', icon: 'apple', primary: false,
-    label: 'iPhone y iPad — archivo IPA (avanzado)',
-    detail: 'Solo si sabés usar AltStore o Sideloadly. Para la mayoría es mucho más fácil instalarla desde Safari (pasos arriba).',
+    label: tt("iPhone y iPad — archivo IPA (avanzado)"),
+    detail: tt("Solo si sabés usar AltStore o Sideloadly. Para la mayoría es mucho más fácil instalarla desde Safari (pasos arriba)."),
     file: 'lifehigh-ios.ipa', url: `${RELEASE_BASE}/lifehigh-ios.ipa`,
   },
   {
     id: 'windows', platform: 'windows', icon: 'windows', primary: true,
-    label: 'Windows 10 / 11',
-    detail: 'Instalador .exe de 64 bits',
+    label: tt("Windows 10 / 11"),
+    detail: tt("Instalador .exe de 64 bits"),
     file: 'LifeHigh-Setup-windows-x64.exe', url: `${RELEASE_BASE}/LifeHigh-Setup-windows-x64.exe`,
   },
   {
     id: 'mac-arm', platform: 'mac', icon: 'mac', primary: true,
-    label: 'Mac — Apple Silicon (M1, M2, M3, M4)',
-    detail: 'Imagen .dmg · macOS 11+',
+    label: tt("Mac — Apple Silicon (M1, M2, M3, M4)"),
+    detail: tt("Imagen .dmg · macOS 11+"),
     file: 'LifeHigh-mac-arm64.dmg', url: `${RELEASE_BASE}/LifeHigh-mac-arm64.dmg`,
   },
   {
     id: 'mac-intel', platform: 'mac', icon: 'mac', primary: false,
-    label: 'Mac — Intel',
-    detail: 'Imagen .dmg · macOS 11+',
+    label: tt("Mac — Intel"),
+    detail: tt("Imagen .dmg · macOS 11+"),
     file: 'LifeHigh-mac-x64.dmg', url: `${RELEASE_BASE}/LifeHigh-mac-x64.dmg`,
   },
   {
     id: 'linux', platform: 'linux', icon: 'linux', primary: true,
     label: 'Linux',
-    detail: 'AppImage de 64 bits (marcá el archivo como ejecutable y abrilo)',
-    file: 'LifeHigh-linux-x86_64.AppImage', url: `${RELEASE_BASE}/LifeHigh-linux-x86_64.AppImage`,
+    detail: tt("AppImage de 64 bits (marcá el archivo como ejecutable y abrilo)"),
+    file: tt("LifeHigh-linux-x86_64.AppImage"), url: `${RELEASE_BASE}/LifeHigh-linux-x86_64.AppImage`,
   },
 ]
 

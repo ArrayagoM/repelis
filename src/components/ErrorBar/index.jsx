@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WarningCircle, X } from '@phosphor-icons/react'
 import { subscribe, clearErrors } from '../../lib/errorMonitor'
+import { tt } from '../../lib/i18n'
 
 export default function ErrorBar() {
   const [errors, setErrors] = useState([])
@@ -36,7 +37,7 @@ export default function ErrorBar() {
         <button
           onClick={() => { clearErrors(); setCollapsed(true); setTimeout(() => setCollapsed(false), 30_000) }}
           className="text-red-300/70 hover:text-red-100 ml-2"
-          title="Cerrar (30s)"
+          title={tt("Cerrar (30s)")}
         >
           <X size={11} weight="bold" />
         </button>

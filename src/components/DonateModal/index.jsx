@@ -4,6 +4,7 @@ import CafecitoButton from '../CafecitoButton'
 import DonateGoal from '../DonateGoal'
 import { useDonations, isSupporter, markSupporter, unmarkSupporter } from '../../lib/donations'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 // 💡 Cambiá estos enlaces cuando crees tus cuentas reales.
 // Cafecito: https://cafecito.app/ → registrate y obtené tu URL
@@ -12,18 +13,18 @@ export const DONATE_OPTIONS = [
   {
     id: 'cafecito',
     label: 'Cafecito',
-    description: 'El más usado en Argentina. Procesa con Mercado Pago.',
+    description: tt("El más usado en Argentina. Procesa con Mercado Pago."),
     href: 'https://cafecito.app/tintech',
-    cta: 'Invitar un café',
+    cta: tt("Invitar un café"),
     accent: 'bg-amber-500/10 border-amber-500/30 text-amber-300',
     icon: Coffee,
   },
   {
     id: 'mercadopago',
     label: 'Mercado Pago',
-    description: 'Link de pago directo, sin intermediarios.',
+    description: tt("Link de pago directo, sin intermediarios."),
     href: 'https://link.mercadopago.com.ar/tintech',
-    cta: 'Donar con MP',
+    cta: tt("Donar con MP"),
     accent: 'bg-sky-500/10 border-sky-500/30 text-sky-300',
     icon: Heart,
   },
@@ -35,7 +36,7 @@ export default function DonateModal({ open, onClose }) {
 
   const alreadyDonated = () => {
     markSupporter()
-    showToast({ icon: '💛', title: '¡Gracias por apoyar Life High!', text: 'Te dejamos la insignia Supporter y no te pedimos más.', ttl: 7000 })
+    showToast({ icon: '💛', title: tt("¡Gracias por apoyar Life High!"), text: tt("Te dejamos la insignia Supporter y no te pedimos más."), ttl: 7000 })
     onClose()
   }
 
@@ -66,13 +67,12 @@ export default function DonateModal({ open, onClose }) {
                   <Coffee size={18} weight="fill" className="text-void" />
                 </div>
                 <div>
-                  <p className="font-display font-bold text-chalk text-lg">Apoyá Life High</p>
-                  <p className="text-muted text-xs">Hecho por TinTech</p>
+                  <p className="font-display font-bold text-chalk text-lg">{tt("Apoyá Life High")}</p>
+                  <p className="text-muted text-xs">{tt("Hecho por TinTech")}</p>
                 </div>
               </div>
               <p className="text-muted/80 text-sm leading-relaxed mt-3">
-                Life High es 100% gratis y sin publicidad propia. Si te gusta y querés ayudar a
-                mantenerlo, cualquier aporte cuenta. ¡Gracias!
+                {tt("Life High es 100% gratis y sin publicidad propia. Si te gusta y querés ayudar a mantenerlo, cualquier aporte cuenta. ¡Gracias!")}
               </p>
             </div>
 
@@ -85,7 +85,7 @@ export default function DonateModal({ open, onClose }) {
             </div>
 
             <p className="text-muted/40 text-[10px] text-center font-mono uppercase tracking-widest mt-2">
-              ó también
+              {tt("ó también")}
             </p>
 
             <div className="p-5 space-y-3">
@@ -118,17 +118,17 @@ export default function DonateModal({ open, onClose }) {
             <div className="px-5 pb-5 pt-2 space-y-3">
               {supporter ? (
                 <p className="text-center text-xs text-gold">
-                  💛 Sos Supporter. ¡Gracias!{' '}
-                  <button onClick={unmarkSupporter} className="text-muted/60 underline underline-offset-2 hover:text-chalk">quitar</button>
+                  {tt("💛 Sos Supporter. ¡Gracias!")}{' '}
+                  <button onClick={unmarkSupporter} className="text-muted/60 underline underline-offset-2 hover:text-chalk">{tt("quitar")}</button>
                 </p>
               ) : (
                 <button onClick={alreadyDonated}
                   className="w-full py-2.5 rounded-full border border-gold/30 text-gold text-sm font-semibold hover:bg-gold/10 transition-colors">
-                  Ya doné ❤ — no pedirme más
+                  {tt("Ya doné ❤ — no pedirme más")}
                 </button>
               )}
               <p className="text-muted/40 text-[10px] text-center font-mono leading-relaxed">
-                100% del aporte va al desarrollador. Sin fees ocultos.
+                {tt("100% del aporte va al desarrollador. Sin fees ocultos.")}
               </p>
             </div>
           </motion.div>

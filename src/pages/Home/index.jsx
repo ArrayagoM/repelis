@@ -23,6 +23,7 @@ import { getDeviceCaps } from '../../lib/deviceCaps'
 import { isOut } from '../../lib/releaseStatus'
 import { isHalloweenSeason } from '../../lib/seasons'
 import { useSEO, useOrgSchema } from '../../lib/useSEO'
+import { tt } from '../../lib/i18n'
 
 const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 
@@ -35,7 +36,7 @@ export default function Home() {
 
   useSEO({
     title: null, // usa el título base "Life High — Cinema sin límites"
-    description: 'Life High: el catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM. Sin engaños, sin paywalls falsos.',
+    description: tt("Life High: el catálogo más completo de películas, series, anime y K-drama. Encontrá dónde ver cualquier estreno en LATAM. Sin engaños, sin paywalls falsos."),
     keywords: 'life high, ver peliculas online, series online, anime, kdrama, estrenos 2026, peliculas latino, streaming Argentina',
   })
   useOrgSchema()
@@ -105,15 +106,15 @@ export default function Home() {
       <main className="min-h-screen bg-void">
         <Hero movies={heroMovies} />
         <div className="relative z-10 -mt-4 space-y-8 pb-12">
-          <MovieRow title="Tendencias" movies={trending.results}
+          <MovieRow title={tt("Tendencias")} movies={trending.results}
             loading={trending.loading && !trending.results.length} />
-          <MovieRow title="Películas Populares" movies={popular.results}
+          <MovieRow title={tt("Películas Populares")} movies={popular.results}
             loading={popular.loading && !popular.results.length}
             onViewAll={() => navigate('/populares')} />
-          <MovieRow title="Series Populares" movies={popularTV.results}
+          <MovieRow title={tt("Series Populares")} movies={popularTV.results}
             loading={popularTV.loading && !popularTV.results.length}
             mediaType="tv" onViewAll={() => navigate('/series')} />
-          <MovieRow title="Anime" movies={anime.results}
+          <MovieRow title={tt("Anime")} movies={anime.results}
             loading={anime.loading && !anime.results.length}
             mediaType="tv" onViewAll={() => navigate('/anime')} />
         </div>
@@ -142,65 +143,65 @@ export default function Home() {
         {personal && lib.list.length > 0 && <MyListRow limit={20} onViewAll={() => navigate('/mi-lista')} />}
 
         {/* ── TOP 10 ── */}
-        <Top10Row title="Top 10 películas hoy" badge="Hoy" movies={top10Movies.results}
+        <Top10Row title={tt("Top 10 películas hoy")} badge={tt("Hoy")} movies={top10Movies.results}
           loading={top10Movies.loading && !top10Movies.results.length} mediaType="movie" />
 
         {/* ── PELÍCULAS ── */}
-        <MovieRow title="En Cartelera" badge="Ahora" movies={nowPlaying.results}
+        <MovieRow title={tt("En Cartelera")} badge={tt("Ahora")} movies={nowPlaying.results}
           loading={nowPlaying.loading && !nowPlaying.results.length} onViewAll={() => navigate('/estrenos')} />
 
         <CinemaBanner />
 
         {halloween && (
-          <MovieRow title="Sesión de terror" badge="Halloween" badgeColor="red" onlyReleased movies={terror.results}
+          <MovieRow title={tt("Sesión de terror")} badge={tt("Halloween")} badgeColor="red" onlyReleased movies={terror.results}
             loading={terror.loading && !terror.results.length} onViewAll={() => navigate('/terror')} />
         )}
 
-        <MovieRow title="Tendencias" badge="Esta semana" onlyReleased movies={trending.results}
+        <MovieRow title={tt("Tendencias")} badge={tt("Esta semana")} onlyReleased movies={trending.results}
           loading={trending.loading && !trending.results.length} />
 
-        <MovieRow title="Más Populares" onlyReleased movies={popular.results}
+        <MovieRow title={tt("Más Populares")} onlyReleased movies={popular.results}
           loading={popular.loading && !popular.results.length} onViewAll={() => navigate('/populares')} />
 
-        <MovieRow title="Mejor Valoradas" badge="Top" movies={topRated.results}
+        <MovieRow title={tt("Mejor Valoradas")} badge={tt("Top")} movies={topRated.results}
           loading={topRated.loading && !topRated.results.length} onViewAll={() => navigate('/top-valoradas')} />
 
-        <MovieRow title="Próximos Estrenos" badge="Muy pronto" movies={upcomingSorted}
+        <MovieRow title={tt("Próximos Estrenos")} badge={tt("Muy pronto")} movies={upcomingSorted}
           loading={upcoming.loading && !upcoming.results.length} onViewAll={() => navigate('/proximos')} />
 
         {/* ── Divider TV ── */}
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
-            <span className="text-blue-400/60 text-xs font-mono uppercase tracking-widest">Series & TV</span>
+            <span className="text-blue-400/60 text-xs font-mono uppercase tracking-widest">{tt("Series & TV")}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
           </div>
         </div>
 
         {/* ── SERIES ── */}
-        <Top10Row title="Top 10 series hoy" badge="Hoy" badgeColor="blue" movies={top10TV.results}
+        <Top10Row title={tt("Top 10 series hoy")} badge={tt("Hoy")} badgeColor="blue" movies={top10TV.results}
           loading={top10TV.loading && !top10TV.results.length} mediaType="tv" />
 
-        <MovieRow title="Series que se vienen" badge="Próximamente" badgeColor="blue" movies={upcomingTVSorted}
+        <MovieRow title={tt("Series que se vienen")} badge={tt("Próximamente")} badgeColor="blue" movies={upcomingTVSorted}
           loading={upcomingTV.loading && !upcomingTV.results.length} mediaType="tv" onViewAll={() => navigate('/series-proximas')} />
 
-        <MovieRow title="Series en Tendencia" badge="TV" badgeColor="blue" onlyReleased
+        <MovieRow title={tt("Series en Tendencia")} badge={tt("TV")} badgeColor="blue" onlyReleased
           movies={trendingTV.results} loading={trendingTV.loading && !trendingTV.results.length}
           mediaType="tv" onViewAll={() => navigate('/series')} />
 
-        <MovieRow title="Series Populares" onlyReleased movies={popularTV.results}
+        <MovieRow title={tt("Series Populares")} onlyReleased movies={popularTV.results}
           loading={popularTV.loading && !popularTV.results.length}
           mediaType="tv" />
 
-        <MovieRow title="Al Aire Ahora" badge="En vivo" badgeColor="blue"
+        <MovieRow title={tt("Al Aire Ahora")} badge={tt("En vivo")} badgeColor="blue"
           movies={airingTodayTV.results} loading={airingTodayTV.loading && !airingTodayTV.results.length}
           mediaType="tv" />
 
-        <MovieRow title="Series más recomendables" badge="Imperdibles" badgeColor="blue"
+        <MovieRow title={tt("Series más recomendables")} badge={tt("Imperdibles")} badgeColor="blue"
           movies={bestTV.results} loading={bestTV.loading && !bestTV.results.length}
           mediaType="tv" />
 
-        <MovieRow title="Mejor Valoradas — Series" badge="Top" badgeColor="blue"
+        <MovieRow title={tt("Mejor Valoradas — Series")} badge={tt("Top")} badgeColor="blue"
           movies={topRatedTV.results} loading={topRatedTV.loading && !topRatedTV.results.length}
           mediaType="tv" />
 
@@ -208,21 +209,21 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
-            <span className="text-purple-400/60 text-xs font-mono uppercase tracking-widest">Anime</span>
+            <span className="text-purple-400/60 text-xs font-mono uppercase tracking-widest">{tt("Anime")}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
           </div>
         </div>
 
         {/* ── ANIME ── */}
-        <MovieRow title="Anime — Series" badge="Anime" badgeColor="purple"
+        <MovieRow title={tt("Anime — Series")} badge={tt("Anime")} badgeColor="purple"
           movies={anime.results} loading={anime.loading && !anime.results.length}
           mediaType="tv" onViewAll={() => navigate('/anime')} />
 
-        <MovieRow title="Anime — Películas" badgeColor="purple"
+        <MovieRow title={tt("Anime — Películas")} badgeColor="purple"
           movies={animeMovies.results} loading={animeMovies.loading && !animeMovies.results.length}
           mediaType="movie" />
 
-        <MovieRow title="K-Drama" badge="Korea" badgeColor="red"
+        <MovieRow title={tt("K-Drama")} badge={tt("Korea")} badgeColor="red"
           movies={kdrama.results} loading={kdrama.loading && !kdrama.results.length}
           mediaType="tv" />
 
@@ -230,18 +231,18 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
-            <span className="text-gold/40 text-xs font-mono uppercase tracking-widest">Clásicos</span>
+            <span className="text-gold/40 text-xs font-mono uppercase tracking-widest">{tt("Clásicos")}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
           </div>
         </div>
 
-        <MovieRow title="Joyas ocultas" badge="Poco conocidas"
+        <MovieRow title={tt("Joyas ocultas")} badge={tt("Poco conocidas")}
           movies={gems.results} loading={gems.loading && !gems.results.length} />
 
-        <MovieRow title="Para ver en familia" badge="Todos"
+        <MovieRow title={tt("Para ver en familia")} badge={tt("Todos")}
           movies={family.results} loading={family.loading && !family.results.length} />
 
-        <MovieRow title="Clásicos del Cine" badge="Leyendas"
+        <MovieRow title={tt("Clásicos del Cine")} badge={tt("Leyendas")}
           movies={classics.results} loading={classics.loading && !classics.results.length} />
 
         {/* Footer */}
@@ -253,10 +254,10 @@ export default function Home() {
                   <polygon points="3,2 10,6 3,10" fill="#08080E" />
                 </svg>
               </div>
-              <span className="font-display font-semibold text-chalk/80">Repe<span className="text-gold">lis</span></span>
+              <span className="font-display font-semibold text-chalk/80">{tt("Repe")}<span className="text-gold">{tt("lis")}</span></span>
             </div>
-            <span className="font-mono text-xs">Datos provistos por <span className="text-gold">TheMovieDB</span></span>
-            <span className="text-xs">© {new Date().getFullYear()} Repelis</span>
+            <span className="font-mono text-xs">{tt("Datos provistos por")} <span className="text-gold">{tt("TheMovieDB")}</span></span>
+            <span className="text-xs">© {new Date().getFullYear()} {tt("Repelis")}</span>
           </div>
         </footer>
       </div>

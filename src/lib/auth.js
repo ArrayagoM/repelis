@@ -13,6 +13,7 @@ import { getDonations, adoptSupporterSince } from './donations'
 import { showToast } from './toast'
 import { canUsePersonal } from './access'
 import { pulseEvent, gateShownRecently } from './pulse'
+import { tt } from './i18n'
 
 const API = '/api/auth'
 const DEBOUNCE_MS = 4000          // espera tras un cambio antes de subir
@@ -66,25 +67,25 @@ const request = async (path, { method = 'GET', body, keepalive = false } = {}) =
 
 /** Texto en español para cada código de error de la API. */
 export const ERROR_MESSAGES = {
-  network: 'No pudimos conectarnos. Revisá tu internet e intentá de nuevo.',
-  auth_unavailable: 'Las cuentas todavía no están disponibles. Probá más tarde.',
-  email_invalid: 'Ese mail no parece válido.',
-  email_taken: 'Ya existe una cuenta con ese mail. Probá ingresar.',
-  password_short: 'La contraseña tiene que tener al menos 8 caracteres.',
-  password_long: 'La contraseña es demasiado larga.',
-  password_weak: 'Esa contraseña es muy fácil de adivinar. Elegí otra.',
-  password_invalid: 'Escribí una contraseña.',
-  invalid_credentials: 'Mail o contraseña incorrectos.',
-  google_invalid: 'No pudimos verificar tu cuenta de Google. Probá de nuevo.',
-  google_unavailable: 'El ingreso con Google no está disponible por ahora. Usá tu mail y contraseña.',
-  no_password: 'Tu cuenta entra con Google y no tiene contraseña.',
-  too_many_requests: 'Demasiados intentos. Esperá unos minutos y probá de nuevo.',
-  token_invalid: 'Este enlace ya no sirve (venció o ya se usó). Pedí uno nuevo.',
-  not_authenticated: 'Tu sesión venció. Ingresá de nuevo.',
-  mail_unavailable: 'El envío de mails no está disponible por ahora.',
-  library_too_large: 'Tu biblioteca es demasiado grande para sincronizar.',
-  forbidden: 'No se pudo completar la acción. Recargá la página.',
-  server_error: 'Algo falló de nuestro lado. Probá de nuevo en un rato.',
+  network: tt("No pudimos conectarnos. Revisá tu internet e intentá de nuevo."),
+  auth_unavailable: tt("Las cuentas todavía no están disponibles. Probá más tarde."),
+  email_invalid: tt("Ese mail no parece válido."),
+  email_taken: tt("Ya existe una cuenta con ese mail. Probá ingresar."),
+  password_short: tt("La contraseña tiene que tener al menos 8 caracteres."),
+  password_long: tt("La contraseña es demasiado larga."),
+  password_weak: tt("Esa contraseña es muy fácil de adivinar. Elegí otra."),
+  password_invalid: tt("Escribí una contraseña."),
+  invalid_credentials: tt("Mail o contraseña incorrectos."),
+  google_invalid: tt("No pudimos verificar tu cuenta de Google. Probá de nuevo."),
+  google_unavailable: tt("El ingreso con Google no está disponible por ahora. Usá tu mail y contraseña."),
+  no_password: tt("Tu cuenta entra con Google y no tiene contraseña."),
+  too_many_requests: tt("Demasiados intentos. Esperá unos minutos y probá de nuevo."),
+  token_invalid: tt("Este enlace ya no sirve (venció o ya se usó). Pedí uno nuevo."),
+  not_authenticated: tt("Tu sesión venció. Ingresá de nuevo."),
+  mail_unavailable: tt("El envío de mails no está disponible por ahora."),
+  library_too_large: tt("Tu biblioteca es demasiado grande para sincronizar."),
+  forbidden: tt("No se pudo completar la acción. Recargá la página."),
+  server_error: tt("Algo falló de nuestro lado. Probá de nuevo en un rato."),
 }
 export const errorMessage = (code) => ERROR_MESSAGES[code] || ERROR_MESSAGES.server_error
 
@@ -118,7 +119,7 @@ export const syncNow = ({ keepalive = false } = {}) => {
     }
     if (res.status === 401) {
       set({ syncing: false, status: 'out', user: null })
-      showToast({ icon: '🔒', title: 'Tu sesión venció', text: 'Ingresá de nuevo para seguir sincronizando.', actionLabel: 'Ingresar', to: '/cuenta', ttl: 9000 })
+      showToast({ icon: '🔒', title: tt("Tu sesión venció"), text: tt("Ingresá de nuevo para seguir sincronizando."), actionLabel: 'Ingresar', to: '/cuenta', ttl: 9000 })
     } else {
       set({ syncing: false, syncError: true })
     }

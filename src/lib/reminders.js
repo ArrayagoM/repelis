@@ -1,4 +1,5 @@
 import { todayStr } from './library'
+import { tt, locale } from './i18n'
 
 const addDays = (str, n) => {
   const [y, m, d] = str.split('-').map(Number)
@@ -25,7 +26,7 @@ export const reminderActions = (reminders, today = todayStr()) => {
 export const dateLabel = (str) => {
   if (!str) return ''
   const [y, m, d] = str.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
+  return new Date(y, m - 1, d).toLocaleDateString(locale(), { day: 'numeric', month: 'long' })
 }
 
 export const notificationsSupported = () => typeof window !== 'undefined' && 'Notification' in window

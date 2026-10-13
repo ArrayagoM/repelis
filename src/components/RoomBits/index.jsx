@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatCountdown } from '../../lib/roomRules'
+import { tt, locale } from '../../lib/i18n'
 
 /** Texto corto del estado de una sala para listados. */
 export const phaseLabel = (room, now = Date.now()) => {
   if (room.phase === 'scheduled' && room.startsAt) {
     const when = new Date(room.startsAt)
-    const day = when.toDateString() === new Date(now).toDateString() ? 'Hoy' : when.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })
-    return `${day} ${when.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
+    const day = when.toDateString() === new Date(now).toDateString() ? 'Hoy' : when.toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' })
+    return `${day} ${when.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}`
   }
   if (room.phase === 'live') return 'Abierta'
-  return 'Terminó'
+  return tt("Terminó")
 }
 
 /** Cuenta regresiva (hasta `startsAt`) alineada con el reloj del servidor. */

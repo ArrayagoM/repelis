@@ -12,6 +12,7 @@ import ListButton from '../ListButton'
 import ReminderButton from '../ReminderButton'
 import { useAuth } from '../../lib/auth'
 import { requiresAccount } from '../../lib/access'
+import { tt } from '../../lib/i18n'
 
 // Capacidades detectadas UNA vez (cacheado). En low-end:
 //   - poster más chico (w342 vs w500)
@@ -43,7 +44,7 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
   const isOrigSpanish = origLang === 'es'
   const rating    = movie.vote_average?.toFixed(1) ?? '–'
   const year      = (movie.release_date || movie.first_air_date)?.slice(0, 4) ?? ''
-  const title     = movie.title ?? movie.name ?? 'Sin título'
+  const title     = movie.title ?? movie.name ?? tt("Sin título")
 
   // Películas sin estrenar NO están en ningún servidor. Lo marcamos.
   const upcoming  = !isTV && isUpcoming(movie)
@@ -126,7 +127,7 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
           {isTV && !upcoming && (
             <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/80 backdrop-blur-sm">
               <TelevisionSimple size={9} weight="fill" className="text-white" />
-              <span className="text-white text-[9px] font-bold">SERIE</span>
+              <span className="text-white text-[9px] font-bold">{tt("SERIE")}</span>
             </div>
           )}
 
@@ -135,7 +136,7 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
             <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/80 backdrop-blur-sm">
               <CalendarBlank size={9} weight="fill" className="text-white" />
               <span className="text-white text-[9px] font-bold uppercase">
-                {daysLeft != null ? `En ${daysLeft}d` : 'Próximamente'}
+                {daysLeft != null ? tt("En {daysLeft}d", { daysLeft: daysLeft }) : tt("Próximamente")}
               </span>
             </div>
           )}
@@ -149,10 +150,10 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
             {upcoming ? (
               <button onClick={handlePlay}
                 className="flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-void/80 backdrop-blur-sm border border-blue-400/40 hover:border-blue-400/70 transition-all"
-                aria-label={`${title} — próximamente`}
+                aria-label={tt("{title} — próximamente", { title: title })}
               >
                 <CalendarBlank size={20} weight="fill" className="text-blue-300" />
-                <span className="text-blue-200 text-[10px] font-bold uppercase tracking-wide">Aún no disponible</span>
+                <span className="text-blue-200 text-[10px] font-bold uppercase tracking-wide">{tt("Aún no disponible")}</span>
               </button>
             ) : (
               <button onClick={handlePlay}
@@ -175,10 +176,10 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
           {isOrigSpanish && (
             <div
               className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full backdrop-blur-sm border bg-emerald-500/20 border-emerald-400/40 text-emerald-200"
-              title="Idioma original: español — sin necesidad de doblaje"
+              title={tt("Idioma original: español — sin necesidad de doblaje")}
             >
               <span className="text-[10px] leading-none">🇲🇽</span>
-              <span className="text-[9px] font-mono font-bold tracking-wide">ESP</span>
+              <span className="text-[9px] font-mono font-bold tracking-wide">{tt("ESP")}</span>
             </div>
           )}
         </div>
@@ -192,8 +193,8 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
                 <span className="flex items-center gap-1.5"><CalendarBlank size={10} /><span className="font-mono">{year}</span></span>
               ) : <span />}
               {guestLocked && (
-                <span title="Para darle play necesitás una cuenta gratis" className="flex items-center gap-1 text-gold/90 text-[10px] font-semibold">
-                  <LockKey size={10} weight="fill" /> Cuenta
+                <span title={tt("Para darle play necesitás una cuenta gratis")} className="flex items-center gap-1 text-gold/90 text-[10px] font-semibold">
+                  <LockKey size={10} weight="fill" /> {tt("Cuenta")}
                 </span>
               )}
             </div>
@@ -205,7 +206,7 @@ export default function MovieCard({ movie, index = 0, mediaType = 'movie' }) {
       <button
         className="absolute inset-0 rounded-[1.25rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
         onClick={handleCardClick}
-        aria-label={`Ver detalles de ${title}`}
+        aria-label={tt("Ver detalles de {title}", { title: title })}
       />
     </motion.article>
   )

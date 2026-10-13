@@ -4,6 +4,7 @@ import PosterStrip from '../PosterStrip'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { useLibrary, continueWatching, progressOf, removeHistory, toggleList, toggleReminder } from '../../lib/library'
 import { dateLabel } from '../../lib/reminders'
+import { tt } from '../../lib/i18n'
 
 const detailPath = (x) => `/${x.type === 'tv' ? 'tv' : 'movie'}/${x.id}`
 
@@ -24,7 +25,7 @@ export function ContinueRow() {
       title: h.title,
       sub: isTV
         ? `T${season} E${episode}${h.next ? ' · siguiente' : left ? ` · quedan ~${left} min` : ''}`
-        : (left ? `Quedan ~${left} min` : 'Seguir viendo'),
+        : (left ? tt("Quedan ~{left} min", { left: left }) : tt("Seguir viendo")),
       progress: h.next ? 0 : progressOf(h),
       chip: h.next ? 'Siguiente' : undefined,
       chipTone: 'blue',
@@ -43,7 +44,7 @@ export function ContinueRow() {
     }
   })
 
-  return <PosterStrip id="continuar" title="Continuar viendo" badge="Seguí donde dejaste" items={items} />
+  return <PosterStrip id="continuar" title={tt("Continuar viendo")} badge={tt("Seguí donde dejaste")} items={items} />
 }
 
 /** "Mi lista" (Home: solo si hay algo guardado). */
@@ -57,7 +58,7 @@ export function MyListRow({ limit = 20, onViewAll }) {
     to: detailPath(x),
     onRemove: () => toggleList(x),
   }))
-  return <PosterStrip id="mi-lista" title="Mi lista" badge="Guardadas" items={items} onViewAll={onViewAll} />
+  return <PosterStrip id="mi-lista" title={tt("Mi lista")} badge={tt("Guardadas")} items={items} onViewAll={onViewAll} />
 }
 
 /** "Te avisamos": estrenos que pediste recordar. */
@@ -69,11 +70,11 @@ export function RemindersRow() {
       key: `${r.type}:${r.id}`,
       poster: r.poster,
       title: r.title,
-      sub: r.notified ? 'Ya se estrenó' : dateLabel(r.date),
-      chip: r.notified ? 'Ya salió' : 'Avisame',
+      sub: r.notified ? tt("Ya se estrenó") : dateLabel(r.date),
+      chip: r.notified ? tt("Ya salió") : 'Avisame',
       chipTone: r.notified ? 'green' : 'blue',
       to: detailPath(r),
       onRemove: () => toggleReminder(r),
     }))
-  return <PosterStrip id="avisos" title="Te avisamos cuando salgan" badge="Estrenos" badgeTone="blue" items={items} />
+  return <PosterStrip id="avisos" title={tt("Te avisamos cuando salgan")} badge={tt("Estrenos")} badgeTone="blue" items={items} />
 }

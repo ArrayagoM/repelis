@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Storefront, ArrowSquareOut, Info } from '@phosphor-icons/react'
 import { getMovieWatchProviders, getTVWatchProviders, IMG_BASE } from '../../api/tmdb'
 import { track } from '../../lib/errorMonitor'
+import { tt } from '../../lib/i18n'
 
 // Países LATAM en orden de prioridad
 const REGIONS = ['AR', 'MX', 'CO', 'CL', 'PE', 'UY', 'ES', 'US']
@@ -91,7 +92,7 @@ export default function WatchProviders({ id, mediaType = 'movie', title = '' }) 
   }
 
   const tierLabel = (tier) =>
-    tier === 'sub' ? 'Incluido en suscripción' :
+    tier === 'sub' ? tt("Incluido en suscripción") :
     tier === 'rent' ? 'Alquiler' : 'Compra'
 
   const tierColor = (tier) =>
@@ -109,7 +110,7 @@ export default function WatchProviders({ id, mediaType = 'movie', title = '' }) 
       <div className="flex items-center justify-between">
         <p className="text-muted/70 text-xs uppercase tracking-widest font-semibold flex items-center gap-2">
           <Storefront size={12} weight="fill" className="text-gold" />
-          Ver también legalmente
+          {tt("Ver también legalmente")}
         </p>
         <span className="text-muted/40 text-[10px] font-mono">{data.region}</span>
       </div>
@@ -145,7 +146,7 @@ export default function WatchProviders({ id, mediaType = 'movie', title = '' }) 
       <p className="text-muted/45 text-[10px] leading-relaxed flex items-start gap-1.5 max-w-[60ch]">
         <Info size={10} weight="fill" className="text-gold/50 flex-shrink-0 mt-0.5" />
         <span>
-          Datos verificados por <strong className="text-chalk/60">TMDB / JustWatch</strong>. Si los servidores gratis de Life High no la tienen, estas son las opciones legales con audio garantizado en español.
+          {tt("Datos verificados por")} <strong className="text-chalk/60">{tt("TMDB / JustWatch")}</strong>{tt(". Si los servidores gratis de Life High no la tienen, estas son las opciones legales con audio garantizado en español.")}
         </span>
       </p>
     </motion.div>

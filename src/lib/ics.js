@@ -1,3 +1,4 @@
+import { tt } from './i18n'
 // Generador de archivos .ics (calendario) — funciona en Google Calendar, Apple Calendar, Outlook.
 // Sirve para "Avisame cuando salga" y "Ver juntos": el aviso lo da el calendario del propio teléfono.
 
@@ -32,11 +33,11 @@ export const buildIcs = (ev) => {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Life High//ES',
+    tt("PRODID:-//Life High//ES"),
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:${esc(ev.uid)}@lifehigh`,
+    tt("UID:{v1}@lifehigh", { v1: esc(ev.uid) }),
     `DTSTAMP:${utcStamp(new Date())}`,
   ]
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X } from '@phosphor-icons/react'
 import CafecitoButton from '../CafecitoButton'
 import { useDonations, isSupporter } from '../../lib/donations'
+import { tt } from '../../lib/i18n'
 
 const DISMISS_KEY = 'repelis:cafecitoDismiss:v1'
 const DISMISS_TTL_MS = 24 * 60 * 60 * 1000   // 24 horas
@@ -56,8 +57,8 @@ export default function FloatingCafecito() {
           <button
             onClick={dismiss}
             className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-void border border-white/15 text-muted hover:text-chalk hover:bg-red-500/20 hover:border-red-500/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 shadow-md"
-            aria-label="Ocultar por 24 horas"
-            title="Ocultar por 24 horas"
+            aria-label={tt("Ocultar por 24 horas")}
+            title={tt("Ocultar por 24 horas")}
           >
             <X size={11} weight="bold" />
           </button>

@@ -6,6 +6,7 @@ import { isStandalone } from '../../lib/install'
 import {
   INTRO_SOUND_URL, INTRO_TOTAL_MS, introSeen, isBotUA, markIntroSeen, prefersReducedMotion, shouldPlayIntro,
 } from '../../lib/intro'
+import { tt } from '../../lib/i18n'
 
 // Línea de tiempo (ms) alineada con public/sounds/intro.wav: el golpe grave cae en 1000 ms.
 const HIT = 1.0
@@ -63,7 +64,7 @@ export default function IntroSplash() {
           transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
           onClick={finish}
           role="img"
-          aria-label="Life High — Cinema sin límites"
+          aria-label={tt("Life High — Cinema sin límites")}
         >
           {/* Resplandor que crece hasta el golpe */}
           <motion.div
@@ -132,7 +133,7 @@ export default function IntroSplash() {
               animate={{ opacity: 1, letterSpacing: '0.35em' }}
               transition={{ delay: HIT + 0.95, duration: 0.8, ease: 'easeOut' }}
             >
-              Cinema sin límites
+              {tt("Cinema sin límites")}
             </motion.p>
           </div>
         </motion.div>

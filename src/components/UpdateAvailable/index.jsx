@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowClockwise, X } from '@phosphor-icons/react'
+import { tt } from '../../lib/i18n'
 
 /**
  * Toast que aparece cuando hay una nueva versión del Service Worker
@@ -60,19 +61,19 @@ export default function UpdateAvailable() {
         >
           <ArrowClockwise size={16} weight="bold" />
           <div className="flex flex-col">
-            <span className="font-bold text-sm leading-tight">Nueva versión disponible</span>
-            <span className="text-void/70 text-[10px] font-mono leading-tight">Recargá para verla</span>
+            <span className="font-bold text-sm leading-tight">{tt("Nueva versión disponible")}</span>
+            <span className="text-void/70 text-[10px] font-mono leading-tight">{tt("Recargá para verla")}</span>
           </div>
           <button
             onClick={reload}
             className="ml-2 px-3 py-1.5 rounded-full bg-void text-gold text-xs font-bold hover:bg-void/80 transition-colors"
           >
-            Recargar
+            {tt("Recargar")}
           </button>
           <button
             onClick={() => setShow(false)}
             className="text-void/50 hover:text-void"
-            aria-label="Más tarde"
+            aria-label={tt("Más tarde")}
           >
             <X size={12} weight="bold" />
           </button>

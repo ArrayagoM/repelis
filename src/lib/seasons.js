@@ -1,3 +1,4 @@
+import { tt } from './i18n'
 // Temporadas del año: hoy, la de Halloween ("Sesión de terror").
 // Funciones puras (reciben la fecha) para poder probarlas.
 
@@ -16,8 +17,8 @@ export const daysToHalloween = (d = new Date()) => {
 
 export const halloweenCountdown = (d = new Date()) => {
   const n = daysToHalloween(d)
-  if (n > 1) return `Faltan ${n} días para Halloween`
-  if (n === 1) return 'Mañana es Halloween'
-  if (n === 0) return 'Hoy es Halloween'
-  return 'Halloween ya pasó, pero el terror no se va'
+  if (n > 1) return tt("Faltan {n} días para Halloween", { n: n })
+  if (n === 1) return tt("Mañana es Halloween")
+  if (n === 0) return tt("Hoy es Halloween")
+  return tt("Halloween ya pasó, pero el terror no se va")
 }

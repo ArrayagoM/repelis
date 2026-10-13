@@ -27,6 +27,7 @@ import { useSEO, useTVSchema } from '../../lib/useSEO'
 import { toLibItem } from '../../lib/library'
 import WatchProviders from '../../components/WatchProviders'
 import DubInfo from '../../components/DubInfo'
+import { tt } from '../../lib/i18n'
 
 export default function TVDetail() {
   const { id }     = useParams()
@@ -83,12 +84,12 @@ export default function TVDetail() {
 
   // SEO dinámico
   useSEO(data ? {
-    title: `Ver ${data.name} (${data.first_air_date?.slice(0, 4) || ''}) online`,
-    description: data.overview?.slice(0, 160) || `${data.name} — Serie completa: temporadas, episodios, reparto. Catálogo de Life High.`,
+    title: tt("Ver {name} ({v2}) online", { name: data.name, v2: data.first_air_date?.slice(0, 4) || '' }),
+    description: data.overview?.slice(0, 160) || tt("{name} — Serie completa: temporadas, episodios, reparto. Catálogo de Life High.", { name: data.name }),
     image: data.poster_path ? `https://image.tmdb.org/t/p/w780${data.poster_path}` : null,
     type: 'video.tv_show',
-    keywords: `${data.name}, ver ${data.name} online, ${data.name} serie completa, ${data.name} español latino`,
-  } : { title: 'Cargando serie' })
+    keywords: tt("{name}, ver {name2} online, {name3} serie completa, {name4} español latino", { name: data.name, name2: data.name, name3: data.name, name4: data.name }),
+  } : { title: tt("Cargando serie") })
   useTVSchema(data)
 
   if (loading || (!data && !error)) return <DetailSkeleton />
@@ -123,7 +124,7 @@ export default function TVDetail() {
           onClick={() => navigate(-1)}
           className="absolute top-24 left-6 md:left-12 flex items-center gap-2 text-chalk/70 hover:text-gold transition-colors group">
           <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          <span className="text-sm font-medium">Volver</span>
+          <span className="text-sm font-medium">{tt("Volver")}</span>
         </motion.button>
       </div>
 
@@ -149,7 +150,7 @@ export default function TVDetail() {
             <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium flex items-center gap-1.5">
                 <TelevisionSimple size={11} weight="fill" />
-                Serie
+                {tt("Serie")}
               </span>
               {genres.map((g) => (
                 <span key={g.id} className="px-3 py-1 rounded-full bg-surface border border-dim/50 text-muted text-xs font-medium">
@@ -186,13 +187,13 @@ export default function TVDetail() {
               {data.number_of_seasons && (
                 <div className="flex items-center gap-1.5 text-muted">
                   <TelevisionSimple size={14} />
-                  <span className="font-mono">{data.number_of_seasons} temp.</span>
+                  <span className="font-mono">{data.number_of_seasons} {tt("temp.")}</span>
                 </div>
               )}
               {data.number_of_episodes && (
                 <div className="flex items-center gap-1.5 text-muted">
                   <Clock size={14} />
-                  <span className="font-mono">{data.number_of_episodes} eps.</span>
+                  <span className="font-mono">{data.number_of_episodes} {tt("eps.")}</span>
                 </div>
               )}
             </div>
@@ -223,12 +224,12 @@ export default function TVDetail() {
                 <span className="w-7 h-7 rounded-full bg-void/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Play size={14} weight="fill" />
                 </span>
-                Reproducir desde T1E1
+                {tt("Reproducir desde T1E1")}
               </motion.button>
               {trailer && (
                 <a href={`https://www.youtube.com/watch?v=${trailer.key}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2.5 px-6 py-3.5 rounded-full glass border border-white/10 text-chalk font-medium text-sm hover:border-gold/30 hover:text-gold transition-all duration-300">
-                  Ver trailer
+                  {tt("Ver trailer")}
                 </a>
               )}
 
@@ -249,7 +250,7 @@ export default function TVDetail() {
 
           {/* Header temporadas */}
           <div className="flex items-center gap-4 mb-6 flex-wrap">
-            <h2 className="font-display font-bold text-xl text-chalk">Episodios</h2>
+            <h2 className="font-display font-bold text-xl text-chalk">{tt("Episodios")}</h2>
             <div className="flex gap-2 flex-wrap">
               {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((s) => (
                 <button key={s} onClick={() => handleSeasonChange(s)}
@@ -258,7 +259,7 @@ export default function TVDetail() {
                       ? 'bg-gold text-void'
                       : 'glass border border-white/10 text-muted hover:text-chalk hover:border-gold/30'
                   }`}>
-                  Temporada {s}
+                  {tt("Temporada")} {s}
                 </button>
               ))}
             </div>
@@ -295,20 +296,20 @@ export default function TVDetail() {
                   {/* Info */}
                   <div className="flex-1 min-w-0 py-0.5">
                     <p className="text-[11px] font-mono text-muted/60 mb-0.5">
-                      E{ep.episode_number}
+                      {tt("E")}{ep.episode_number}
                     </p>
                     <p className="text-sm font-semibold text-chalk group-hover:text-gold transition-colors line-clamp-2 leading-tight">
                       {ep.name}
                     </p>
                     {ep.runtime && (
-                      <p className="text-[11px] text-muted/50 font-mono mt-1">{ep.runtime} min</p>
+                      <p className="text-[11px] text-muted/50 font-mono mt-1">{ep.runtime} {tt("min")}</p>
                     )}
                   </div>
                 </motion.div>
               ))}
             </div>
           ) : (
-            <p className="text-muted text-sm">No hay episodios disponibles para esta temporada.</p>
+            <p className="text-muted text-sm">{tt("No hay episodios disponibles para esta temporada.")}</p>
           )}
         </motion.section>
 
@@ -318,7 +319,7 @@ export default function TVDetail() {
             transition={{ duration: 0.5 }} className="mt-16">
             <div className="flex items-center gap-3 mb-6">
               <Users size={20} className="text-gold" />
-              <h2 className="font-display font-bold text-xl text-chalk">Reparto principal</h2>
+              <h2 className="font-display font-bold text-xl text-chalk">{tt("Reparto principal")}</h2>
             </div>
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3">
               {cast.map((person, i) => (
@@ -346,7 +347,7 @@ export default function TVDetail() {
         {/* Similar */}
         {similar.length > 0 && (
           <div className="mt-16">
-            <MovieRow title="Series similares" movies={similar} mediaType="tv" />
+            <MovieRow title={tt("Series similares")} movies={similar} mediaType="tv" />
           </div>
         )}
       </div>
@@ -383,10 +384,10 @@ function ErrorState({ error, onBack }) {
   return (
     <div className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 px-6">
       <FilmSlate size={48} className="text-dim" />
-      <p className="text-chalk font-display text-xl">No se pudo cargar la serie</p>
+      <p className="text-chalk font-display text-xl">{tt("No se pudo cargar la serie")}</p>
       <p className="text-muted text-sm font-mono">{error}</p>
       <button onClick={onBack} className="px-6 py-2.5 rounded-full bg-gold text-void font-semibold text-sm hover:bg-gold-hi transition-colors">
-        Volver
+        {tt("Volver")}
       </button>
     </div>
   )

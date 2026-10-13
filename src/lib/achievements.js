@@ -1,4 +1,5 @@
 import { todayStr } from './library'
+import { tt } from './i18n'
 
 const dayNum = (s) => { const [y, m, d] = s.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000) }
 
@@ -30,17 +31,17 @@ const maxInOneDay = (daily = {}) => Math.max(0, ...Object.values(daily).map((v) 
 
 // value() devuelve el progreso actual; done = value >= target
 const DEFS = [
-  { id: 'first',     icon: '🎬', title: 'Primera función',   desc: 'Mirá tu primer título',                  target: 1,   value: (l) => Object.keys(l.seen).length },
-  { id: 'cinefilo',  icon: '🍿', title: 'Cinéfilo',          desc: 'Mirá 10 títulos distintos',              target: 10,  value: (l) => Object.keys(l.seen).length },
-  { id: 'devorador', icon: '🏆', title: 'Devorador',         desc: 'Mirá 50 títulos distintos',              target: 50,  value: (l) => Object.keys(l.seen).length },
-  { id: 'racha3',    icon: '🔥', title: 'En racha',          desc: '3 días seguidos viendo algo',            target: 3,   value: (l, c) => c.streak.best },
-  { id: 'racha7',    icon: '⚡', title: 'Semana completa',   desc: '7 días seguidos viendo algo',            target: 7,   value: (l, c) => c.streak.best },
-  { id: 'racha30',   icon: '👑', title: 'Imparable',         desc: '30 días seguidos viendo algo',           target: 30,  value: (l, c) => c.streak.best },
-  { id: 'maraton',   icon: '🛋️', title: 'Maratonista',       desc: '3 episodios o películas en un mismo día', target: 3,   value: (l) => maxInOneDay(l.daily) },
-  { id: 'explorador',icon: '🧭', title: 'Explorador',        desc: 'Mirá títulos de 5 géneros distintos',    target: 5,   value: (l) => Object.keys(l.genres).length },
-  { id: 'horas10',   icon: '⏱️', title: '10 horas de cine',  desc: 'Sumá 10 horas reproducidas',             target: 600, value: (l) => Math.floor(l.minutes), unit: 'min' },
-  { id: 'coleccion', icon: '📚', title: 'Coleccionista',     desc: 'Guardá 10 títulos en Mi lista',          target: 10,  value: (l) => l.list.length },
-  { id: 'aviso',     icon: '🔔', title: 'Estreno asegurado', desc: 'Pedí un aviso de estreno',               target: 1,   value: (l) => l.reminders.length },
+  { id: 'first',     icon: '🎬', title: tt("Primera función"),   desc: tt("Mirá tu primer título"),                  target: 1,   value: (l) => Object.keys(l.seen).length },
+  { id: 'cinefilo',  icon: '🍿', title: tt("Cinéfilo"),          desc: tt("Mirá 10 títulos distintos"),              target: 10,  value: (l) => Object.keys(l.seen).length },
+  { id: 'devorador', icon: '🏆', title: 'Devorador',         desc: tt("Mirá 50 títulos distintos"),              target: 50,  value: (l) => Object.keys(l.seen).length },
+  { id: 'racha3',    icon: '🔥', title: tt("En racha"),          desc: tt("3 días seguidos viendo algo"),            target: 3,   value: (l, c) => c.streak.best },
+  { id: 'racha7',    icon: '⚡', title: tt("Semana completa"),   desc: tt("7 días seguidos viendo algo"),            target: 7,   value: (l, c) => c.streak.best },
+  { id: 'racha30',   icon: '👑', title: 'Imparable',         desc: tt("30 días seguidos viendo algo"),           target: 30,  value: (l, c) => c.streak.best },
+  { id: 'maraton',   icon: '🛋️', title: 'Maratonista',       desc: tt("3 episodios o películas en un mismo día"), target: 3,   value: (l) => maxInOneDay(l.daily) },
+  { id: 'explorador',icon: '🧭', title: 'Explorador',        desc: tt("Mirá títulos de 5 géneros distintos"),    target: 5,   value: (l) => Object.keys(l.genres).length },
+  { id: 'horas10',   icon: '⏱️', title: tt("10 horas de cine"),  desc: tt("Sumá 10 horas reproducidas"),             target: 600, value: (l) => Math.floor(l.minutes), unit: 'min' },
+  { id: 'coleccion', icon: '📚', title: 'Coleccionista',     desc: tt("Guardá 10 títulos en Mi lista"),          target: 10,  value: (l) => l.list.length },
+  { id: 'aviso',     icon: '🔔', title: tt("Estreno asegurado"), desc: tt("Pedí un aviso de estreno"),               target: 1,   value: (l) => l.reminders.length },
 ]
 
 export const computeAchievements = (lib, today = todayStr()) => {

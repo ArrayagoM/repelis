@@ -1,14 +1,15 @@
 import { Globe, Translate, Info } from '@phosphor-icons/react'
+import { tt } from '../../lib/i18n'
 
 // Mapeo ISO 639-1 → nombre en español (los más comunes)
 const LANG_NAMES = {
-  en: 'Inglés', es: 'Español', fr: 'Francés', it: 'Italiano',
-  de: 'Alemán', pt: 'Portugués', ja: 'Japonés', ko: 'Coreano',
-  zh: 'Chino', ru: 'Ruso', ar: 'Árabe', hi: 'Hindi',
-  tr: 'Turco', pl: 'Polaco', nl: 'Holandés', sv: 'Sueco',
-  th: 'Tailandés', vi: 'Vietnamita', he: 'Hebreo', uk: 'Ucraniano',
-  cs: 'Checo', el: 'Griego', no: 'Noruego', fi: 'Finlandés',
-  da: 'Danés', hu: 'Húngaro', ro: 'Rumano', bg: 'Búlgaro',
+  en: tt("Inglés"), es: tt("Español"), fr: tt("Francés"), it: 'Italiano',
+  de: tt("Alemán"), pt: tt("Portugués"), ja: tt("Japonés"), ko: 'Coreano',
+  zh: 'Chino', ru: 'Ruso', ar: tt("Árabe"), hi: 'Hindi',
+  tr: 'Turco', pl: 'Polaco', nl: tt("Holandés"), sv: 'Sueco',
+  th: tt("Tailandés"), vi: 'Vietnamita', he: 'Hebreo', uk: 'Ucraniano',
+  cs: 'Checo', el: 'Griego', no: 'Noruego', fi: tt("Finlandés"),
+  da: tt("Danés"), hu: tt("Húngaro"), ro: 'Rumano', bg: tt("Búlgaro"),
 }
 
 const flag = (iso) => {
@@ -45,7 +46,7 @@ export default function LanguagesInfo({ originalLanguage, spokenLanguages = [] }
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-muted/70 text-xs uppercase tracking-widest font-semibold">
-        <Translate size={12} weight="bold" /> Idiomas
+        <Translate size={12} weight="bold" /> {tt("Idiomas")}
       </div>
       <div className="flex flex-wrap gap-2">
         {allLangs.map(({ iso, original, name }) => (
@@ -56,11 +57,11 @@ export default function LanguagesInfo({ originalLanguage, spokenLanguages = [] }
                 ? 'bg-gold/10 border-gold/30 text-gold'
                 : 'bg-white/[0.03] border-white/10 text-muted'
               }`}
-            title={original ? 'Idioma original' : 'Hablado en la obra'}
+            title={original ? tt("Idioma original") : tt("Hablado en la obra")}
           >
             <span className="text-sm leading-none">{flag(iso)}</span>
             <span>{label(iso, name)}</span>
-            {original && <span className="text-[9px] opacity-70">orig.</span>}
+            {original && <span className="text-[9px] opacity-70">{tt("orig.")}</span>}
           </span>
         ))}
       </div>
@@ -68,7 +69,7 @@ export default function LanguagesInfo({ originalLanguage, spokenLanguages = [] }
       <p className="text-muted/45 text-[10px] leading-relaxed flex items-start gap-1.5 max-w-[58ch]">
         <Info size={10} weight="fill" className="text-gold/60 flex-shrink-0 mt-0.5" />
         <span>
-          Idiomas de la obra según TMDB. El <strong className="text-chalk/70">doblaje y los subtítulos</strong> que llegan al reproductor dependen del servidor — buscá el botón <strong className="text-gold/80">🔊 Audio / CC</strong> dentro del player y, si no está, probá otro servidor (1-12).
+          {tt("Idiomas de la obra según TMDB. El")} <strong className="text-chalk/70">{tt("doblaje y los subtítulos")}</strong> {tt("que llegan al reproductor dependen del servidor — buscá el botón")} <strong className="text-gold/80">{tt("🔊 Audio / CC")}</strong> {tt("dentro del player y, si no está, probá otro servidor (1-12).")}
         </span>
       </p>
     </div>

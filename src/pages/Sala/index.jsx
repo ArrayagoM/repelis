@@ -15,6 +15,7 @@ import { Avatar } from '../../components/Community'
 import VoiceControls from '../../components/VoiceControls'
 import SyncControls from '../../components/SyncControls'
 import { phaseLabel, useCountdown } from '../../components/RoomBits'
+import { tt } from '../../lib/i18n'
 
 export default function Sala() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
@@ -25,7 +26,7 @@ export default function Sala() {
   const ready = auth.status === 'in'
 
   const [info, setInfo] = useState({ loading: true, room: null, error: '' })
-  useSEO({ title: info.room ? `Sala: ${info.room.title}` : 'Sala', description: 'Sala de cine digital de Life High', noindex: true })
+  useSEO({ title: info.room ? tt("Sala: {title}", { title: info.room.title }) : 'Sala', description: tt("Sala de cine digital de Life High"), noindex: true })
 
   useEffect(() => {
     if (!code) return setInfo({ loading: false, room: null, error: 'room_not_found' })
@@ -43,7 +44,7 @@ export default function Sala() {
       <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-3 px-6 text-center">
         <Popcorn size={40} className="text-gold" />
         <p className="text-chalk font-display font-bold text-xl">{roomErrorText(info.error || 'room_not_found')}</p>
-        <Link to="/salas" className="text-gold text-sm hover:underline">Ir a Salas</Link>
+        <Link to="/salas" className="text-gold text-sm hover:underline">{tt("Ir a Salas")}</Link>
       </main>
     )
   }
@@ -56,11 +57,11 @@ export default function Sala() {
         <div className="max-w-xl mx-auto p-8 rounded-3xl bg-card border border-white/[0.06] text-center space-y-3">
           <Popcorn size={36} className="text-gold mx-auto" weight="fill" />
           <h1 className="font-display font-extrabold text-2xl text-chalk">{r.title}</h1>
-          <p className="text-muted text-sm">Sala de @{r.host?.handle || 'alguien'} · {phaseLabel(r)} · {r.online} conectados</p>
-          {r.item && <p className="text-chalk/80 text-sm">Película: <strong>{r.item.title}</strong></p>}
+          <p className="text-muted text-sm">{tt("Sala de @")}{r.host?.handle || 'alguien'} · {phaseLabel(r)} · {r.online} {tt("conectados")}</p>
+          {r.item && <p className="text-chalk/80 text-sm">{tt("Película:")} <strong>{r.item.title}</strong></p>}
           <LockKey size={20} className="text-gold mx-auto mt-2" />
-          <p className="text-muted text-sm">Para entrar necesitás una cuenta gratis.</p>
-          <Link to={`/cuenta?modo=registro&volver=/sala/${code}`} className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear cuenta o ingresar</Link>
+          <p className="text-muted text-sm">{tt("Para entrar necesitás una cuenta gratis.")}</p>
+          <Link to={`/cuenta?modo=registro&volver=/sala/${code}`} className="inline-block px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">{tt("Crear cuenta o ingresar")}</Link>
         </div>
       </main>
     )
@@ -71,7 +72,7 @@ export default function Sala() {
       <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-3 px-6 text-center">
         <Popcorn size={40} className="text-gold" />
         <p className="text-chalk font-display font-bold text-xl max-w-md">{roomErrorText(s.live.error)}</p>
-        <Link to="/salas" onClick={() => s.exit()} className="text-gold text-sm hover:underline">Ir a Salas</Link>
+        <Link to="/salas" onClick={() => s.exit()} className="text-gold text-sm hover:underline">{tt("Ir a Salas")}</Link>
       </main>
     )
   }
@@ -88,12 +89,12 @@ function Tile({ m, canKick, onKick }) {
       </span>
       <Link to={`/u/${m.handle}`} className="text-chalk text-xs font-semibold hover:text-gold truncate max-w-full">@{m.handle}</Link>
       <span className="flex items-center gap-1 h-4">
-        {m.host && <Crown size={12} weight="fill" className="text-gold" aria-label="Anfitrión" />}
-        {m.me && <span className="text-muted text-[10px]">vos</span>}
-        {m.muted && <MicrophoneSlash size={12} className="text-red-300" aria-label="Micrófono apagado" />}
-        {m.inVoice && !m.muted && <Microphone size={12} className="text-emerald-300" aria-label="En la llamada" />}
+        {m.host && <Crown size={12} weight="fill" className="text-gold" aria-label={tt("Anfitrión")} />}
+        {m.me && <span className="text-muted text-[10px]">{tt("vos")}</span>}
+        {m.muted && <MicrophoneSlash size={12} className="text-red-300" aria-label={tt("Micrófono apagado")} />}
+        {m.inVoice && !m.muted && <Microphone size={12} className="text-emerald-300" aria-label={tt("En la llamada")} />}
       </span>
-      {canKick && <button onClick={onKick} aria-label={`Sacar a @${m.handle}`} className="absolute top-1 right-1 w-6 h-6 rounded-full text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={12} /></button>}
+      {canKick && <button onClick={onKick} aria-label={tt("Sacar a @{handle}", { handle: m.handle })} className="absolute top-1 right-1 w-6 h-6 rounded-full text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={12} /></button>}
     </li>
   )
 }
@@ -115,12 +116,12 @@ function RoomView({ code, base }) {
   const toggleAuto = (v) => { setAutoOpen(v); try { localStorage.setItem('lifehigh:room:autoopen', v ? '1' : '0') } catch { /* sin storage */ } }
 
   const url = typeof window !== 'undefined' ? `${window.location.origin}/sala/${code}` : ''
-  const waLink = `https://wa.me/?text=${encodeURIComponent(`Sumate a mi sala "${room.title}" en Life High: ${url}`)}`
+  const waLink = `https://wa.me/?text=${encodeURIComponent(tt("Sumate a mi sala \"{title}\" en Life High: {url}", { title: room.title, url: url }))}`
 
   useEffect(() => {
     if (room.phase === 'scheduled' && started && !announced.current) {
       announced.current = true
-      showToast({ icon: '🍿', title: '¡Es la hora!', text: autoOpen && room.item?.type === 'movie' ? 'Abrimos la película para que todos arranquen juntos.' : 'Dale play a la película.', ttl: 6000, tone: 'green' })
+      showToast({ icon: '🍿', title: tt("¡Es la hora!"), text: autoOpen && room.item?.type === 'movie' ? tt("Abrimos la película para que todos arranquen juntos.") : tt("Dale play a la película."), ttl: 6000, tone: 'green' })
       if (autoOpen && room.item?.type === 'movie') watchHere()          // a la hora exacta todos abren el reproductor a la vez
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,12 +129,12 @@ function RoomView({ code, base }) {
 
   const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { /* sin portapapeles */ } }
   const leave = async () => { await s.exit(); navigate('/salas') }
-  const close = async () => { if (window.confirm('¿Cerrar la sala para todos?')) await rooms.close(code) }
+  const close = async () => { if (window.confirm(tt("¿Cerrar la sala para todos?"))) await rooms.close(code) }
   const saveWhen = async () => {
     const r = await rooms.update(code, { startsAt: when ? new Date(when).getTime() : null })
     if (r.ok) setEditing(false); else showToast({ icon: '⚠️', title: roomErrorText(r.error), ttl: 4000, tone: 'blue' })
   }
-  const kick = async (handle) => { if (window.confirm(`¿Sacar a @${handle} de la sala?`)) await rooms.kick(code, handle) }
+  const kick = async (handle) => { if (window.confirm(tt("¿Sacar a @{handle} de la sala?", { handle: handle }))) await rooms.kick(code, handle) }
 
   // Ver la película acá: el reproductor se abre en esta misma pestaña y la barra de la sala queda por encima
   const watchHere = () => {
@@ -147,25 +148,25 @@ function RoomView({ code, base }) {
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-24 pb-32">
       <div className="max-w-4xl mx-auto px-4 md:px-8 space-y-5">
         <header className="flex flex-wrap items-center gap-3">
-          <Link to="/salas" aria-label="Volver a Salas" className="w-9 h-9 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-gold"><ArrowLeft size={16} /></Link>
+          <Link to="/salas" aria-label={tt("Volver a Salas")} className="w-9 h-9 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-gold"><ArrowLeft size={16} /></Link>
           <div className="mr-auto min-w-0">
             <h1 className="font-display font-extrabold text-xl sm:text-2xl text-chalk truncate">{room.title}</h1>
-            <p className="text-muted text-xs">Anfitrión: @{room.host?.handle || '—'} · <Users size={11} className="inline -mt-0.5" /> {live.members.length}/{ROOM.maxMembers}</p>
+            <p className="text-muted text-xs">{tt("Anfitrión: @")}{room.host?.handle || '—'} · <Users size={11} className="inline -mt-0.5" /> {live.members.length}/{ROOM.maxMembers}</p>
           </div>
         </header>
 
         {/* Escenario: hora de arranque + película */}
         <section className="p-6 rounded-3xl bg-gradient-to-b from-card to-void border border-white/[0.06] text-center space-y-4">
           {closed ? (
-            <p className="text-muted text-sm py-4">La sala terminó. ¡Gracias por venir!</p>
+            <p className="text-muted text-sm py-4">{tt("La sala terminó. ¡Gracias por venir!")}</p>
           ) : scheduled ? (
             <>
-              <p className="text-muted text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5"><Clock size={13} /> Arranca en</p>
+              <p className="text-muted text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5"><Clock size={13} /> {tt("Arranca en")}</p>
               <p className="font-display font-extrabold text-6xl sm:text-7xl text-gold tabular-nums">{countdown}</p>
               <p className="text-muted text-xs">{phaseLabel(room)}</p>
             </>
           ) : (
-            <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest"><Play size={12} weight="fill" /> ¡Es la hora!</p>
+            <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest"><Play size={12} weight="fill" /> {tt("¡Es la hora!")}</p>
           )}
 
           {room.item && (
@@ -173,42 +174,42 @@ function RoomView({ code, base }) {
               <div className="w-14 h-[5.25rem] rounded-lg overflow-hidden bg-card flex-shrink-0">{room.item.poster && <img src={`${IMG_W342}${room.item.poster}`} alt="" className="w-full h-full object-cover" />}</div>
               <div className="min-w-0">
                 <p className="text-chalk text-sm font-semibold leading-tight">{room.item.title}</p>
-                <p className="text-muted text-xs font-mono">{room.item.year || ''}{room.item.type === 'tv' ? ' · Serie' : ''}</p>
-                {!closed && <button onClick={watchHere} className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi transition-colors"><Play size={11} weight="fill" /> {room.item.type === 'tv' ? 'Elegir capítulo' : 'Ver la película acá'}</button>}
+                <p className="text-muted text-xs font-mono">{room.item.year || ''}{room.item.type === 'tv' ? tt(" · Serie") : ''}</p>
+                {!closed && <button onClick={watchHere} className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi transition-colors"><Play size={11} weight="fill" /> {room.item.type === 'tv' ? tt("Elegir capítulo") : tt("Ver la película acá")}</button>}
               </div>
             </div>
           )}
           {!closed && room.item?.type === 'movie' && (
             <label className="flex items-center justify-center gap-2 text-xs text-muted cursor-pointer">
-              <input type="checkbox" checked={autoOpen} onChange={(e) => toggleAuto(e.target.checked)} className="accent-[#E8A020]" /> Abrir la película sola a la hora de arranque
+              <input type="checkbox" checked={autoOpen} onChange={(e) => toggleAuto(e.target.checked)} className="accent-[#E8A020]" /> {tt("Abrir la película sola a la hora de arranque")}
             </label>
           )}
-          {!closed && <p className="text-muted/70 text-xs max-w-md mx-auto">Mientras mirás, la barra de la sala queda abajo para hablar y reaccionar sin tapar la pantalla. Cada quien reproduce la película en su pantalla.</p>}
+          {!closed && <p className="text-muted/70 text-xs max-w-md mx-auto">{tt("Mientras mirás, la barra de la sala queda abajo para hablar y reaccionar sin tapar la pantalla. Cada quien reproduce la película en su pantalla.")}</p>}
         </section>
 
         {/* Personas */}
-        <section aria-label="Personas en la sala">
-          <h2 className="font-display font-bold text-sm text-chalk mb-3">En la sala</h2>
+        <section aria-label={tt("Personas en la sala")}>
+          <h2 className="font-display font-bold text-sm text-chalk mb-3">{tt("En la sala")}</h2>
           <ul className="flex flex-wrap gap-3">
             {s.members.map((m) => <Tile key={m.handle} m={m} canKick={room.isHost && !m.me && !closed} onKick={() => kick(m.handle)} />)}
-            {live.status !== 'in' && <li className="text-muted text-sm">Entrando…</li>}
+            {live.status !== 'in' && <li className="text-muted text-sm">{tt("Entrando…")}</li>}
           </ul>
         </section>
 
         {room.isHost && !closed && (
           <section className="p-4 rounded-2xl bg-card border border-white/[0.06] space-y-2">
-            <h2 className="font-display font-bold text-sm text-chalk">Anfitrión</h2>
+            <h2 className="font-display font-bold text-sm text-chalk">{tt("Anfitrión")}</h2>
             {editing ? (
               <div className="flex flex-wrap items-center gap-2">
-                <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} aria-label="Nuevo horario" className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-chalk text-sm" />
-                <button onClick={saveWhen} className="px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold">Guardar</button>
-                <button onClick={() => rooms.update(code, { startsAt: null }).then(() => setEditing(false))} className="px-4 py-1.5 rounded-full glass border border-white/10 text-muted text-xs">Sin horario</button>
-                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-muted text-xs">Cancelar</button>
+                <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} aria-label={tt("Nuevo horario")} className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-chalk text-sm" />
+                <button onClick={saveWhen} className="px-4 py-1.5 rounded-full bg-gold text-void text-xs font-bold">{tt("Guardar")}</button>
+                <button onClick={() => rooms.update(code, { startsAt: null }).then(() => setEditing(false))} className="px-4 py-1.5 rounded-full glass border border-white/10 text-muted text-xs">{tt("Sin horario")}</button>
+                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-muted text-xs">{tt("Cancelar")}</button>
               </div>
             ) : (
               <div className="flex gap-2">
-                <button onClick={() => setEditing(true)} className="px-4 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-gold/40">Cambiar horario</button>
-                <button onClick={close} className="px-4 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">Cerrar sala</button>
+                <button onClick={() => setEditing(true)} className="px-4 py-1.5 rounded-full glass border border-white/10 text-chalk text-xs hover:border-gold/40">{tt("Cambiar horario")}</button>
+                <button onClick={close} className="px-4 py-1.5 rounded-full glass border border-white/10 text-red-300 text-xs hover:border-red-400/50">{tt("Cerrar sala")}</button>
               </div>
             )}
           </section>
@@ -217,20 +218,20 @@ function RoomView({ code, base }) {
 
       {/* Barra de la sala (estilo llamada) */}
       <div className="fixed z-[130] left-1/2 -translate-x-1/2 bottom-4 max-w-[calc(100vw-1rem)]">
-        <div className="flex items-center gap-1.5 px-2 py-2 rounded-full bg-card/95 backdrop-blur border border-white/10 shadow-2xl" role="toolbar" aria-label="Controles de la sala">
+        <div className="flex items-center gap-1.5 px-2 py-2 rounded-full bg-card/95 backdrop-blur border border-white/10 shadow-2xl" role="toolbar" aria-label={tt("Controles de la sala")}>
           <VoiceControls size={40} />
           <SyncControls size={40} />
-          <div className="flex gap-0.5 px-1" role="group" aria-label="Reacciones">
-            {EMOJIS.map((e) => <button key={e} onClick={() => !closed && live.react(e)} disabled={closed} aria-label={`Reaccionar ${e}`} className="w-9 h-9 rounded-full text-xl hover:scale-125 transition disabled:opacity-40">{e}</button>)}
+          <div className="flex gap-0.5 px-1" role="group" aria-label={tt("Reacciones")}>
+            {EMOJIS.map((e) => <button key={e} onClick={() => !closed && live.react(e)} disabled={closed} aria-label={tt("Reaccionar {e}", { e: e })} className="w-9 h-9 rounded-full text-xl hover:scale-125 transition disabled:opacity-40">{e}</button>)}
           </div>
           <span className="w-px h-6 bg-white/10" aria-hidden="true" />
-          <button onClick={() => s.setChatOpen(!s.chatOpen)} aria-pressed={s.chatOpen} aria-label={s.unread ? `Chat (${s.unread} sin leer)` : 'Chat'} className="relative w-10 h-10 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">
+          <button onClick={() => s.setChatOpen(!s.chatOpen)} aria-pressed={s.chatOpen} aria-label={s.unread ? tt("Chat ({unread} sin leer)", { unread: s.unread }) : tt("Chat")} className="relative w-10 h-10 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">
             <ChatCircleText size={20} />
             {s.unread > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{s.unread > 9 ? '9+' : s.unread}</span>}
           </button>
-          <button onClick={copy} aria-label="Copiar enlace de invitación" className="w-10 h-10 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">{copied ? <Check size={18} className="text-emerald-300" /> : <Copy size={18} />}</button>
-          <a href={waLink} target="_blank" rel="noopener noreferrer" aria-label="Invitar por WhatsApp" className="w-10 h-10 rounded-full text-emerald-300 hover:bg-emerald-500/15 flex items-center justify-center"><WhatsappLogo size={20} weight="fill" /></a>
-          <button onClick={leave} aria-label="Salir de la sala" className="w-10 h-10 rounded-full bg-red-500/15 text-red-300 hover:bg-red-500/30 flex items-center justify-center"><SignOut size={18} /></button>
+          <button onClick={copy} aria-label={tt("Copiar enlace de invitación")} className="w-10 h-10 rounded-full text-muted hover:text-gold hover:bg-white/5 flex items-center justify-center">{copied ? <Check size={18} className="text-emerald-300" /> : <Copy size={18} />}</button>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" aria-label={tt("Invitar por WhatsApp")} className="w-10 h-10 rounded-full text-emerald-300 hover:bg-emerald-500/15 flex items-center justify-center"><WhatsappLogo size={20} weight="fill" /></a>
+          <button onClick={leave} aria-label={tt("Salir de la sala")} className="w-10 h-10 rounded-full bg-red-500/15 text-red-300 hover:bg-red-500/30 flex items-center justify-center"><SignOut size={18} /></button>
         </div>
       </div>
     </motion.main>

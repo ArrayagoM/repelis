@@ -8,6 +8,7 @@ import { setUnread } from '../../lib/notifications'
 import { devicePushState, enablePush, disablePush, pushSupported } from '../../lib/push'
 import { ago } from '../../lib/panelFormat'
 import { useSEO } from '../../lib/useSEO'
+import { tt } from '../../lib/i18n'
 
 const ICONS = { follow: UserPlus, like: Heart, comment: ChatCircleText, new_list: ListPlus }
 
@@ -24,7 +25,7 @@ const Toggle = ({ on, onChange, label, hint, disabled }) => (
 
 export default function Avisos() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
-  useSEO({ title: 'Avisos', description: 'Tus avisos de Life High', noindex: true })
+  useSEO({ title: 'Avisos', description: tt("Tus avisos de Life High"), noindex: true })
   const auth = useAuth()
   const [state, setState] = useState({ loading: true, error: '', items: [], prefs: { push: true, email: false }, push: { available: false, publicKey: null } })
   const [device, setDevice] = useState('off')
@@ -48,8 +49,8 @@ export default function Avisos() {
     return (
       <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 px-6 text-center">
         <LockKey size={36} className="text-gold" weight="fill" />
-        <p className="text-chalk font-display font-bold text-xl">Tus avisos viven en tu cuenta gratis</p>
-        <Link to="/cuenta?modo=registro&volver=/avisos" className="px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi cuenta</Link>
+        <p className="text-chalk font-display font-bold text-xl">{tt("Tus avisos viven en tu cuenta gratis")}</p>
+        <Link to="/cuenta?modo=registro&volver=/avisos" className="px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">{tt("Crear mi cuenta")}</Link>
       </main>
     )
   }
@@ -59,7 +60,7 @@ export default function Avisos() {
     if (on) {
       const r = await enablePush(state.push.publicKey)
       setDevice(await devicePushState())
-      if (!r.ok) setMsg(r.reason === 'denied' ? 'El navegador bloqueó los avisos. Habilitalos desde el candado de la barra de direcciones.' : r.reason === 'unsupported' ? 'Este navegador no admite avisos.' : 'No pudimos activar los avisos. Probá de nuevo.')
+      if (!r.ok) setMsg(r.reason === 'denied' ? tt("El navegador bloqueó los avisos. Habilitalos desde el candado de la barra de direcciones.") : r.reason === 'unsupported' ? tt("Este navegador no admite avisos.") : tt("No pudimos activar los avisos. Probá de nuevo."))
     } else {
       await disablePush()
       setDevice(await devicePushState())
@@ -73,28 +74,28 @@ export default function Avisos() {
   return (
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-28 pb-24">
       <div className="max-w-2xl mx-auto px-6 space-y-8">
-        <h1 className="font-display font-extrabold text-3xl text-chalk flex items-center gap-3"><Bell size={28} weight="fill" className="text-gold" /> Avisos</h1>
+        <h1 className="font-display font-extrabold text-3xl text-chalk flex items-center gap-3"><Bell size={28} weight="fill" className="text-gold" /> {tt("Avisos")}</h1>
 
-        <section aria-label="Preferencias" className="space-y-3">
-          <Toggle label="Avisos en este dispositivo" on={device === 'on'} onChange={toggleDevice}
+        <section aria-label={tt("Preferencias")} className="space-y-3">
+          <Toggle label={tt("Avisos en este dispositivo")} on={device === 'on'} onChange={toggleDevice}
             disabled={!state.push.available || !pushSupported() || device === 'denied'}
-            hint={!state.push.available ? 'Los avisos del navegador todavía no están disponibles.'
-              : !pushSupported() ? 'Este navegador no admite avisos del sistema.'
-              : device === 'denied' ? 'Bloqueaste los avisos en el navegador. Habilitalos desde el candado de la barra de direcciones.'
-              : 'Te avisamos cuando alguien te sigue, comenta o da me gusta a tus listas, o cuando alguien que seguís publica una.'} />
-          <Toggle label="Resumen por email" on={state.prefs.email} onChange={(v) => setPref('email', v)}
-            hint="Un mail por día, solo si tuviste novedades. Podés desactivarlo cuando quieras." />
+            hint={!state.push.available ? tt("Los avisos del navegador todavía no están disponibles.")
+              : !pushSupported() ? tt("Este navegador no admite avisos del sistema.")
+              : device === 'denied' ? tt("Bloqueaste los avisos en el navegador. Habilitalos desde el candado de la barra de direcciones.")
+              : tt("Te avisamos cuando alguien te sigue, comenta o da me gusta a tus listas, o cuando alguien que seguís publica una.")} />
+          <Toggle label={tt("Resumen por email")} on={state.prefs.email} onChange={(v) => setPref('email', v)}
+            hint={tt("Un mail por día, solo si tuviste novedades. Podés desactivarlo cuando quieras.")} />
           {msg && <p role="alert" className="text-amber-300 text-xs">{msg}</p>}
         </section>
 
-        <section aria-label="Novedades">
-          <h2 className="font-display font-bold text-lg text-chalk mb-3">Novedades</h2>
+        <section aria-label={tt("Novedades")}>
+          <h2 className="font-display font-bold text-lg text-chalk mb-3">{tt("Novedades")}</h2>
           {state.loading ? <div className="skeleton h-24 rounded-2xl" />
             : state.error ? <p role="alert" className="text-red-200 text-sm">{state.error}</p>
             : state.items.length === 0 ? (
               <p className="p-6 rounded-2xl bg-card border border-white/[0.06] text-muted text-sm text-center leading-relaxed">
-                Todavía no tenés avisos. Cuando alguien te siga o comente tus listas, lo ves acá.{' '}
-                <Link to="/comunidad" className="text-gold hover:underline">Ir a la comunidad</Link>
+                {tt("Todavía no tenés avisos. Cuando alguien te siga o comente tus listas, lo ves acá.")}{' '}
+                <Link to="/comunidad" className="text-gold hover:underline">{tt("Ir a la comunidad")}</Link>
               </p>
             ) : (
               <ul className="space-y-2">

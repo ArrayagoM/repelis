@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Share, Copy, Check, WhatsappLogo, TelegramLogo, TwitterLogo, FacebookLogo } from '@phosphor-icons/react'
+import { tt } from '../../lib/i18n'
 
 /**
  * Botones de compartir. Funciona en mobile con Web Share API nativa.
@@ -78,7 +79,7 @@ export default function ShareButtons({ title, description = '' }) {
         className="flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-white/10 text-muted text-sm hover:text-gold hover:border-gold/30 transition-all duration-200"
       >
         <Share size={14} weight="bold" />
-        Compartir
+        {tt("Compartir")}
       </button>
 
       <AnimatePresence>
@@ -113,7 +114,7 @@ export default function ShareButtons({ title, description = '' }) {
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted text-sm border-t border-white/[0.04] hover:text-gold transition-colors"
               >
                 {copied ? <Check size={16} weight="bold" className="text-emerald-400" /> : <Copy size={16} weight="bold" />}
-                {copied ? '¡Copiado!' : 'Copiar enlace'}
+                {copied ? tt("¡Copiado!") : tt("Copiar enlace")}
               </button>
             </motion.div>
           </>

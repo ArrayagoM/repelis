@@ -7,44 +7,46 @@ import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
 import LanguageModeToggle from '../LanguageModeToggle'
+import LanguageSwitch from '../LanguageSwitch'
 import { StreakChip } from '../Achievements'
 import { SupporterBadge } from '../Supporter'
 import { useAuth } from '../../lib/auth'
 import { isHalloweenSeason } from '../../lib/seasons'
 import { useUnread } from '../../lib/notifications'
+import { tt, isEnglish } from '../../lib/i18n'
 
 // Mega-menú: agrupado para que el usuario encuentre lo que busca rápido
 const MEGA_MENU = {
   'Películas': {
     'Principal': [
-      ['Más populares',     '/populares'],
+      [tt("Más populares"),     '/populares'],
       ['Tendencias',        '/tendencias'],
-      ['Tendencias de hoy', '/tendencias-hoy'],
-      ['En cartelera',      '/estrenos'],
-      ['Próximos estrenos', '/proximos'],
-      ['Calendario de estrenos', '/calendario'],
-      ['Top valoradas',     '/top-valoradas'],
-      ['Clásicos',          '/clasicos'],
+      [tt("Tendencias de hoy"), '/tendencias-hoy'],
+      [tt("En cartelera"),      '/estrenos'],
+      [tt("Próximos estrenos"), '/proximos'],
+      [tt("Calendario de estrenos"), '/calendario'],
+      [tt("Top valoradas"),     '/top-valoradas'],
+      [tt("Clásicos"),          '/clasicos'],
     ],
     'Géneros': [
-      ['Acción',           '/genero-accion'],
+      [tt("Acción"),           '/genero-accion'],
       ['Comedia',          '/genero-comedia'],
       ['Drama',            '/genero-drama'],
       ['Terror',           '/genero-terror'],
-      ['Ciencia Ficción',  '/genero-sci-fi'],
+      [tt("Ciencia Ficción"),  '/genero-sci-fi'],
       ['Romance',          '/genero-romance'],
       ['Thriller',         '/genero-thriller'],
       ['Aventura',         '/genero-aventura'],
-      ['Animación',        '/genero-animacion'],
+      [tt("Animación"),        '/genero-animacion'],
       ['Documentales',     '/genero-documental'],
-      ['Fantasía',         '/genero-fantasia'],
+      [tt("Fantasía"),         '/genero-fantasia'],
       ['Familiar',         '/genero-familia'],
       ['Crimen',           '/genero-crimen'],
       ['Misterio',         '/genero-misterio'],
-      ['Bélica',           '/genero-belica'],
+      [tt("Bélica"),           '/genero-belica'],
       ['Western',          '/genero-western'],
-      ['Música',           '/genero-musica'],
-      ['Histórico',        '/genero-historia'],
+      [tt("Música"),           '/genero-musica'],
+      [tt("Histórico"),        '/genero-historia'],
     ],
     'Décadas': [
       ['2020s', '/decada-2020'],
@@ -57,18 +59,18 @@ const MEGA_MENU = {
   },
   'Series': {
     'Principal': [
-      ['Series populares',     '/series'],
-      ['Series tendencia',     '/series-trending'],
-      ['Series mejor valoradas','/series-top'],
-      ['En emisión hoy',       '/en-emision'],
-      ['En antena',            '/en-antena'],
+      [tt("Series populares"),     '/series'],
+      [tt("Series tendencia"),     '/series-trending'],
+      [tt("Series mejor valoradas"),'/series-top'],
+      [tt("En emisión hoy"),       '/en-emision'],
+      [tt("En antena"),            '/en-antena'],
     ],
     'Géneros TV': [
-      ['Acción',     '/series-accion'],
+      [tt("Acción"),     '/series-accion'],
       ['Comedia',    '/series-comedia'],
       ['Drama',      '/series-drama'],
       ['Crimen',     '/series-crimen'],
-      ['Sci-Fi & Fantasía', '/series-sci-fi'],
+      [tt("Sci-Fi & Fantasía"), '/series-sci-fi'],
       ['Misterio',   '/series-misterio'],
       ['Documental', '/series-documental'],
       ['Familia',    '/series-familia'],
@@ -79,16 +81,16 @@ const MEGA_MENU = {
   },
   'Anime & K-Drama': {
     'Anime': [
-      ['Anime (series)',       '/anime'],
-      ['Películas de anime',   '/anime-peliculas'],
+      [tt("Anime (series)"),       '/anime'],
+      [tt("Películas de anime"),   '/anime-peliculas'],
       ['Studio Ghibli',        '/ghibli'],
       ['Crunchyroll',          '/crunchyroll'],
     ],
     'Asia': [
       ['K-Drama',              '/kdrama'],
-      ['Cine japonés',         '/pais-japon'],
-      ['Cine coreano',         '/pais-corea'],
-      ['Cine asiático',        '/pais-china'],
+      [tt("Cine japonés"),         '/pais-japon'],
+      [tt("Cine coreano"),         '/pais-corea'],
+      [tt("Cine asiático"),        '/pais-china'],
     ],
   },
   'Plataformas': {
@@ -114,27 +116,27 @@ const MEGA_MENU = {
       ['Marvel (MCU)',         '/marvel'],
       ['DC',                   '/dc'],
       ['Pixar',                '/pixar'],
-      ['Disney clásicos',      '/disney-clasicas'],
+      [tt("Disney clásicos"),      '/disney-clasicas'],
       ['Lucasfilm (Star Wars)','/lucasfilm'],
     ],
     'Por país': [
-      ['Latinoamérica',  '/pais-latam'],
-      ['España',         '/pais-espana'],
+      [tt("Latinoamérica"),  '/pais-latam'],
+      [tt("España"),         '/pais-espana'],
       ['USA',            '/pais-usa'],
       ['Francia',        '/pais-francia'],
       ['Italia',         '/pais-italia'],
-      ['Reino Unido',    '/pais-uk'],
+      [tt("Reino Unido"),    '/pais-uk'],
       ['Bollywood',      '/pais-india'],
     ],
     'Especiales': [
-      ['Para los más chicos', '/infantil'],
+      [tt("Para los más chicos"), '/infantil'],
     ],
   },
 }
 
 const authLabel = (auth) => {
-  if (auth.status === 'in') return auth.user?.name ? `Mi cuenta · ${auth.user.name}` : 'Mi cuenta'
-  return auth.status === 'unavailable' ? 'Mi cuenta' : 'Ingresar o crear cuenta'
+  if (auth.status === 'in') return auth.user?.name ? tt("Mi cuenta · {name}", { name: auth.user.name }) : tt("Mi cuenta")
+  return auth.status === 'unavailable' ? tt("Mi cuenta") : tt("Ingresar o crear cuenta")
 }
 
 // Acceso a la cuenta: círculo con la inicial si hay sesión, ícono si no. Se oculta si las cuentas no están disponibles.
@@ -157,7 +159,7 @@ function BellLink() {
   const unread = useUnread()
   if (auth.status !== 'in') return null
   return (
-    <Link to="/avisos" title={unread ? `${unread} avisos sin leer` : 'Avisos'} aria-label={unread ? `Avisos: ${unread} sin leer` : 'Avisos'}
+    <Link to="/avisos" title={unread ? tt("{unread} avisos sin leer", { unread: unread }) : tt("Avisos")} aria-label={unread ? tt("Avisos: {unread} sin leer", { unread: unread }) : tt("Avisos")}
       className="relative hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all">
       <Bell size={14} weight={unread ? 'fill' : 'regular'} />
       {unread > 0 && (
@@ -172,7 +174,7 @@ function PanelLink() {
   const auth = useAuth()
   if (!auth.user?.root) return null
   return (
-    <Link to="/panel" title="Panel del fundador" aria-label="Panel del fundador"
+    <Link to="/panel" title={tt("Panel del fundador")} aria-label={tt("Panel del fundador")}
       className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/25 transition-all">
       <ChartLineUp size={16} weight="bold" />
     </Link>
@@ -259,7 +261,7 @@ export default function Navbar({ onDonateClick }) {
               <FilmSlate size={16} weight="fill" className="text-void" />
             </div>
             <span className="font-display font-800 text-[1.1rem] tracking-tight text-chalk hidden sm:block">
-              Life<span className="text-gold"> High</span>
+              {tt("Life")}<span className="text-gold"> {tt("High")}</span>
             </span>
           </Link>
 
@@ -271,7 +273,7 @@ export default function Navbar({ onDonateClick }) {
             <Link to="/"
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
                 ${location.pathname === '/' ? 'bg-gold/10 text-gold' : 'text-muted hover:text-chalk hover:bg-white/5'}`}>
-              Inicio
+              {tt("Inicio")}
             </Link>
             {Object.keys(MEGA_MENU).map((mainLabel) => (
               <div key={mainLabel} className="relative"
@@ -283,7 +285,7 @@ export default function Navbar({ onDonateClick }) {
                   aria-expanded={openMega === mainLabel}
                   aria-haspopup="menu"
                 >
-                  {mainLabel}
+                  {tt(mainLabel)}
                   <CaretDown size={10} weight="bold" className={`transition-transform ${openMega === mainLabel ? 'rotate-180' : ''}`} />
                 </button>
               </div>
@@ -295,7 +297,7 @@ export default function Navbar({ onDonateClick }) {
             {isHalloweenSeason() && (
               <Link to="/terror"
                 className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-red-500/15 border border-red-500/35 text-red-300 hover:bg-red-500/25 transition-all"
-                title="Sesión de terror · Halloween" aria-label="Sesión de terror">
+                title={tt("Sesión de terror · Halloween")} aria-label={tt("Sesión de terror")}>
                 <Ghost size={14} weight="fill" />
               </Link>
             )}
@@ -308,36 +310,37 @@ export default function Navbar({ onDonateClick }) {
 
             <Link to="/comunidad"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
-              title="Comunidad: listas y planes de la gente" aria-label="Comunidad">
+              title={tt("Comunidad: listas y planes de la gente")} aria-label={tt("Comunidad")}>
               <UsersThree size={14} weight="fill" />
             </Link>
 
             <Link to="/salas"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
-              title="Salas: mirá películas en grupo" aria-label="Salas">
+              title={tt("Salas: mirá películas en grupo")} aria-label={tt("Salas")}>
               <Popcorn size={14} weight="fill" />
             </Link>
 
             <Link to="/mi-lista"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/15 text-chalk/80 hover:text-gold hover:border-gold/40 transition-all"
-              title="Mi lista y Continuar viendo" aria-label="Mi lista">
+              title={tt("Mi lista y Continuar viendo")} aria-label={tt("Mi lista")}>
               <BookmarkSimple size={14} weight="fill" />
             </Link>
 
             <Link to="/cines-cerca"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-gold/15 border border-gold/30 text-gold hover:bg-gold/25 transition-all"
-              title="Cines cerca tuyo">
+              title={tt("Cines cerca tuyo")}>
               <MapPin size={14} weight="fill" />
             </Link>
 
             <Link to="/descargar"
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 hover:bg-blue-500/25 transition-all"
-              title="Descargar la app (Android, iPhone, TV, Windows, Mac)">
+              title={tt("Descargar la app (Android, iPhone, TV, Windows, Mac)")}>
               <DeviceMobile size={14} weight="fill" />
             </Link>
 
-            <div className="hidden lg:block">
-              <LanguageModeToggle variant="navbar" />
+            <div className="hidden lg:flex items-center gap-2">
+              {!isEnglish() && <LanguageModeToggle variant="navbar" />}
+              <LanguageSwitch />
             </div>
 
             {/* Café removido del navbar — duplicado con FloatingCafecito + Footer */}
@@ -347,7 +350,7 @@ export default function Navbar({ onDonateClick }) {
               whileTap={{ scale: 0.92 }}
               onClick={() => setSearchOpen(true)}
               className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:text-gold hover:bg-gold/10 transition-all duration-300 lg:hidden"
-              aria-label="Buscar"
+              aria-label={tt("Buscar")}
             >
               <MagnifyingGlass size={18} weight="bold" />
             </motion.button>
@@ -356,7 +359,7 @@ export default function Navbar({ onDonateClick }) {
               whileTap={{ scale: 0.92 }}
               onClick={() => setMenuOpen(true)}
               className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:text-gold hover:bg-gold/10 transition-all duration-300 lg:hidden"
-              aria-label="Abrir menú"
+              aria-label={tt("Abrir menú")}
             >
               <List size={20} weight="bold" />
             </motion.button>
@@ -384,13 +387,13 @@ export default function Navbar({ onDonateClick }) {
                 <div className="grid grid-cols-3 gap-4 p-5">
                   {Object.entries(MEGA_MENU[openMega]).map(([groupTitle, items]) => (
                     <div key={groupTitle}>
-                      <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold mb-2 px-2">{groupTitle}</p>
+                      <p className="text-muted/50 text-[10px] uppercase tracking-widest font-semibold mb-2 px-2">{tt(groupTitle)}</p>
                       <ul className="space-y-0.5">
                         {items.map(([label, path]) => (
                           <li key={path}>
                             <Link to={path}
                               className="block px-2 py-1.5 rounded-lg text-muted text-xs hover:text-gold hover:bg-gold/5 transition-colors">
-                              {label}
+                              {tt(label)}
                             </Link>
                           </li>
                         ))}
@@ -418,7 +421,7 @@ export default function Navbar({ onDonateClick }) {
               transition={{ delay: 0.1, duration: 0.3 }}
               onClick={() => setMenuOpen(false)}
               className="absolute top-6 right-6 w-10 h-10 rounded-full glass flex items-center justify-center text-muted hover:text-chalk transition-colors z-10"
-              aria-label="Cerrar menú"
+              aria-label={tt("Cerrar menú")}
             >
               <X size={20} />
             </motion.button>
@@ -428,7 +431,7 @@ export default function Navbar({ onDonateClick }) {
                 <FilmSlate size={20} weight="fill" className="text-void" />
               </div>
               <span className="font-display font-800 text-2xl tracking-tight text-chalk">
-                Life<span className="text-gold"> High</span>
+                {tt("Life")}<span className="text-gold"> {tt("High")}</span>
               </span>
             </Link>
 
@@ -446,8 +449,8 @@ export default function Navbar({ onDonateClick }) {
                   <DownloadSimple size={24} weight="bold" />
                 </span>
                 <span className="flex-1">
-                  <span className="block font-display font-extrabold text-lg leading-tight">Instalar la app</span>
-                  <span className="block text-sm opacity-75 leading-tight mt-0.5">Gratis · Android, iPhone, TV, PC y Mac</span>
+                  <span className="block font-display font-extrabold text-lg leading-tight">{tt("Instalar la app")}</span>
+                  <span className="block text-sm opacity-75 leading-tight mt-0.5">{tt("Gratis · Android, iPhone, TV, PC y Mac")}</span>
                 </span>
               </button>
             )}
@@ -456,30 +459,30 @@ export default function Navbar({ onDonateClick }) {
             <div className="grid grid-cols-2 gap-2 mb-4">
               <Link to="/mi-lista" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
-                <BookmarkSimple size={16} weight="fill" className="text-gold" /> Mi lista
+                <BookmarkSimple size={16} weight="fill" className="text-gold" /> {tt("Mi lista")}
               </Link>
               <Link to="/comunidad" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
-                <UsersThree size={16} weight="fill" className="text-gold" /> Comunidad
+                <UsersThree size={16} weight="fill" className="text-gold" /> {tt("Comunidad")}
               </Link>
               <Link to="/salas" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
-                <Popcorn size={16} weight="fill" className="text-gold" /> Salas
+                <Popcorn size={16} weight="fill" className="text-gold" /> {tt("Salas")}
               </Link>
               {isHalloweenSeason() && (
                 <Link to="/terror" onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-400/30 text-red-300 text-sm font-semibold">
-                  <Ghost size={16} weight="fill" /> Sesión de terror
+                  <Ghost size={16} weight="fill" /> {tt("Sesión de terror")}
                 </Link>
               )}
               <Link to="/cines-cerca" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-chalk text-sm font-semibold">
-                <MapPin size={16} weight="fill" className="text-gold" /> Cines cerca
+                <MapPin size={16} weight="fill" className="text-gold" /> {tt("Cines cerca")}
               </Link>
               {auth.user?.root && (
                 <Link to="/panel" onClick={() => setMenuOpen(false)}
                   className="col-span-2 flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-sm font-semibold">
-                  <ChartLineUp size={16} weight="bold" /> Panel del fundador
+                  <ChartLineUp size={16} weight="bold" /> {tt("Panel del fundador")}
                 </Link>
               )}
               <Link to="/cuenta" onClick={() => setMenuOpen(false)}
@@ -490,10 +493,11 @@ export default function Navbar({ onDonateClick }) {
 
             {/* Toggle idioma + Donar móvil */}
             <div className="flex flex-wrap items-center gap-2 mb-6">
-              <LanguageModeToggle variant="full" />
+              {!isEnglish() && <LanguageModeToggle variant="full" />}
+              <LanguageSwitch />
               <button onClick={() => { onDonateClick?.(); setMenuOpen(false) }}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold/10 border border-gold/30 text-gold text-sm font-semibold hover:bg-gold/20 transition-all">
-                <Coffee size={14} weight="fill" /> Café
+                <Coffee size={14} weight="fill" /> {tt("Café")}
               </button>
             </div>
 
@@ -501,17 +505,17 @@ export default function Navbar({ onDonateClick }) {
             <div className="space-y-6 pb-12">
               {Object.entries(MEGA_MENU).map(([mainLabel, groups]) => (
                 <div key={mainLabel}>
-                  <p className="text-gold/80 text-xs uppercase tracking-widest font-bold mb-3">{mainLabel}</p>
+                  <p className="text-gold/80 text-xs uppercase tracking-widest font-bold mb-3">{tt(mainLabel)}</p>
                   <div className="space-y-4 pl-1">
                     {Object.entries(groups).map(([groupTitle, items]) => (
                       <div key={groupTitle}>
-                        <p className="text-muted/40 text-[10px] uppercase tracking-widest mb-1.5">{groupTitle}</p>
+                        <p className="text-muted/40 text-[10px] uppercase tracking-widest mb-1.5">{tt(groupTitle)}</p>
                         <ul className="space-y-0.5">
                           {items.map(([label, path]) => (
                             <li key={path}>
                               <Link to={path}
                                 className="block py-3 text-chalk/85 text-base hover:text-gold transition-colors min-h-[44px] active:bg-white/5 rounded-lg px-2 -mx-2">
-                                {label}
+                                {tt(label)}
                               </Link>
                             </li>
                           ))}
@@ -525,12 +529,12 @@ export default function Navbar({ onDonateClick }) {
 
             <div className="mt-auto pt-6 border-t border-white/[0.04] text-muted text-xs font-mono space-y-2">
               <div className="flex gap-3 text-muted/60">
-                <Link to="/about"   className="hover:text-gold">Sobre</Link>
-                <Link to="/terms"   className="hover:text-gold">Términos</Link>
-                <Link to="/privacy" className="hover:text-gold">Privacidad</Link>
-                <Link to="/dmca"    className="hover:text-gold">DMCA</Link>
+                <Link to="/about"   className="hover:text-gold">{tt("Sobre")}</Link>
+                <Link to="/terms"   className="hover:text-gold">{tt("Términos")}</Link>
+                <Link to="/privacy" className="hover:text-gold">{tt("Privacidad")}</Link>
+                <Link to="/dmca"    className="hover:text-gold">{tt("DMCA")}</Link>
               </div>
-              <p className="text-muted/40">© Life High by TinTech {new Date().getFullYear()}</p>
+              <p className="text-muted/40">{tt("© Life High by TinTech")} {new Date().getFullYear()}</p>
             </div>
           </motion.div>
         )}
@@ -560,12 +564,12 @@ export default function Navbar({ onDonateClick }) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Películas, series, anime, K-dramas..."
+                  placeholder={tt("Películas, series, anime, K-dramas...")}
                   className="w-full bg-surface border border-dim/60 rounded-2xl pl-14 pr-6 py-5 text-lg text-chalk placeholder:text-muted outline-none focus:border-gold/50 focus:shadow-[0_0_0_3px_rgba(232,160,32,0.15)] transition-all duration-300 font-display"
                 />
                 <button type="submit"
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-gold text-void font-semibold px-5 py-2 rounded-xl text-sm hover:bg-gold-hi transition-colors duration-200">
-                  Buscar
+                  {tt("Buscar")}
                 </button>
               </form>
               <div className="flex flex-wrap gap-2 mt-5 justify-center">
@@ -582,7 +586,7 @@ export default function Navbar({ onDonateClick }) {
                 ))}
               </div>
               <p className="text-center text-muted text-sm mt-4">
-                Presioná <kbd className="px-2 py-0.5 rounded bg-surface border border-dim/60 text-xs font-mono">ESC</kbd> para cerrar
+                {tt("Presioná")} <kbd className="px-2 py-0.5 rounded bg-surface border border-dim/60 text-xs font-mono">{tt("ESC")}</kbd> {tt("para cerrar")}
               </p>
             </motion.div>
           </motion.div>

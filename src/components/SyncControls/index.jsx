@@ -3,6 +3,7 @@ import { Timer, CheckCircle, FastForward, Rewind, Pause } from '@phosphor-icons/
 import { useRoomSession } from '../../lib/roomSession'
 import { countdownSeconds, formatClock } from '../../lib/playback'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 // Pitido corto (si el navegador no deja sonar, no pasa nada)
 let audioCtx = null
@@ -45,8 +46,8 @@ export function SyncCountdownOverlay() {
   return (
     <div role="alert" aria-live="assertive" className="pointer-events-none fixed inset-0 z-[160] flex items-center justify-center bg-black/55">
       <div className="text-center">
-        <p className={`font-display font-extrabold leading-none drop-shadow-[0_0_40px_rgba(232,160,32,0.7)] ${n === 0 ? 'text-emerald-300 text-7xl sm:text-9xl' : 'text-gold text-[9rem] sm:text-[14rem]'}`}>{n === 0 ? '¡PLAY!' : n}</p>
-        <p className="mt-2 text-chalk text-lg font-semibold">{n === 0 ? 'Dale play ahora' : 'Preparate para dar play'}</p>
+        <p className={`font-display font-extrabold leading-none drop-shadow-[0_0_40px_rgba(232,160,32,0.7)] ${n === 0 ? 'text-emerald-300 text-7xl sm:text-9xl' : 'text-gold text-[9rem] sm:text-[14rem]'}`}>{n === 0 ? tt("¡PLAY!") : n}</p>
+        <p className="mt-2 text-chalk text-lg font-semibold">{n === 0 ? tt("Dale play ahora") : tt("Preparate para dar play")}</p>
       </div>
     </div>
   )
@@ -66,7 +67,7 @@ export default function SyncControls({ size = 40, compact = false }) {
   // Pausa guiada: "pausá X segundos" con cuenta propia y aviso al terminar
   useEffect(() => {
     if (pause === null) return undefined
-    if (pause <= 0) { beep(988, 300, 0.18); showToast({ icon: '▶️', title: '¡Dale play!', text: 'Ya estás sincronizado.', ttl: 4000, tone: 'green' }); setPause(null); return undefined }
+    if (pause <= 0) { beep(988, 300, 0.18); showToast({ icon: '▶️', title: tt("¡Dale play!"), text: tt("Ya estás sincronizado."), ttl: 4000, tone: 'green' }); setPause(null); return undefined }
     const id = setTimeout(() => setPause((p) => (p === null ? null : p - 1)), 1000)
     return () => clearTimeout(id)
   }, [pause])
@@ -76,13 +77,13 @@ export default function SyncControls({ size = 40, compact = false }) {
   const box = { width: size, height: size }
   const call = async () => {
     const r = await s.callCountdown(8)
-    if (!r.ok) showToast({ icon: '⚠️', title: r.error === 'sync_fast' ? 'Esperá un momento antes de lanzar otra cuenta.' : 'No pudimos lanzar la cuenta regresiva.', ttl: 3500, tone: 'blue' })
+    if (!r.ok) showToast({ icon: '⚠️', title: r.error === 'sync_fast' ? tt("Esperá un momento antes de lanzar otra cuenta.") : tt("No pudimos lanzar la cuenta regresiva."), ttl: 3500, tone: 'blue' })
   }
 
   return (
     <>
       {isHost && (
-        <button onClick={call} style={box} aria-label="Cuenta regresiva para dar play juntos" title="Cuenta regresiva de 8 segundos: ¡Play juntos! (todos la ven llegar a cero a la vez)"
+        <button onClick={call} style={box} aria-label={tt("Cuenta regresiva para dar play juntos")} title={tt("Cuenta regresiva de 8 segundos: ¡Play juntos! (todos la ven llegar a cero a la vez)")}
           className="rounded-full text-gold hover:bg-gold/15 flex items-center justify-center transition-colors"><Timer size={size * 0.5} weight="bold" /></button>
       )}
       {!isHost && a && (
@@ -90,21 +91,21 @@ export default function SyncControls({ size = 40, compact = false }) {
           <button onClick={() => setOpen((v) => !v)} aria-expanded={open}
             className={`h-9 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-colors ${a.kind === 'ok' ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300' : 'bg-amber-500/15 border-amber-400/40 text-amber-200'}`}>
             {a.kind === 'ok' ? <CheckCircle size={14} weight="fill" /> : a.kind === 'ahead' ? <FastForward size={14} weight="fill" /> : <Rewind size={14} weight="fill" />}
-            {pause !== null ? `Pausa: ${pause} s` : a.kind === 'ok' ? (compact ? 'Sincro' : 'Sincronizado') : a.kind === 'ahead' ? `+${a.seconds} s` : `−${a.seconds} s`}
+            {pause !== null ? tt("Pausa: {pause} s", { pause: pause }) : a.kind === 'ok' ? (compact ? tt("Sincro") : tt("Sincronizado")) : a.kind === 'ahead' ? tt("+{seconds} s", { seconds: a.seconds }) : tt("−{seconds} s", { seconds: a.seconds })}
           </button>
           {open && (
-            <div role="dialog" aria-label="Sincronía con el anfitrión" className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 p-4 rounded-2xl bg-card border border-white/10 shadow-2xl text-left space-y-2">
-              {a.kind === 'ok' && <p className="text-sm text-chalk">Vas a la par del anfitrión. ¡A disfrutar!</p>}
+            <div role="dialog" aria-label={tt("Sincronía con el anfitrión")} className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 p-4 rounded-2xl bg-card border border-white/10 shadow-2xl text-left space-y-2">
+              {a.kind === 'ok' && <p className="text-sm text-chalk">{tt("Vas a la par del anfitrión. ¡A disfrutar!")}</p>}
               {a.kind === 'ahead' && (
                 <>
-                  <p className="text-sm text-chalk">Estás <strong className="text-amber-200">{a.seconds} s adelantado</strong>. Pausá tu video y dale play cuando termine la cuenta.</p>
-                  <button onClick={() => { setPause(a.seconds); setOpen(false) }} className="w-full px-4 py-2 rounded-full bg-gold text-void text-sm font-bold hover:bg-gold-hi flex items-center justify-center gap-2"><Pause size={14} weight="fill" /> Pausar {a.seconds} s</button>
+                  <p className="text-sm text-chalk">{tt("Estás")} <strong className="text-amber-200">{a.seconds} {tt("s adelantado")}</strong>{tt(". Pausá tu video y dale play cuando termine la cuenta.")}</p>
+                  <button onClick={() => { setPause(a.seconds); setOpen(false) }} className="w-full px-4 py-2 rounded-full bg-gold text-void text-sm font-bold hover:bg-gold-hi flex items-center justify-center gap-2"><Pause size={14} weight="fill" /> {tt("Pausar")} {a.seconds} {tt("s")}</button>
                 </>
               )}
               {a.kind === 'behind' && (
-                <p className="text-sm text-chalk">Estás <strong className="text-amber-200">{a.seconds} s atrasado</strong>. El anfitrión va en <strong>{formatClock(a.target)}</strong>: llevá tu video a ese minuto con la barra del reproductor.</p>
+                <p className="text-sm text-chalk">{tt("Estás")} <strong className="text-amber-200">{a.seconds} {tt("s atrasado")}</strong>{tt(". El anfitrión va en")} <strong>{formatClock(a.target)}</strong>{tt(": llevá tu video a ese minuto con la barra del reproductor.")}</p>
               )}
-              <p className="text-[11px] text-muted leading-snug">Se actualiza solo. Para empezar de cero juntos, pedile al anfitrión una cuenta regresiva.</p>
+              <p className="text-[11px] text-muted leading-snug">{tt("Se actualiza solo. Para empezar de cero juntos, pedile al anfitrión una cuenta regresiva.")}</p>
             </div>
           )}
         </div>

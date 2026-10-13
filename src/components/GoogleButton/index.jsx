@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { tt } from '../../lib/i18n'
 
 const SRC = 'https://accounts.google.com/gsi/client'
 let loader = null
@@ -25,7 +26,7 @@ const loadGsi = () => {
  * Botón oficial "Continuar con Google". Al elegir una cuenta, Google nos da una credencial firmada
  * que el servidor verifica. `onCredential(credential)` se llama con ese texto.
  */
-export default function GoogleButton({ clientId, onCredential, text = 'continue_with', label = 'Continuar con Google' }) {
+export default function GoogleButton({ clientId, onCredential, text = 'continue_with', label = tt("Continuar con Google") }) {
   const holder = useRef(null)
   const cb = useRef(onCredential)
   cb.current = onCredential
@@ -56,7 +57,7 @@ export default function GoogleButton({ clientId, onCredential, text = 'continue_
   if (state === 'error') {
     return (
       <p role="status" className="text-center text-xs text-muted leading-relaxed p-3 rounded-xl bg-white/5 border border-white/10">
-        No pudimos cargar el botón de Google (puede ser un bloqueador de contenido o la conexión). Podés usar tu mail y contraseña.
+        {tt("No pudimos cargar el botón de Google (puede ser un bloqueador de contenido o la conexión). Podés usar tu mail y contraseña.")}
       </p>
     )
   }
@@ -64,7 +65,7 @@ export default function GoogleButton({ clientId, onCredential, text = 'continue_
     <div className="flex flex-col items-center gap-2">
       {/* color-scheme claro: así el iframe del botón de Google no dibuja un marco blanco sobre el fondo oscuro */}
       <div ref={holder} style={{ colorScheme: 'light' }} className="w-full flex justify-center min-h-[44px]" aria-label={label} />
-      {state === 'loading' && <p className="text-muted/60 text-xs">Cargando Google…</p>}
+      {state === 'loading' && <p className="text-muted/60 text-xs">{tt("Cargando Google…")}</p>}
     </div>
   )
 }

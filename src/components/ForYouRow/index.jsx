@@ -3,6 +3,7 @@ import PosterStrip from '../PosterStrip'
 import { getLibrary, useLibrary } from '../../lib/library'
 import { usePersonal } from '../../lib/auth'
 import { loadForYou, pickSeeds } from '../../lib/forYou'
+import { tt } from '../../lib/i18n'
 
 /** "Recomendadas para vos": a partir de lo último que viste y guardaste. Sin seeds, no aparece. */
 export default function ForYouRow() {
@@ -29,5 +30,5 @@ export default function ForYouRow() {
     to: `/${r.media === 'tv' ? 'tv' : 'movie'}/${r.id}`,
   }))
 
-  return <PosterStrip id="para-vos" title="Recomendadas para vos" badge="Según lo que viste" items={items} />
+  return <PosterStrip id="para-vos" title={tt("Recomendadas para vos")} badge={tt("Según lo que viste")} items={items} />
 }

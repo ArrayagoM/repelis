@@ -7,6 +7,11 @@ import App from './App'
 import { installGlobalHandlers } from './lib/errorMonitor'
 import { getDeviceCaps } from './lib/deviceCaps'
 import './index.css'
+import { getLang, locale, refineLangByCountry } from './lib/i18n'
+
+// 0) Idioma de la interfaz (automático por navegador y país; ver src/lib/i18n.js)
+if (typeof document !== 'undefined') document.documentElement.lang = getLang() === 'en' ? 'en' : locale()
+refineLangByCountry()
 
 // 1) Captura de errores globales (window.error + unhandledrejection)
 installGlobalHandlers()

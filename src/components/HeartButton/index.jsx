@@ -3,6 +3,7 @@ import { Heart } from '@phosphor-icons/react'
 import { social, errorText, ensureAccount } from '../../lib/social'
 import { useReaction, setReaction } from '../../lib/reactions'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 /**
  * Me gusta de una película/serie ('movie:603') o de un comentario ('c:<id>').
@@ -28,12 +29,12 @@ export default function HeartButton({ k, label, compact = false, className = '' 
   }
 
   return (
-    <button onClick={toggle} aria-pressed={liked} aria-label={`${liked ? 'Quitar me gusta' : 'Me gusta'}: ${label}`}
+    <button onClick={toggle} aria-pressed={liked} aria-label={`${liked ? tt("Quitar me gusta") : tt("Me gusta")}: ${label}`}
       className={`inline-flex items-center gap-1.5 rounded-full border transition-colors ${compact ? 'px-2.5 py-1 text-xs' : 'px-5 py-3 text-sm font-medium'}
         ${liked ? 'bg-red-500/15 border-red-400/40 text-red-300' : 'glass border-white/10 text-muted hover:text-chalk hover:border-white/25'} ${className}`}>
       <Heart size={compact ? 13 : 16} weight={liked ? 'fill' : 'regular'} />
       <span className="font-mono">{count}</span>
-      {!compact && <span>Me gusta</span>}
+      {!compact && <span>{tt("Me gusta")}</span>}
     </button>
   )
 }

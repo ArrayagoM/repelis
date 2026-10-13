@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { UsersThree, Plus, Check } from '@phosphor-icons/react'
 import { social, errorText, ensureAccount, refreshMe, useMe } from '../../lib/social'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 /**
  * "Agregar a una lista de la comunidad" desde la ficha de una película/serie.
@@ -43,7 +44,7 @@ export default function AddToList({ item, className = '' }) {
     if (r.ok) {
       await refreshMe()
       setOpen(false)
-      showToast({ icon: '✅', title: `Agregada a «${list.title}»`, text: item.title, actionLabel: 'Ver lista', to: `/lista/${list.id}`, ttl: 4000, tone: 'green' })
+      showToast({ icon: '✅', title: tt("Agregada a «{title}»", { title: list.title }), text: item.title, actionLabel: tt("Ver lista"), to: `/lista/${list.id}`, ttl: 4000, tone: 'green' })
     } else {
       showToast({ icon: '⚠️', title: errorText(r.error), ttl: 4500, tone: 'blue' })
     }
@@ -55,7 +56,7 @@ export default function AddToList({ item, className = '' }) {
     <div ref={box} className={`relative ${className}`}>
       <button onClick={toggle} aria-haspopup="menu" aria-expanded={open}
         className="flex items-center gap-2 px-5 py-3 rounded-full border text-sm font-medium transition-all duration-300 glass border-white/10 text-chalk hover:border-gold/30 hover:text-gold">
-        <UsersThree size={16} weight="bold" /> Agregar a una lista
+        <UsersThree size={16} weight="bold" /> {tt("Agregar a una lista")}
       </button>
       {open && (
         <div role="menu" className="absolute z-30 left-0 mt-2 w-72 max-h-80 overflow-auto rounded-2xl bg-card border border-white/10 shadow-2xl p-2">
@@ -73,7 +74,7 @@ export default function AddToList({ item, className = '' }) {
                 )
               })}
               <button role="menuitem" onClick={createNew} className="w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-sm text-gold hover:bg-gold/10">
-                <Plus size={14} weight="bold" /> Nueva lista con este título
+                <Plus size={14} weight="bold" /> {tt("Nueva lista con este título")}
               </button>
             </>
           )}

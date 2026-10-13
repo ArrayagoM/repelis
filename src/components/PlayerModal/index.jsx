@@ -21,6 +21,7 @@ import NextEpisodeCard from '../NextEpisodeCard'
 import { showToast } from '../../lib/toast'
 import WatchProviders from '../WatchProviders'
 import { useWatchTracker } from '../../lib/useWatchTracker'
+import { tt } from '../../lib/i18n'
 
 // ─── Timeouts (balance entre velocidad y NO interrumpir reproducción) ──
 // Lección: timeouts agresivos cortaban videos que tardaban en arrancar.
@@ -369,10 +370,10 @@ export default function PlayerModal() {
             <div className="flex items-center gap-2 px-4 py-2.5 bg-[#0E0E18] border-b border-white/[0.05]">
               <FilmSlate size={14} className="text-gold flex-shrink-0" />
               <span className="text-chalk/85 font-display font-medium text-sm truncate flex-1 min-w-0">
-                {title || 'Reproduciendo…'}
+                {title || tt("Reproduciendo…")}
                 {isTV && (
                   <span className="text-muted/60 font-mono text-xs ml-2">
-                    T{localSeason} E{localEpisode}
+                    {tt("T")}{localSeason} {tt("E")}{localEpisode}
                   </span>
                 )}
               </span>
@@ -385,7 +386,7 @@ export default function PlayerModal() {
                     <SkipBack size={11} weight="fill" />
                   </button>
                   <span className="text-[10px] font-mono text-muted/50 px-1">
-                    S{localSeason}E{localEpisode}
+                    {tt("S")}{localSeason}{tt("E")}{localEpisode}
                   </span>
                   <button onClick={nextEpisode} disabled={!target}
                     className="w-6 h-6 flex items-center justify-center rounded text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors">
@@ -402,7 +403,7 @@ export default function PlayerModal() {
                   className="hidden sm:block bg-surface border border-white/10 text-chalk text-[10px] font-mono rounded px-2 py-1 focus:outline-none focus:border-gold/30 flex-shrink-0"
                 >
                   {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((s) => (
-                    <option key={s} value={s}>Temporada {s}</option>
+                    <option key={s} value={s}>{tt("Temporada")} {s}</option>
                   ))}
                 </select>
               )}
@@ -418,7 +419,7 @@ export default function PlayerModal() {
                       ${showLang ? 'bg-gold/15 border-gold/30 text-gold' : 'bg-white/5 border-white/10 text-muted/60 hover:text-chalk hover:border-white/20'}`}
                   >
                     <Subtitles size={11} weight="fill" />
-                    <span>ES</span>
+                    <span>{tt("ES")}</span>
                   </motion.button>
                 )}
               </AnimatePresence>
@@ -433,7 +434,7 @@ export default function PlayerModal() {
                   >
                     <WifiLow size={11} weight="fill" className="text-amber-400" />
                     <span className="text-amber-400/80 text-[10px] font-mono">
-                      {net.quality === 'slow' ? 'Red lenta' : 'Señal media'}
+                      {net.quality === 'slow' ? tt("Red lenta") : tt("Señal media")}
                     </span>
                   </motion.div>
                 )}
@@ -443,10 +444,10 @@ export default function PlayerModal() {
               {src?.esLat && (
                 <span
                   className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wide flex-shrink-0 cursor-help"
-                  title="Servidor con buen catálogo de doblaje LATAM. El audio del título específico depende de qué pistas tenga el server. Si arranca en otro idioma, cambialo desde el ícono Audio/CC del player."
+                  title={tt("Servidor con buen catálogo de doblaje LATAM. El audio del título específico depende de qué pistas tenga el server. Si arranca en otro idioma, cambialo desde el ícono Audio/CC del player.")}
                 >
                   <span className="text-sm leading-none">🇲🇽</span>
-                  LATAM probable
+                  {tt("LATAM probable")}
                 </span>
               )}
 
@@ -481,15 +482,15 @@ export default function PlayerModal() {
                 </span>
               </div>
 
-              <button onClick={handleExternalClick} title="Abrir en pestaña externa"
+              <button onClick={handleExternalClick} title={tt("Abrir en pestaña externa")}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-gold hover:bg-gold/8 transition-all flex-shrink-0">
                 <ArrowSquareOut size={13} weight="bold" />
               </button>
-              <button onClick={() => goTo(srcIdx)} title="Recargar"
+              <button onClick={() => goTo(srcIdx)} title={tt("Recargar")}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-chalk hover:bg-white/5 transition-all flex-shrink-0">
                 <ArrowClockwise size={13} />
               </button>
-              <button onClick={handleClose} title="Cerrar"
+              <button onClick={handleClose} title={tt("Cerrar")}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-red-400 hover:bg-red-400/8 transition-all flex-shrink-0">
                 <X size={13} weight="bold" />
               </button>
@@ -507,18 +508,18 @@ export default function PlayerModal() {
                   <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/[0.07] border-l-2 border-amber-400/40">
                     <Info size={16} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 space-y-2">
-                      <p className="text-amber-200 text-sm font-bold">⚠️ ¿Arrancó en inglés? Es normal — leé esto</p>
+                      <p className="text-amber-200 text-sm font-bold">{tt("⚠️ ¿Arrancó en inglés? Es normal — leé esto")}</p>
                       <p className="text-chalk/85 text-[12px] leading-relaxed">
-                        El badge <strong>"LATAM probable"</strong> significa que el servidor tiene buen catálogo de doblajes, pero <strong className="text-amber-200">cada peli es distinta</strong>. Si arrancó en otro idioma:
+                        {tt("El badge")} <strong>{tt("\"LATAM probable\"")}</strong> {tt("significa que el servidor tiene buen catálogo de doblajes, pero")} <strong className="text-amber-200">{tt("cada peli es distinta")}</strong>{tt(". Si arrancó en otro idioma:")}
                       </p>
                       <ol className="text-muted/85 text-[11px] leading-relaxed list-decimal list-inside space-y-0.5 marker:text-amber-400/70">
-                        <li>Mové el mouse sobre el video → aparecen los controles del player</li>
-                        <li>Buscá el ícono <strong className="text-amber-200">🔊 Audio</strong> o <strong className="text-amber-200">CC</strong> (a veces dice "ES" o un engranaje ⚙️)</li>
-                        <li>Elegí <strong className="text-emerald-300">"Español"</strong>, <strong className="text-emerald-300">"Latino"</strong> o <strong className="text-emerald-300">"Spanish"</strong></li>
-                        <li>Si NO aparece la opción → este servidor no tiene doblaje. Tocá los números <strong>1, 2, 3…</strong> arriba para probar otro.</li>
+                        <li>{tt("Mové el mouse sobre el video → aparecen los controles del player")}</li>
+                        <li>{tt("Buscá el ícono")} <strong className="text-amber-200">{tt("🔊 Audio")}</strong> {tt("o")} <strong className="text-amber-200">{tt("CC")}</strong> {tt("(a veces dice \"ES\" o un engranaje ⚙️)")}</li>
+                        <li>{tt("Elegí")} <strong className="text-emerald-300">{tt("\"Español\"")}</strong>, <strong className="text-emerald-300">{tt("\"Latino\"")}</strong> {tt("o")} <strong className="text-emerald-300">{tt("\"Spanish\"")}</strong></li>
+                        <li>{tt("Si NO aparece la opción → este servidor no tiene doblaje. Tocá los números")} <strong>1, 2, 3…</strong> {tt("arriba para probar otro.")}</li>
                       </ol>
                       <p className="text-muted/60 text-[10px] leading-relaxed pt-1 border-t border-amber-400/20">
-                        💡 <strong>EmbedMaster</strong>, <strong>VidLink</strong> y <strong>111Movies</strong> son los que con más frecuencia traen pista latina.
+                        💡 <strong>{tt("EmbedMaster")}</strong>, <strong>{tt("VidLink")}</strong> {tt("y")} <strong>{tt("111Movies")}</strong> {tt("son los que con más frecuencia traen pista latina.")}
                       </p>
                     </div>
                     <button onClick={() => setShowLang(false)} className="text-muted/40 hover:text-chalk transition-colors flex-shrink-0">
@@ -558,13 +559,13 @@ export default function PlayerModal() {
                       onClick={() => goTo((srcIdx + 1) % sources.length)}
                       className="px-5 py-2 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi shadow-[0_4px_24px_rgba(232,160,32,0.4)] transition-all"
                     >
-                      Saltar al siguiente →
+                      {tt("Saltar al siguiente →")}
                     </motion.button>
 
                     {isSlowNet && (
                       <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }}
                         className="text-muted/35 text-[10px] font-mono text-center max-w-[28ch]">
-                        Conexión lenta · puede tardar en arrancar
+                        {tt("Conexión lenta · puede tardar en arrancar")}
                       </motion.p>
                     )}
                   </motion.div>
@@ -585,11 +586,11 @@ export default function PlayerModal() {
                         initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                         className="absolute bottom-3 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-void/80 border border-white/8 backdrop-blur-sm">
                         <span className="text-muted/70 text-[10px] font-mono">
-                          Probando {srcIdx + 2}/{sources.length}
+                          {tt("Probando")} {srcIdx + 2}/{sources.length}
                         </span>
                         <button onClick={(e) => { e.stopPropagation(); goTo(srcIdx + 1) }}
                           className="text-gold text-[10px] font-semibold hover:underline pointer-events-auto">
-                          Ahora
+                          {tt("Ahora")}
                         </button>
                       </motion.div>
                     )}
@@ -606,21 +607,20 @@ export default function PlayerModal() {
                     <SmileySad size={36} className="text-dim" />
                     <div className="space-y-2 max-w-md">
                       <p className="text-chalk font-display font-semibold text-lg">
-                        Esta peli no la tenemos
+                        {tt("Esta peli no la tenemos")}
                       </p>
                       <p className="text-muted text-sm">
-                        Probamos los <strong className="text-chalk/85">{sources.length} servidores</strong> y ninguno la indexó todavía.
-                        Suele pasar con estrenos recientes o cine de nicho.
+                        {tt("Probamos los")} <strong className="text-chalk/85">{sources.length} {tt("servidores")}</strong> {tt("y ninguno la indexó todavía. Suele pasar con estrenos recientes o cine de nicho.")}
                       </p>
                       <p className="text-muted/60 text-xs">
-                        Te mostramos abajo las opciones legales donde sí está disponible.
+                        {tt("Te mostramos abajo las opciones legales donde sí está disponible.")}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2 justify-center">
                       <button onClick={() => goTo(0)}
                         className="px-5 py-2 rounded-full bg-gold text-void text-sm font-semibold hover:bg-gold-hi transition-colors">
-                        Reintentar
+                        {tt("Reintentar")}
                       </button>
                       <button onClick={() => {
                         try {
@@ -630,14 +630,14 @@ export default function PlayerModal() {
                             localStorage.setItem('repelis:reported:v1', JSON.stringify(reported))
                           }
                         } catch {}
-                        alert('Gracias. Reportamos esta peli como no disponible para revisar.')
+                        alert(tt("Gracias. Reportamos esta peli como no disponible para revisar."))
                       }}
                         className="px-5 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-semibold hover:bg-amber-500/20 transition-colors">
-                        Reportar
+                        {tt("Reportar")}
                       </button>
                       <button onClick={handleClose}
                         className="px-5 py-2 rounded-full glass border border-white/10 text-muted text-sm hover:text-chalk transition-colors">
-                        Cerrar
+                        {tt("Cerrar")}
                       </button>
                     </div>
 
@@ -665,7 +665,7 @@ export default function PlayerModal() {
               <iframe
                 key={`${movieId}-${mediaType}-${localSeason}-${localEpisode}-${srcIdx}-${key}`}
                 src={url}
-                title={title || 'Reproductor'}
+                title={title || tt("Reproductor")}
                 className="absolute inset-0 w-full h-full"
                 frameBorder="0"
                 allowFullScreen
@@ -703,13 +703,12 @@ export default function PlayerModal() {
                     <div className="flex items-start gap-3 mb-4">
                       <Warning size={20} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-chalk font-display font-semibold text-sm mb-1">Abrir en pestaña externa</p>
+                        <p className="text-chalk font-display font-semibold text-sm mb-1">{tt("Abrir en pestaña externa")}</p>
                         <p className="text-muted text-xs leading-relaxed mb-2">
-                          Vamos a abrir el reproductor de <strong className="text-chalk/80">{src?.label}</strong> en una pestaña nueva.
-                          Es un servidor de terceros — puede mostrar publicidad o pop-ups. <strong className="text-chalk/80">No instales nada que te ofrezca.</strong>
+                          {tt("Vamos a abrir el reproductor de")} <strong className="text-chalk/80">{src?.label}</strong> {tt("en una pestaña nueva. Es un servidor de terceros — puede mostrar publicidad o pop-ups.")} <strong className="text-chalk/80">{tt("No instales nada que te ofrezca.")}</strong>
                         </p>
                         <p className="text-muted/70 text-xs leading-relaxed">
-                          <strong className="text-gold/80">¿Querés descargar?</strong> Instalá la extensión <em>"Video DownloadHelper"</em> en tu navegador y, en la pestaña externa, va a aparecer el ícono para bajar el video.
+                          <strong className="text-gold/80">{tt("¿Querés descargar?")}</strong> {tt("Instalá la extensión")} <em>{tt("\"Video DownloadHelper\"")}</em> {tt("en tu navegador y, en la pestaña externa, va a aparecer el ícono para bajar el video.")}
                         </p>
                       </div>
                     </div>
@@ -718,13 +717,13 @@ export default function PlayerModal() {
                         onClick={() => setShowExtConfirm(false)}
                         className="px-4 py-2 rounded-full text-muted text-xs font-semibold hover:text-chalk transition-colors"
                       >
-                        Cancelar
+                        {tt("Cancelar")}
                       </button>
                       <button
                         onClick={handleOpenExternal}
                         className="px-4 py-2 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi transition-colors"
                       >
-                        Abrir
+                        {tt("Abrir")}
                       </button>
                     </div>
                   </motion.div>
@@ -740,22 +739,22 @@ export default function PlayerModal() {
                     reportServerFailure(src?.id)
                     const next = (srcIdx + 1) % sources.length
                     goTo(next)
-                    showToast({ icon: '🔄', title: `Probando otro servidor (${next + 1} de ${sources.length})`, text: 'Gracias por avisar: lo tenemos en cuenta para ordenar los servidores.', ttl: 3500, tone: 'blue' })
+                    showToast({ icon: '🔄', title: tt("Probando otro servidor ({v1} de {length})", { v1: next + 1, length: sources.length }), text: tt("Gracias por avisar: lo tenemos en cuenta para ordenar los servidores."), ttl: 3500, tone: 'blue' })
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-[11px] font-semibold hover:bg-gold/20 active:scale-95 transition-all"
-                  title="Si no carga, se ve mal o no está en español, probá otro servidor"
+                  title={tt("Si no carga, se ve mal o no está en español, probá otro servidor")}
                 >
                   <ArrowClockwise size={12} weight="bold" />
-                  ¿No anda? Probar otro servidor
+                  {tt("¿No anda? Probar otro servidor")}
                 </button>
-                <span className="text-muted/25 text-[10px] font-mono hidden sm:block">ESC · cerrar</span>
+                <span className="text-muted/25 text-[10px] font-mono hidden sm:block">{tt("ESC · cerrar")}</span>
                 {isTV && (
                   <div className="flex items-center gap-1.5 sm:hidden">
                     <button onClick={prevEpisode} disabled={localSeason === 1 && localEpisode === 1}
                       className="text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors p-1">
                       <SkipBack size={12} weight="fill" />
                     </button>
-                    <span className="text-[10px] font-mono text-muted/50">S{localSeason}E{localEpisode}</span>
+                    <span className="text-[10px] font-mono text-muted/50">{tt("S")}{localSeason}{tt("E")}{localEpisode}</span>
                     <button onClick={nextEpisode} disabled={!target} className="text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors p-1">
                       <SkipForward size={12} weight="fill" />
                     </button>

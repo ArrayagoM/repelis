@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CaretRight, Play, X } from '@phosphor-icons/react'
 import { IMG_W342 } from '../../api/tmdb'
+import { tt } from '../../lib/i18n'
 
 const CHIP_TONES = {
   gold:  'bg-gold text-void',
@@ -47,14 +48,14 @@ export default function PosterStrip({ title, badge, badgeTone = 'gold', items = 
         <div className="flex items-center gap-2">
           {onViewAll && (
             <button onClick={onViewAll} className="hidden sm:block text-sm text-muted hover:text-gold transition-colors">
-              Ver todo
+              {tt("Ver todo")}
             </button>
           )}
-          <button onClick={() => scroll(-1)} aria-label="Anterior"
+          <button onClick={() => scroll(-1)} aria-label={tt("Anterior")}
             className="hidden md:flex w-8 h-8 rounded-full glass border border-white/10 items-center justify-center text-muted hover:text-gold hover:border-gold/30 transition-all rotate-180">
             <CaretRight size={14} weight="bold" />
           </button>
-          <button onClick={() => scroll(1)} aria-label="Siguiente"
+          <button onClick={() => scroll(1)} aria-label={tt("Siguiente")}
             className="hidden md:flex w-8 h-8 rounded-full glass border border-white/10 items-center justify-center text-muted hover:text-gold hover:border-gold/30 transition-all">
             <CaretRight size={14} weight="bold" />
           </button>
@@ -103,13 +104,13 @@ export default function PosterStrip({ title, badge, badgeTone = 'gold', items = 
               <button
                 className="absolute inset-0 rounded-[1.25rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                 onClick={() => { if (it.onClick) it.onClick(); else if (it.to) navigate(it.to) }}
-                aria-label={it.playIcon ? `Continuar ${it.title}` : `Ver ${it.title}`}
+                aria-label={it.playIcon ? tt("Continuar {title}", { title: it.title }) : tt("Ver {title}", { title: it.title })}
               />
               {it.onRemove && (
                 <button
                   onClick={(e) => { e.stopPropagation(); it.onRemove() }}
-                  aria-label={`Quitar ${it.title}`}
-                  title="Quitar"
+                  aria-label={tt("Quitar {title}", { title: it.title })}
+                  title={tt("Quitar")}
                   className="absolute z-20 top-2 right-2 w-7 h-7 rounded-full bg-void/80 border border-white/15 text-muted hover:text-chalk hover:bg-red-500/30 hover:border-red-500/40 flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
                 >
                   <X size={12} weight="bold" />

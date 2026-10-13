@@ -5,6 +5,7 @@ import {
   getLanguageMode, setLanguageMode, subscribeLanguageMode,
   MODE_LABELS, MODE_DESCRIPTIONS,
 } from '../../lib/languageMode'
+import { tt } from '../../lib/i18n'
 
 const ORDER = ['broad', 'strict', 'all']
 
@@ -46,7 +47,7 @@ export default function LanguageModeToggle({ variant = 'navbar' }) {
             mode === 'broad'  ? 'text-gold border-gold/30' :
                                 'text-muted'}`}
         title={MODE_DESCRIPTIONS[mode]}
-        aria-label={`Modo idioma: ${MODE_LABELS[mode]}`}
+        aria-label={tt("Modo idioma: {v1}", { v1: MODE_LABELS[mode] })}
       >
         <span className={isCompact ? 'text-xs leading-none' : 'text-base leading-none'}>{ICONS[mode]}</span>
         <span className="font-bold uppercase tracking-wide">{MODE_LABELS[mode]}</span>
@@ -65,9 +66,9 @@ export default function LanguageModeToggle({ variant = 'navbar' }) {
             <div className="px-4 py-3 border-b border-white/5">
               <p className="text-chalk text-sm font-display font-semibold flex items-center gap-2">
                 <Translate size={13} weight="fill" className="text-gold" />
-                Filtro de idioma
+                {tt("Filtro de idioma")}
               </p>
-              <p className="text-muted/60 text-[10px] mt-0.5">Aplica al catálogo entero</p>
+              <p className="text-muted/60 text-[10px] mt-0.5">{tt("Aplica al catálogo entero")}</p>
             </div>
 
             <ul className="p-1">
@@ -99,7 +100,7 @@ export default function LanguageModeToggle({ variant = 'navbar' }) {
 
             <div className="px-4 py-2.5 border-t border-white/5">
               <p className="text-muted/50 text-[10px] leading-relaxed">
-                <strong className="text-chalk/70">Importante:</strong> el filtro recorta el catálogo, pero el audio final lo decide el servidor donde se reproduce. Si escuchás inglés, cambiá el audio dentro del player (icono 🔊).
+                <strong className="text-chalk/70">{tt("Importante:")}</strong> {tt("el filtro recorta el catálogo, pero el audio final lo decide el servidor donde se reproduce. Si escuchás inglés, cambiá el audio dentro del player (icono 🔊).")}
               </p>
             </div>
           </motion.div>

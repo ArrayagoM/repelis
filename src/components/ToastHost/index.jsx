@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from '@phosphor-icons/react'
 import { subscribeToasts } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 const TONES = {
   gold:  'border-gold/30',
@@ -46,11 +47,11 @@ export default function ToastHost() {
                   onClick={() => { if (t.to) navigate(t.to); t.onAction?.(); close(t.id) }}
                   className="mt-2 px-3 py-1 rounded-full bg-gold/15 border border-gold/30 text-gold text-xs font-semibold hover:bg-gold/25 transition-colors"
                 >
-                  {t.actionLabel || 'Ver'}
+                  {t.actionLabel || tt("Ver")}
                 </button>
               )}
             </div>
-            <button onClick={() => close(t.id)} aria-label="Cerrar aviso"
+            <button onClick={() => close(t.id)} aria-label={tt("Cerrar aviso")}
               className="w-6 h-6 flex items-center justify-center rounded-full text-muted hover:text-chalk hover:bg-white/5 flex-shrink-0">
               <X size={12} weight="bold" />
             </button>

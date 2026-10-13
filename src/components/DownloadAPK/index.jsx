@@ -1,5 +1,6 @@
 import { DeviceMobile, DownloadSimple } from '@phosphor-icons/react'
 import { APK_URL } from '../../lib/apkInfo'
+import { tt } from '../../lib/i18n'
 
 /**
  * Botón "Descargar APK". Variantes:
@@ -18,8 +19,8 @@ export default function DownloadAPK({ variant = 'compact', className = '' }) {
           <DownloadSimple size={20} weight="bold" />
         </span>
         <div className="text-left leading-tight">
-          <div className="text-lg font-extrabold">Descargar APK</div>
-          <div className="text-xs font-mono opacity-70">Android 7.0+ · ~6 MB</div>
+          <div className="text-lg font-extrabold">{tt("Descargar APK")}</div>
+          <div className="text-xs font-mono opacity-70">{tt("Android 7.0+ · ~6 MB")}</div>
         </div>
       </a>
     )
@@ -30,11 +31,11 @@ export default function DownloadAPK({ variant = 'compact', className = '' }) {
     <a
       href={APK_URL}
       download
-      title="Descargar APK para Android"
+      title={tt("Descargar APK para Android")}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/20 transition-all whitespace-nowrap ${className}`}
     >
       <DeviceMobile size={12} weight="fill" />
-      APK
+      {tt("APK")}
     </a>
   )
 }

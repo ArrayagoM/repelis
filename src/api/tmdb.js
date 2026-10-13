@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { track } from '../lib/errorMonitor'
 import { getDiscoverParamsForMode } from '../lib/languageMode'
+import { tmdbLang } from '../lib/i18n'
 
 const BASE_URL = 'https://api.themoviedb.org/3'
 
@@ -21,7 +22,7 @@ const api = axios.create({
     Authorization: 'Bearer ' + ACCESS_TOKEN,
     'Content-Type': 'application/json',
   },
-  params: { language: 'es-MX' },
+  params: { language: tmdbLang() },      // es-MX o en-US según el idioma de la interfaz
   timeout: 8000,
 })
 

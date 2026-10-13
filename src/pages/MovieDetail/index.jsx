@@ -28,6 +28,7 @@ import WatchProviders from '../../components/WatchProviders'
 import { isUpcoming, daysUntilRelease } from '../../lib/releaseStatus'
 import { toLibItem } from '../../lib/library'
 import { useSEO, useMovieSchema } from '../../lib/useSEO'
+import { tt } from '../../lib/i18n'
 
 export default function MovieDetail() {
   const { id }     = useParams()
@@ -43,12 +44,12 @@ export default function MovieDetail() {
 
   // SEO dinámico — los hooks deben llamarse SIEMPRE en mismo orden
   useSEO(data ? {
-    title: `Ver ${data.title} (${data.release_date?.slice(0, 4) || ''}) online`,
-    description: data.overview?.slice(0, 160) || `${data.title} — Ficha completa, reparto, dónde verla online. Catálogo de Life High.`,
+    title: tt("Ver {title} ({v2}) online", { title: data.title, v2: data.release_date?.slice(0, 4) || '' }),
+    description: data.overview?.slice(0, 160) || tt("{title} — Ficha completa, reparto, dónde verla online. Catálogo de Life High.", { title: data.title }),
     image: data.poster_path ? `https://image.tmdb.org/t/p/w780${data.poster_path}` : null,
     type: 'video.movie',
-    keywords: `${data.title}, ver ${data.title} online, ${data.title} español latino, ${data.title} pelicula completa`,
-  } : { title: 'Cargando película' })
+    keywords: tt("{title}, ver {title2} online, {title3} español latino, {title4} pelicula completa", { title: data.title, title2: data.title, title3: data.title, title4: data.title }),
+  } : { title: tt("Cargando película") })
   useMovieSchema(data)
 
   if (loading) return <DetailSkeleton />
@@ -105,7 +106,7 @@ export default function MovieDetail() {
           className="absolute top-24 left-6 md:left-12 flex items-center gap-2 text-chalk/70 hover:text-gold transition-colors duration-200 group"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
-          <span className="text-sm font-medium">Volver</span>
+          <span className="text-sm font-medium">{tt("Volver")}</span>
         </motion.button>
       </div>
 
@@ -206,9 +207,8 @@ export default function MovieDetail() {
               <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-start gap-2.5 max-w-xl">
                 <CalendarBlank size={16} weight="fill" className="text-blue-300 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-100/85 text-xs leading-relaxed">
-                  <strong className="text-blue-200">Aún no disponible.</strong> Esta película se estrena
-                  {movieDaysLeft != null ? ` en ${movieDaysLeft} día${movieDaysLeft !== 1 ? 's' : ''}` : ' próximamente'}.
-                  Todavía no está en los servidores de streaming. Podés ver el tráiler mientras tanto.
+                  <strong className="text-blue-200">{tt("Aún no disponible.")}</strong> {tt("Esta película se estrena")}
+                  {movieDaysLeft != null ? tt(" en {movieDaysLeft} día{v2}", { movieDaysLeft: movieDaysLeft, v2: movieDaysLeft !== 1 ? 's' : '' }) : tt(" próximamente")}{tt(". Todavía no está en los servidores de streaming. Podés ver el tráiler mientras tanto.")}
                 </p>
               </div>
             )}
@@ -233,7 +233,7 @@ export default function MovieDetail() {
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-300 ${movieUpcoming ? 'bg-white/5' : 'bg-void/20 group-hover:scale-110'}`}>
                   {movieUpcoming ? <CalendarBlank size={14} weight="fill" /> : <Play size={14} weight="fill" />}
                 </span>
-                {movieUpcoming ? 'Próximamente' : 'Reproducir ahora'}
+                {movieUpcoming ? tt("Próximamente") : tt("Reproducir ahora")}
               </motion.button>
 
               {trailer && (
@@ -248,7 +248,7 @@ export default function MovieDetail() {
                     transition-all duration-300
                   "
                 >
-                  Ver trailer
+                  {tt("Ver trailer")}
                 </a>
               )}
 
@@ -273,7 +273,7 @@ export default function MovieDetail() {
           >
             <div className="flex items-center gap-3 mb-6">
               <Users size={20} className="text-gold" />
-              <h2 className="font-display font-bold text-xl text-chalk">Reparto principal</h2>
+              <h2 className="font-display font-bold text-xl text-chalk">{tt("Reparto principal")}</h2>
             </div>
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3">
               {cast.map((person, i) => (
@@ -314,7 +314,7 @@ export default function MovieDetail() {
         {similar.length > 0 && (
           <div className="mt-16">
             <MovieRow
-              title="Películas similares"
+              title={tt("Películas similares")}
               movies={similar}
             />
           </div>
@@ -361,10 +361,10 @@ function ErrorState({ error, onBack }) {
   return (
     <div className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 px-6">
       <FilmSlate size={48} className="text-dim" />
-      <p className="text-chalk font-display text-xl">No se pudo cargar la película</p>
+      <p className="text-chalk font-display text-xl">{tt("No se pudo cargar la película")}</p>
       <p className="text-muted text-sm font-mono">{error}</p>
       <button onClick={onBack} className="px-6 py-2.5 rounded-full bg-gold text-void font-semibold text-sm hover:bg-gold-hi transition-colors">
-        Volver
+        {tt("Volver")}
       </button>
     </div>
   )

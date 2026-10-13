@@ -2,6 +2,7 @@
 // Para armar cada conexión solo se intercambian unos pocos mensajes chicos ("señales") por nuestra propia API: no hace falta
 // ningún servidor extra ni nada prendido. Hasta 12 personas, solo audio.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { tt } from './i18n'
 
 // ─── Piezas puras (se prueban sin navegador) ────────────────────────────
 
@@ -36,13 +37,13 @@ export const SIGNAL_SLOW_MS = 4000
 export const signalDelay = ({ negotiating, recentChange }) => (negotiating || recentChange ? SIGNAL_FAST_MS : SIGNAL_SLOW_MS)
 
 export const VOICE_ERRORS = {
-  mic_denied: 'El navegador no te dejó usar el micrófono. Habilitalo desde el candado de la barra de direcciones.',
-  mic_missing: 'No encontramos un micrófono en este dispositivo.',
-  voice_unavailable: 'La voz todavía no está disponible.',
-  kicked: 'El anfitrión te sacó de la sala.',
-  room_closed: 'La sala terminó.',
-  voice_failed: 'No pudimos conectar la voz. Revisá tu internet y probá de nuevo.',
-  unsupported: 'Este navegador no admite llamadas de voz.',
+  mic_denied: tt("El navegador no te dejó usar el micrófono. Habilitalo desde el candado de la barra de direcciones."),
+  mic_missing: tt("No encontramos un micrófono en este dispositivo."),
+  voice_unavailable: tt("La voz todavía no está disponible."),
+  kicked: tt("El anfitrión te sacó de la sala."),
+  room_closed: tt("La sala terminó."),
+  voice_failed: tt("No pudimos conectar la voz. Revisá tu internet y probá de nuevo."),
+  unsupported: tt("Este navegador no admite llamadas de voz."),
 }
 export const voiceErrorText = (code) => VOICE_ERRORS[code] || VOICE_ERRORS.voice_failed
 

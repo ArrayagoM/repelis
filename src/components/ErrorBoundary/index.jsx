@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { tt } from '../../lib/i18n'
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -20,7 +21,7 @@ export default class ErrorBoundary extends Component {
     if (this.state.error) {
       return (
         <div className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 px-6 text-center">
-          <p className="text-chalk font-display text-xl">Algo se rompió</p>
+          <p className="text-chalk font-display text-xl">{tt("Algo se rompió")}</p>
           <p className="text-muted text-sm font-mono max-w-[60ch] break-words">
             {String(this.state.error?.message ?? this.state.error)}
           </p>
@@ -28,7 +29,7 @@ export default class ErrorBoundary extends Component {
             onClick={() => { this.reset(); window.location.href = '/' }}
             className="px-6 py-2.5 rounded-full bg-gold text-void font-semibold text-sm hover:bg-gold-hi transition-colors"
           >
-            Volver al inicio
+            {tt("Volver al inicio")}
           </button>
         </div>
       )

@@ -5,6 +5,7 @@ import MovieCard, { MovieCardSkeleton } from '../MovieCard'
 import { getDeviceCaps } from '../../lib/deviceCaps'
 import { useLanguageFilter } from '../../lib/useLanguageFilter'
 import { isOut } from '../../lib/releaseStatus'
+import { tt } from '../../lib/i18n'
 
 const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 const ROW_LIMIT = _LOW_END ? 8 : 20
@@ -55,7 +56,7 @@ export default function MovieRow({ title, badge, movies = [], loading = false, o
           {onViewAll && (
             <button onClick={onViewAll}
               className="hidden sm:flex items-center gap-1.5 text-sm text-muted hover:text-gold transition-colors group">
-              Ver todo
+              {tt("Ver todo")}
               <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           )}

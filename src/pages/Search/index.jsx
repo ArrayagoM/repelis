@@ -12,27 +12,28 @@ import {
 import { useSEO } from '../../lib/useSEO'
 import { IMG_W342 } from '../../api/tmdb'
 import MovieCard, { MovieCardSkeleton } from '../../components/MovieCard'
+import { tt } from '../../lib/i18n'
 
 const KIND_OPTIONS = [
   { id: 'all',    label: 'Todo',      Icon: MagnifyingGlass },
-  { id: 'movie',  label: 'Películas', Icon: FilmSlate },
+  { id: 'movie',  label: tt("Películas"), Icon: FilmSlate },
   { id: 'tv',     label: 'Series',    Icon: Television },
   { id: 'person', label: 'Personas',  Icon: User },
 ]
 const SORT_OPTIONS = [
   { id: 'popularity', label: 'Popularidad' },
-  { id: 'rating',     label: 'Mejor valoradas' },
-  { id: 'year-desc',  label: 'Más recientes' },
-  { id: 'year-asc',   label: 'Más antiguas' },
+  { id: 'rating',     label: tt("Mejor valoradas") },
+  { id: 'year-desc',  label: tt("Más recientes") },
+  { id: 'year-asc',   label: tt("Más antiguas") },
 ]
 const LANG_OPTIONS = [
-  { id: '',   label: 'Cualquier idioma' },
-  { id: 'es', label: 'Español 🇲🇽' },
-  { id: 'en', label: 'Inglés 🇺🇸' },
-  { id: 'ja', label: 'Japonés 🇯🇵' },
-  { id: 'ko', label: 'Coreano 🇰🇷' },
-  { id: 'fr', label: 'Francés 🇫🇷' },
-  { id: 'it', label: 'Italiano 🇮🇹' },
+  { id: '',   label: tt("Cualquier idioma") },
+  { id: 'es', label: tt("Español 🇲🇽") },
+  { id: 'en', label: tt("Inglés 🇺🇸") },
+  { id: 'ja', label: tt("Japonés 🇯🇵") },
+  { id: 'ko', label: tt("Coreano 🇰🇷") },
+  { id: 'fr', label: tt("Francés 🇫🇷") },
+  { id: 'it', label: tt("Italiano 🇮🇹") },
 ]
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -63,10 +64,10 @@ export default function Search() {
   const [history,     setHistory]     = useState(getHistory())
 
   useSEO({
-    title: urlQuery ? `Buscar: ${urlQuery}` : 'Buscador',
+    title: urlQuery ? tt("Buscar: {urlQuery}", { urlQuery: urlQuery }) : 'Buscador',
     description: urlQuery
-      ? `Resultados de búsqueda para "${urlQuery}" en Life High. Películas, series, anime y personas.`
-      : 'Buscador completo de películas, series, anime, K-drama y personas. Filtros por tipo, idioma, año y rating.',
+      ? tt("Resultados de búsqueda para \"{urlQuery}\" en Life High. Películas, series, anime y personas.", { urlQuery: urlQuery })
+      : tt("Buscador completo de películas, series, anime, K-drama y personas. Filtros por tipo, idioma, año y rating."),
     keywords: urlQuery ? `buscar ${urlQuery}, ${urlQuery} online, ${urlQuery} ver` : 'buscar peliculas, buscar series, anime, kdrama',
   })
 
@@ -107,7 +108,7 @@ export default function Search() {
         setFromCache(res.fromCache)
         setError(null)
       } catch (e) {
-        setError(e.message || 'Error en la búsqueda')
+        setError(e.message || tt("Error en la búsqueda"))
       } finally {
         setLoading(false)
       }
@@ -150,7 +151,7 @@ export default function Search() {
       setPage(res.page)
       setTotalPages(res.totalPages)
     } catch (e) {
-      setError(e.message || 'Error cargando más')
+      setError(e.message || tt("Error cargando más"))
     } finally {
       setLoading(false)
     }
@@ -183,13 +184,13 @@ export default function Search() {
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-gold hover:border-gold/30 transition-all"
-            aria-label="Volver">
+            aria-label={tt("Volver")}>
             <ArrowLeft size={16} />
           </button>
-          <h1 className="font-display font-extrabold text-2xl text-chalk">Buscador</h1>
+          <h1 className="font-display font-extrabold text-2xl text-chalk">{tt("Buscador")}</h1>
           {fromCache && (
-            <span className="ml-auto text-[10px] font-mono text-emerald-400/60" title="Resultado servido desde cache">
-              ⚡ cache
+            <span className="ml-auto text-[10px] font-mono text-emerald-400/60" title={tt("Resultado servido desde cache")}>
+              {tt("⚡ cache")}
             </span>
           )}
         </div>
@@ -202,24 +203,23 @@ export default function Search() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder='Películas, series, anime, actores...   (presioná "/" para enfocar)'
+            placeholder={tt("Películas, series, anime, actores...   (presioná \"/\" para enfocar)")}
             className="w-full bg-surface border border-dim/60 rounded-2xl pl-14 pr-32 py-4 text-base text-chalk placeholder:text-muted/60 outline-none focus:border-gold/50 focus:shadow-[0_0_0_3px_rgba(232,160,32,0.15)] transition-all duration-300 font-display"
             autoComplete="off"
           />
           {query && (
             <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus() }}
               className="absolute right-32 top-1/2 -translate-y-1/2 text-muted hover:text-chalk"
-              aria-label="Limpiar">
+              aria-label={tt("Limpiar")}>
               <X size={16} weight="bold" />
             </button>
           )}
           <button type="button" onClick={() => setFiltersOpen((v) => !v)}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5
-              ${filtersOpen || activeFilterCount > 0
+            className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5\n              ${filtersOpen || activeFilterCount > 0
                 ? 'bg-gold text-void'
                 : 'bg-white/5 text-chalk hover:bg-white/10'}`}>
             <Sliders size={12} weight="bold" />
-            Filtros
+            {tt("Filtros")}
             {activeFilterCount > 0 && (
               <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-void/30 text-[9px] font-mono">{activeFilterCount}</span>
             )}
@@ -239,7 +239,7 @@ export default function Search() {
               <div className="bg-surface/50 border border-white/5 rounded-2xl p-5 space-y-5">
                 {/* Kind chips */}
                 <div>
-                  <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2">Tipo</p>
+                  <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2">{tt("Tipo")}</p>
                   <div className="flex flex-wrap gap-2">
                     {KIND_OPTIONS.map((o) => {
                       const Icon = o.Icon
@@ -260,7 +260,7 @@ export default function Search() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2 flex items-center gap-1.5">
-                      <ArrowsDownUp size={11} /> Ordenar
+                      <ArrowsDownUp size={11} /> {tt("Ordenar")}
                     </p>
                     <select value={sort} onChange={(e) => setSort(e.target.value)}
                       className="w-full bg-surface border border-white/10 rounded-lg px-3 py-2 text-sm text-chalk focus:outline-none focus:border-gold/30">
@@ -268,7 +268,7 @@ export default function Search() {
                     </select>
                   </div>
                   <div>
-                    <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2">Idioma original</p>
+                    <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2">{tt("Idioma original")}</p>
                     <select value={language} onChange={(e) => setLanguage(e.target.value)}
                       className="w-full bg-surface border border-white/10 rounded-lg px-3 py-2 text-sm text-chalk focus:outline-none focus:border-gold/30">
                       {LANG_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
@@ -280,7 +280,7 @@ export default function Search() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2 flex items-center gap-1.5">
-                      <Star size={11} weight="fill" className="text-gold" /> Rating mín: <span className="text-gold ml-1">{minRating}</span>
+                      <Star size={11} weight="fill" className="text-gold" /> {tt("Rating mín:")} <span className="text-gold ml-1">{minRating}</span>
                     </p>
                     <input type="range" min="0" max="10" step="0.5" value={minRating}
                       onChange={(e) => setMinRating(Number(e.target.value))}
@@ -288,7 +288,7 @@ export default function Search() {
                   </div>
                   <div>
                     <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2 flex items-center gap-1.5">
-                      <CalendarBlank size={11} /> Año desde
+                      <CalendarBlank size={11} /> {tt("Año desde")}
                     </p>
                     <input type="number" placeholder="1900" min="1900" max={CURRENT_YEAR}
                       value={minYear} onChange={(e) => setMinYear(e.target.value)}
@@ -296,7 +296,7 @@ export default function Search() {
                   </div>
                   <div>
                     <p className="text-muted/60 text-[10px] uppercase tracking-widest font-semibold mb-2 flex items-center gap-1.5">
-                      <CalendarBlank size={11} /> Año hasta
+                      <CalendarBlank size={11} /> {tt("Año hasta")}
                     </p>
                     <input type="number" placeholder={String(CURRENT_YEAR)} min="1900" max={CURRENT_YEAR}
                       value={maxYear} onChange={(e) => setMaxYear(e.target.value)}
@@ -306,7 +306,7 @@ export default function Search() {
 
                 <div className="flex justify-end">
                   <button onClick={resetFilters} className="text-xs text-muted hover:text-gold transition-colors">
-                    Resetear filtros
+                    {tt("Resetear filtros")}
                   </button>
                 </div>
               </div>
@@ -319,10 +319,10 @@ export default function Search() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
               <p className="text-muted text-xs uppercase tracking-widest font-semibold flex items-center gap-1.5">
-                <Clock size={12} /> Búsquedas recientes
+                <Clock size={12} /> {tt("Búsquedas recientes")}
               </p>
               <button onClick={onClearHistory} className="text-muted/50 hover:text-red-400 text-xs transition-colors">
-                Limpiar
+                {tt("Limpiar")}
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -344,10 +344,10 @@ export default function Search() {
         {!query && history.length === 0 && (
           <div className="mb-8">
             <p className="text-muted text-xs uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
-              <TrendUp size={12} /> Probá buscar
+              <TrendUp size={12} /> {tt("Probá buscar")}
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Breaking Bad', 'Inception', 'Attack on Titan', 'The Office', 'Spirited Away', 'Avengers', 'Casa de Papel', 'Game of Thrones'].map((s) => (
+              {['Breaking Bad', 'Inception', 'Attack on Titan', 'The Office', 'Spirited Away', 'Avengers', tt("Casa de Papel"), 'Game of Thrones'].map((s) => (
                 <button key={s} onClick={() => onHistoryClick(s)}
                   className="px-3 py-1.5 rounded-full bg-surface border border-white/5 text-muted text-sm hover:text-gold hover:border-gold/20 transition-all">
                   {s}
@@ -368,7 +368,7 @@ export default function Search() {
         {results.some(isPerson) && (
           <section className="mb-8">
             <p className="text-muted text-xs uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
-              <User size={12} weight="fill" /> Personas
+              <User size={12} weight="fill" /> {tt("Personas")}
             </p>
             <div className="flex flex-wrap gap-3">
               {results.filter(isPerson).slice(0, 10).map((p) => (
@@ -395,8 +395,8 @@ export default function Search() {
         {results.filter((r) => !isPerson(r)).length > 0 && (
           <section>
             <p className="text-muted text-xs mb-4 font-mono">
-              {results.filter((r) => !isPerson(r)).length} resultado{results.length !== 1 ? 's' : ''}
-              {totalPages > page && ' (hay más)'}
+              {results.filter((r) => !isPerson(r)).length} {tt("resultado")}{results.length !== 1 ? 's' : ''}
+              {totalPages > page && tt(" (hay más)")}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
               {results.filter((r) => !isPerson(r)).map((item, i) => (
@@ -409,7 +409,7 @@ export default function Search() {
               <div className="flex justify-center mt-10">
                 <button onClick={loadMore} disabled={loading}
                   className="px-8 py-3 rounded-full glass border border-white/10 text-chalk font-medium hover:border-gold/30 hover:text-gold transition-all duration-200 disabled:opacity-50">
-                  {loading ? 'Cargando…' : `Página ${page + 1}`}
+                  {loading ? tt("Cargando…") : tt("Página {v1}", { v1: page + 1 })}
                 </button>
               </div>
             )}
@@ -427,9 +427,9 @@ export default function Search() {
         {!loading && query.length >= 2 && results.length === 0 && !error && (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             <Funnel size={32} className="text-muted" />
-            <p className="text-chalk font-semibold">Sin resultados para "{query}"</p>
+            <p className="text-chalk font-semibold">{tt("Sin resultados para \"")}{query}"</p>
             <p className="text-muted text-sm max-w-md">
-              Probá ajustar los filtros o buscar con otros términos. TMDB indexa títulos en su idioma original.
+              {tt("Probá ajustar los filtros o buscar con otros términos. TMDB indexa títulos en su idioma original.")}
             </p>
           </div>
         )}

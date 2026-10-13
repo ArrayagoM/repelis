@@ -3,6 +3,7 @@ import { getLibrary, updateReminders } from '../../lib/library'
 import { reminderActions, systemNotify, dateLabel } from '../../lib/reminders'
 import { showToast } from '../../lib/toast'
 import { getMovieDetail, getTVDetail } from '../../api/tmdb'
+import { tt } from '../../lib/i18n'
 
 const MAX_REFRESH = 10
 const path = (r) => `/${r.type === 'tv' ? 'tv' : 'movie'}/${r.id}`
@@ -36,12 +37,12 @@ export default function ReminderWatcher() {
       // 2) Qué avisar
       const { released, soon } = reminderActions(getLibrary().reminders)
       for (const r of released) {
-        showToast({ icon: '🎬', title: `¡Ya se estrenó ${r.title}!`, text: 'Lo guardaste para que te avisemos.', actionLabel: 'Ver ahora', to: path(r), ttl: 12000 })
-        systemNotify(`¡Ya se estrenó ${r.title}!`, 'Abrí Life High para verla.', path(r))
+        showToast({ icon: '🎬', title: tt("¡Ya se estrenó {title}!", { title: r.title }), text: tt("Lo guardaste para que te avisemos."), actionLabel: tt("Ver ahora"), to: path(r), ttl: 12000 })
+        systemNotify(tt("¡Ya se estrenó {title}!", { title: r.title }), tt("Abrí Life High para verla."), path(r))
       }
       for (const r of soon) {
-        showToast({ icon: '⏰', title: `Mañana se estrena ${r.title}`, text: dateLabel(r.date), actionLabel: 'Ver ficha', to: path(r), ttl: 9000, tone: 'blue' })
-        systemNotify(`Mañana se estrena ${r.title}`, 'Te lo recordamos desde Life High.', path(r))
+        showToast({ icon: '⏰', title: tt("Mañana se estrena {title}", { title: r.title }), text: dateLabel(r.date), actionLabel: tt("Ver ficha"), to: path(r), ttl: 9000, tone: 'blue' })
+        systemNotify(tt("Mañana se estrena {title}", { title: r.title }), tt("Te lo recordamos desde Life High."), path(r))
       }
       if (released.length || soon.length) {
         const doneR = new Set(released.map((r) => `${r.type}:${r.id}`))

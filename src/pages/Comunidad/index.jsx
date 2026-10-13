@@ -6,14 +6,15 @@ import { ListGrid, EmptyState } from '../../components/Community'
 import { useAuth } from '../../lib/auth'
 import { social, errorText, ensureAccount } from '../../lib/social'
 import { useSEO } from '../../lib/useSEO'
+import { tt } from '../../lib/i18n'
 
 const TABS = [['popular', 'Populares'], ['new', 'Nuevas'], ['following', 'Siguiendo']]
 
 export default function Comunidad() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   useSEO({
-    title: 'Comunidad: listas y planes de la gente',
-    description: 'Listas de películas y series armadas por la comunidad: zapping, planes de finde, maratones. Seguí a quien tenga tu mismo gusto.',
+    title: tt("Comunidad: listas y planes de la gente"),
+    description: tt("Listas de películas y series armadas por la comunidad: zapping, planes de finde, maratones. Seguí a quien tenga tu mismo gusto."),
   })
   const auth = useAuth()
   const navigate = useNavigate()
@@ -39,18 +40,18 @@ export default function Comunidad() {
         <header className="flex flex-wrap items-end gap-4 mb-8">
           <div className="mr-auto">
             <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-chalk flex items-center gap-3">
-              <UsersThree size={32} weight="fill" className="text-gold" /> Comunidad
+              <UsersThree size={32} weight="fill" className="text-gold" /> {tt("Comunidad")}
             </h1>
             <p className="text-muted text-sm mt-2 max-w-xl leading-relaxed">
-              Listas armadas por la gente: zapping para la noche, planes de finde, maratones. Mirarlas es libre; para dar like, seguir o armar las tuyas hace falta una cuenta gratis.
+              {tt("Listas armadas por la gente: zapping para la noche, planes de finde, maratones. Mirarlas es libre; para dar like, seguir o armar las tuyas hace falta una cuenta gratis.")}
             </p>
           </div>
           <div className="flex gap-2">
             <Link to="/perfil" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-white/10 text-chalk text-sm hover:border-gold/30 hover:text-gold transition-colors">
-              <UserCircle size={16} /> Mi perfil
+              <UserCircle size={16} /> {tt("Mi perfil")}
             </Link>
             <button onClick={create} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi transition-colors">
-              <Plus size={16} weight="bold" /> Crear lista
+              <Plus size={16} weight="bold" /> {tt("Crear lista")}
             </button>
           </div>
         </header>
@@ -69,13 +70,13 @@ export default function Comunidad() {
         {state.loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-64 rounded-2xl" />)}</div>
         ) : tab === 'following' && auth.status !== 'in' ? (
-          <EmptyState title="Las listas de quienes seguís" action={<button onClick={() => ensureAccount()} className="mt-5 px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Ingresar o crear cuenta</button>}>
-            Con tu cuenta seguís a gente con tu mismo gusto y acá ves lo nuevo que arman.
+          <EmptyState title={tt("Las listas de quienes seguís")} action={<button onClick={() => ensureAccount()} className="mt-5 px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">{tt("Ingresar o crear cuenta")}</button>}>
+            {tt("Con tu cuenta seguís a gente con tu mismo gusto y acá ves lo nuevo que arman.")}
           </EmptyState>
         ) : state.lists.length === 0 ? (
-          <EmptyState title={tab === 'following' ? 'Todavía no seguís a nadie' : 'Todavía no hay listas'}
-            action={<button onClick={() => (tab === 'following' ? setTab('popular') : create())} className="mt-5 px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">{tab === 'following' ? 'Descubrir gente' : 'Armar la primera'}</button>}>
-            {tab === 'following' ? 'Entrá a una lista que te guste y tocá "Seguir" en el perfil de quien la armó.' : 'Sé la primera persona en compartir una lista.'}
+          <EmptyState title={tab === 'following' ? tt("Todavía no seguís a nadie") : tt("Todavía no hay listas")}
+            action={<button onClick={() => (tab === 'following' ? setTab('popular') : create())} className="mt-5 px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">{tab === 'following' ? tt("Descubrir gente") : tt("Armar la primera")}</button>}>
+            {tab === 'following' ? tt("Entrá a una lista que te guste y tocá \"Seguir\" en el perfil de quien la armó.") : tt("Sé la primera persona en compartir una lista.")}
           </EmptyState>
         ) : (
           <ListGrid lists={state.lists} />

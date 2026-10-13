@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Ghost, ArrowRight } from '@phosphor-icons/react'
 import { halloweenCountdown, isHalloweenSeason } from '../../lib/seasons'
+import { tt } from '../../lib/i18n'
 
 /** Cartel de la Sesión de terror para el inicio. Solo aparece en temporada de Halloween. */
 export default function TerrorBanner() {
@@ -15,11 +16,11 @@ export default function TerrorBanner() {
         </span>
         <span className="relative mr-auto min-w-0">
           <span className="block text-red-300 text-[11px] font-semibold uppercase tracking-widest">{halloweenCountdown()}</span>
-          <span className="block font-display font-extrabold text-xl sm:text-2xl text-chalk leading-tight">Sesión de terror</span>
-          <span className="block text-muted text-sm mt-0.5">Lo último, los clásicos y series para no dormir. Armá tu maratón de Halloween.</span>
+          <span className="block font-display font-extrabold text-xl sm:text-2xl text-chalk leading-tight">{tt("Sesión de terror")}</span>
+          <span className="block text-muted text-sm mt-0.5">{tt("Lo último, los clásicos y series para no dormir. Armá tu maratón de Halloween.")}</span>
         </span>
         <span className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 text-white font-bold text-sm group-hover:bg-red-500 transition-colors">
-          Entrar <ArrowRight size={14} weight="bold" />
+          {tt("Entrar")} <ArrowRight size={14} weight="bold" />
         </span>
       </Link>
     </div>

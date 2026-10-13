@@ -7,6 +7,7 @@ import { IMG_ORIGINAL, IMG_W500, IMG_W780 } from '../../api/tmdb'
 import { openPlayer } from '../../store/slices/playerSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
 import { toLibItem } from '../../lib/library'
+import { tt } from '../../lib/i18n'
 
 const _caps = typeof window !== 'undefined' ? getDeviceCaps() : { lowEnd: false }
 const LOW_END = _caps.lowEnd
@@ -94,7 +95,7 @@ export default function Hero({ movies = [] }) {
             {/* Eyebrow */}
             <div className="flex flex-wrap items-center gap-3">
               <span className="px-3 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold text-[11px] uppercase tracking-[0.18em] font-semibold">
-                Tendencia global
+                {tt("Tendencia global")}
               </span>
               <span className="flex items-center gap-1 text-gold text-sm font-mono font-medium">
                 <Star size={14} weight="fill" />
@@ -106,10 +107,10 @@ export default function Hero({ movies = [] }) {
               {/* Servidores con catálogo LATAM (no garantía por título — depende del server) */}
               <span
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-[11px] font-semibold uppercase tracking-wide"
-                title="Tenemos servidores con buen catálogo en español latino. El audio final depende del título y del servidor — si arranca en inglés, cambialo desde el ícono Audio/CC dentro del player."
+                title={tt("Tenemos servidores con buen catálogo en español latino. El audio final depende del título y del servidor — si arranca en inglés, cambialo desde el ícono Audio/CC dentro del player.")}
               >
                 <span className="text-sm leading-none">🇲🇽</span>
-                LATAM-friendly
+                {tt("LATAM-friendly")}
               </span>
             </div>
 
@@ -139,7 +140,7 @@ export default function Hero({ movies = [] }) {
                 <span className="w-7 h-7 rounded-full bg-void/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <Play size={14} weight="fill" />
                 </span>
-                Reproducir
+                {tt("Reproducir")}
               </motion.button>
 
               <motion.button
@@ -154,7 +155,7 @@ export default function Hero({ movies = [] }) {
                 "
               >
                 <Info size={17} weight="bold" />
-                Más info
+                {tt("Más info")}
               </motion.button>
             </div>
           </motion.div>
@@ -194,7 +195,7 @@ export default function Hero({ movies = [] }) {
                   ? 'w-8 h-1.5 bg-gold shadow-[0_0_8px_rgba(232,160,32,0.6)]'
                   : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
               }`}
-              aria-label={`Ir a película ${i + 1}`}
+              aria-label={tt("Ir a película {v1}", { v1: i + 1 })}
             />
           ))}
         </div>

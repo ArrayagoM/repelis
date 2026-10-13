@@ -5,6 +5,7 @@ import { IMG_W342 } from '../../api/tmdb'
 import { TAG_LABELS } from '../../lib/socialRules'
 import { social, ensureAccount } from '../../lib/social'
 import { showToast } from '../../lib/toast'
+import { tt } from '../../lib/i18n'
 
 export function Avatar({ name = '', size = 40, className = '' }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase()
@@ -46,11 +47,11 @@ export function LikeButton({ list, onChange, compact = false }) {
     setState((s) => ({ liked: next, likes: Math.max(0, s.likes + (next ? 1 : -1)), busy: true }))        // optimista
     const r = await social.like(list.id, next)
     if (r.ok) { setState({ liked: r.data.liked, likes: r.data.likes, busy: false }); onChange?.(r.data) }
-    else { setState((s) => ({ liked: !next, likes: Math.max(0, s.likes + (next ? -1 : 1)), busy: false })); showToast({ icon: '⚠️', title: 'No pudimos guardar tu like', ttl: 3500, tone: 'blue' }) }
+    else { setState((s) => ({ liked: !next, likes: Math.max(0, s.likes + (next ? -1 : 1)), busy: false })); showToast({ icon: '⚠️', title: tt("No pudimos guardar tu like"), ttl: 3500, tone: 'blue' }) }
   }
 
   return (
-    <button onClick={toggle} aria-pressed={state.liked} aria-label={state.liked ? 'Quitar me gusta' : 'Me gusta'}
+    <button onClick={toggle} aria-pressed={state.liked} aria-label={state.liked ? tt("Quitar me gusta") : tt("Me gusta")}
       className={`inline-flex items-center gap-1.5 rounded-full border transition-colors ${compact ? 'px-2.5 py-1 text-xs' : 'px-4 py-2 text-sm'}
         ${state.liked ? 'bg-red-500/15 border-red-400/40 text-red-300' : 'glass border-white/10 text-muted hover:text-chalk hover:border-white/25'}`}>
       <Heart size={compact ? 13 : 16} weight={state.liked ? 'fill' : 'regular'} />
@@ -74,7 +75,7 @@ export function FollowButton({ handle, following: initial, onChange }) {
     <button onClick={toggle} disabled={busy}
       className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-colors disabled:opacity-60
         ${following ? 'glass border border-white/15 text-chalk hover:border-red-400/40 hover:text-red-300' : 'bg-gold text-void hover:bg-gold-hi'}`}>
-      {following ? <><UserMinus size={16} weight="bold" /> Siguiendo</> : <><UserPlus size={16} weight="bold" /> Seguir</>}
+      {following ? <><UserMinus size={16} weight="bold" /> {tt("Siguiendo")}</> : <><UserPlus size={16} weight="bold" /> {tt("Seguir")}</>}
     </button>
   )
 }
@@ -83,15 +84,15 @@ export function FollowButton({ handle, following: initial, onChange }) {
 export function ListCard({ list }) {
   return (
     <article className="group rounded-2xl bg-card border border-white/[0.06] overflow-hidden hover:border-gold/30 transition-colors flex flex-col">
-      <Link to={`/lista/${list.id}`} className="block" aria-label={`Abrir la lista ${list.title}`}>
+      <Link to={`/lista/${list.id}`} className="block" aria-label={tt("Abrir la lista {title}", { title: list.title })}>
         <div className="relative aspect-[16/10] bg-black overflow-hidden">
           <Cover posters={list.cover} className="w-full h-full group-hover:scale-[1.03] transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
           <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-void/80 border border-white/15 text-[10px] font-semibold uppercase tracking-wide text-gold">
-            {TAG_LABELS[list.tag] || 'Lista'}
+            {tt(TAG_LABELS[list.tag] || "Lista")}
           </span>
           <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 text-[11px] text-chalk/90 font-mono">
-            <ListBullets size={12} /> {list.itemsCount} títulos
+            <ListBullets size={12} /> {list.itemsCount} {tt("títulos")}
           </span>
         </div>
         <div className="p-3.5 pb-1">

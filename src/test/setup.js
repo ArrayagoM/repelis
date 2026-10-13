@@ -1,5 +1,7 @@
 // Setup global para Vitest + Testing Library
 import '@testing-library/jest-dom/vitest'
+// Las pruebas corren siempre en español (el idioma real se elige por navegador/país: ver src/lib/i18n.js)
+globalThis.__LH_LANG__ = 'es'
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 

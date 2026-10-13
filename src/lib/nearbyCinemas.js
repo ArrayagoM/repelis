@@ -1,3 +1,4 @@
+import { tt } from './i18n'
 // ─────────────────────────────────────────────────────────────────────────
 // Cines cercanos vía Overpass API de OpenStreetMap.
 //   - Gratis, sin API key
@@ -130,7 +131,7 @@ export const fetchNearbyCinemas = async (lat, lng, radiusKm = 30) => {
       const tags = el.tags || {}
       return {
         id: `${el.type}-${el.id}`,
-        name: tags.name || tags['name:es'] || 'Cine sin nombre',
+        name: tags.name || tags['name:es'] || tt("Cine sin nombre"),
         brand: tags.brand || tags.operator || null,
         address: [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
           .filter(Boolean).join(' '),

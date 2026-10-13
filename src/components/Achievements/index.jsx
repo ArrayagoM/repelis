@@ -5,6 +5,7 @@ import { useLibrary, getLibrary, markAchievementsSeen } from '../../lib/library'
 import { computeAchievements, computeStreak, newlyUnlocked } from '../../lib/achievements'
 import { showToast } from '../../lib/toast'
 import { usePersonal } from '../../lib/auth'
+import { tt } from '../../lib/i18n'
 
 /** Chip 🔥 con los días de racha (Navbar). Aparece desde 2 días seguidos. */
 export function StreakChip() {
@@ -13,7 +14,7 @@ export function StreakChip() {
   const { current } = useMemo(() => computeStreak(lib.days), [lib.days])
   if (!personal || current < 2) return null
   return (
-    <Link to="/mi-lista#logros" title={`${current} días seguidos viendo algo`} aria-label={`Racha de ${current} días`}
+    <Link to="/mi-lista#logros" title={tt("{current} días seguidos viendo algo", { current: current })} aria-label={tt("Racha de {current} días", { current: current })}
       className="hidden lg:flex items-center gap-1 h-8 px-2.5 rounded-full bg-orange-500/15 border border-orange-400/30 text-orange-300 text-xs font-bold hover:bg-orange-500/25 transition-all">
       <Fire size={14} weight="fill" />
       {current}
@@ -32,8 +33,8 @@ export function AchievementWatcher() {
     if (!fresh.length) return
     markAchievementsSeen(fresh.map((a) => a.id))
     fresh.slice(0, 3).forEach((a, i) => setTimeout(() => showToast({
-      icon: a.icon, title: `Logro desbloqueado: ${a.title}`, text: a.desc,
-      actionLabel: 'Ver mis logros', to: '/mi-lista#logros', ttl: 8000,
+      icon: a.icon, title: tt("Logro desbloqueado: {title}", { title: a.title }), text: a.desc,
+      actionLabel: tt("Ver mis logros"), to: '/mi-lista#logros', ttl: 8000,
     }), i * 600))
   }, [lib, personal])
   return null
@@ -47,16 +48,16 @@ export function AchievementsPanel() {
   const done = list.filter((a) => a.done).length
 
   return (
-    <section id="logros" className="max-w-7xl mx-auto px-6 md:px-12" aria-label="Logros">
+    <section id="logros" className="max-w-7xl mx-auto px-6 md:px-12" aria-label={tt("Logros")}>
       <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
-        <h2 className="font-display font-bold text-xl sm:text-2xl text-chalk">Tus logros</h2>
-        <span className="text-muted text-sm font-mono">{done} de {list.length}</span>
+        <h2 className="font-display font-bold text-xl sm:text-2xl text-chalk">{tt("Tus logros")}</h2>
+        <span className="text-muted text-sm font-mono">{done} {tt("de")} {list.length}</span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-        <Stat label="Racha actual" value={`${streak.current} día${streak.current === 1 ? '' : 's'}`} hint={streak.current > 0 && !streak.activeToday ? 'Mirá algo hoy para sumarla' : 'Seguí así'} icon="🔥" />
-        <Stat label="Mejor racha" value={`${streak.best} día${streak.best === 1 ? '' : 's'}`} icon="🏅" />
-        <Stat label="Tiempo viendo" value={`${Math.floor(lib.minutes / 60)} h ${Math.floor(lib.minutes % 60)} min`} icon="⏱️" />
+        <Stat label={tt("Racha actual")} value={tt("{current} día{v2}", { current: streak.current, v2: streak.current === 1 ? '' : 's' })} hint={streak.current > 0 && !streak.activeToday ? tt("Mirá algo hoy para sumarla") : tt("Seguí así")} icon="🔥" />
+        <Stat label={tt("Mejor racha")} value={tt("{best} día{v2}", { best: streak.best, v2: streak.best === 1 ? '' : 's' })} icon="🏅" />
+        <Stat label={tt("Tiempo viendo")} value={`${Math.floor(lib.minutes / 60)} h ${Math.floor(lib.minutes % 60)} min`} icon="⏱️" />
       </div>
 
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

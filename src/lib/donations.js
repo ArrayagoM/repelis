@@ -8,6 +8,7 @@
 // desde el navegador, y lo único que se desbloquea es quitar los pedidos y una insignia.
 // ─────────────────────────────────────────────────────────────────────────
 import { useSyncExternalStore } from 'react'
+import { tt } from './i18n'
 
 const KEY = 'lifehigh:donations:v1'
 const DAY = 86400000
@@ -96,7 +97,7 @@ export const formatMoney = (amount, currency = 'USD') => {
 
 export const loadGoal = async () => {
   try {
-    const res = await fetch('/donation-goal.json', { cache: 'no-store' })
+    const res = await fetch('/donation-goal.json', { cache: tt("no-store") })
     if (!res.ok) return null
     // Con el rewrite SPA, un archivo inexistente devuelve index.html: parseGoal lo descarta
     return parseGoal(await res.json())

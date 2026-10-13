@@ -5,6 +5,7 @@ import { CaretRight, Star } from '@phosphor-icons/react'
 import { IMG_W342 } from '../../api/tmdb'
 import { useLanguageFilter } from '../../lib/useLanguageFilter'
 import { isOut } from '../../lib/releaseStatus'
+import { tt } from '../../lib/i18n'
 
 const badgeStyles = {
   blue: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
@@ -14,7 +15,7 @@ const badgeStyles = {
 }
 
 /** Fila "Top 10" con el número del puesto bien grande detrás de cada póster. */
-export default function Top10Row({ title, badge = 'Top 10', badgeColor = 'gold', movies = [], loading = false, mediaType = 'movie' }) {
+export default function Top10Row({ title, badge = tt("Top 10"), badgeColor = 'gold', movies = [], loading = false, mediaType = 'movie' }) {
   const trackRef = useRef(null)
   const navigate = useNavigate()
   const released = useMemo(() => movies.filter(isOut), [movies])
@@ -49,11 +50,11 @@ export default function Top10Row({ title, badge = 'Top 10', badgeColor = 'gold',
           <h2 className="font-display font-bold text-xl sm:text-2xl text-chalk tracking-tight">{title}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => scroll('left')} aria-label="Anterior"
+          <button onClick={() => scroll('left')} aria-label={tt("Anterior")}
             className="hidden md:flex w-8 h-8 rounded-full glass border border-white/10 items-center justify-center text-muted hover:text-gold hover:border-gold/30 transition-all rotate-180">
             <CaretRight size={14} weight="bold" />
           </button>
-          <button onClick={() => scroll('right')} aria-label="Siguiente"
+          <button onClick={() => scroll('right')} aria-label={tt("Siguiente")}
             className="hidden md:flex w-8 h-8 rounded-full glass border border-white/10 items-center justify-center text-muted hover:text-gold hover:border-gold/30 transition-all">
             <CaretRight size={14} weight="bold" />
           </button>
@@ -69,12 +70,12 @@ export default function Top10Row({ title, badge = 'Top 10', badgeColor = 'gold',
               </li>
             ))
           : top.map((item, i) => {
-              const name = item.title ?? item.name ?? 'Sin título'
+              const name = item.title ?? item.name ?? tt("Sin título")
               return (
                 <li key={item.id} className="flex-shrink-0" style={{ scrollSnapAlign: 'start' }}>
                   <button
                     onClick={() => open(item)}
-                    aria-label={`Puesto ${i + 1}: ${name}`}
+                    aria-label={tt("Puesto {v1}: {name}", { v1: i + 1, name: name })}
                     className="group relative flex items-end focus:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-xl"
                   >
                     <span

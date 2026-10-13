@@ -9,7 +9,10 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'repelis:langMode:v1'
-const DEFAULT_MODE = 'broad'
+import { isEnglish, tt } from './i18n'
+
+// En español el filtro "Doblado LATAM" es el normal; en inglés no aplica (el audio original en inglés es lo esperado): sin filtro.
+const defaultMode = () => (isEnglish() ? 'all' : 'broad')
 
 const VALID = ['strict', 'broad', 'all']
 
@@ -18,9 +21,9 @@ const listeners = new Set()
 const safeGet = () => {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
-    return VALID.includes(v) ? v : DEFAULT_MODE
+    return VALID.includes(v) ? v : defaultMode()
   } catch {
-    return DEFAULT_MODE
+    return defaultMode()
   }
 }
 
@@ -31,7 +34,7 @@ const safeSet = (v) => {
 export const getLanguageMode = () => safeGet()
 
 export const setLanguageMode = (mode) => {
-  const safe = VALID.includes(mode) ? mode : DEFAULT_MODE
+  const safe = VALID.includes(mode) ? mode : defaultMode()
   safeSet(safe)
   listeners.forEach((fn) => { try { fn(safe) } catch {} })
 }
@@ -43,7 +46,7 @@ export const subscribeLanguageMode = (fn) => {
 }
 
 // ─── Helpers para inyectar params en discover ────────────────────────────
-const LATAM_COUNTRY_LIST = 'MX|AR|CO|CL|PE|VE|UY|EC|BO|PY|ES'
+const LATAM_COUNTRY_LIST = tt("MX|AR|CO|CL|PE|VE|UY|EC|BO|PY|ES")
 const HISPANO_LANG = 'es'
 
 /**
@@ -83,13 +86,13 @@ export const filterResultsByMode = (results = [], mode = getLanguageMode()) => {
 }
 
 export const MODE_LABELS = {
-  strict: 'Solo hispano',
-  broad:  'Doblado LATAM',
-  all:    'Todo el catálogo',
+  strict: tt("Solo hispano"),
+  broad:  tt("Doblado LATAM"),
+  all:    tt("Todo el catálogo"),
 }
 
 export const MODE_DESCRIPTIONS = {
-  strict: 'Solo películas y series producidas originalmente en español. Catálogo más chico pero 100% en español.',
-  broad:  'Cine hispano + estrenos populares con doblaje LATAM confirmado. Recomendado para Argentina.',
-  all:    'Catálogo completo en idioma original. El audio depende del servidor de reproducción.',
+  strict: tt("Solo películas y series producidas originalmente en español. Catálogo más chico pero 100% en español."),
+  broad:  tt("Cine hispano + estrenos populares con doblaje LATAM confirmado. Recomendado para Argentina."),
+  all:    tt("Catálogo completo en idioma original. El audio depende del servidor de reproducción."),
 }

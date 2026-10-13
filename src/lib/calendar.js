@@ -1,6 +1,7 @@
 import { todayStr } from './library'
+import { tt } from './i18n'
 
-const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+const DAYS = ['domingo', 'lunes', 'martes', tt("miércoles"), 'jueves', 'viernes', tt("sábado")]
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
 const parts = (s) => s.split('-').map(Number)
@@ -9,7 +10,7 @@ const addDays = (s, n) => { const [y, m, d] = parts(s); return todayStr(new Date
 /** "Hoy", "Mañana" o "Viernes 9 de octubre". */
 export const dayLabel = (dateStr, today = todayStr()) => {
   if (dateStr === today) return 'Hoy'
-  if (dateStr === addDays(today, 1)) return 'Mañana'
+  if (dateStr === addDays(today, 1)) return tt("Mañana")
   const [y, m, d] = parts(dateStr)
   const dow = DAYS[new Date(y, m - 1, d).getDay()]
   return `${dow[0].toUpperCase()}${dow.slice(1)} ${d} de ${MONTHS[m - 1]}`

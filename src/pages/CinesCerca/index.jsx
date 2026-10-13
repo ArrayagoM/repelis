@@ -9,6 +9,7 @@ import { useSEO } from '../../lib/useSEO'
 import {
   getUserCoords, fetchNearbyCinemas, mapsDirectionsUrl,
 } from '../../lib/nearbyCinemas'
+import { tt } from '../../lib/i18n'
 
 const formatDistance = (km) =>
   km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`
@@ -22,9 +23,9 @@ export default function CinesCerca() {
   const [radius, setRadius]   = useState(30)
 
   useSEO({
-    title: 'Cines cerca tuyo',
-    description: 'Encontrá los cines más cercanos a tu ubicación. Datos en vivo de OpenStreetMap.',
-    keywords: 'cines cerca, cine en argentina, ver en cartelera, cines cercanos',
+    title: tt("Cines cerca tuyo"),
+    description: tt("Encontrá los cines más cercanos a tu ubicación. Datos en vivo de OpenStreetMap."),
+    keywords: tt("cines cerca, cine en argentina, ver en cartelera, cines cercanos"),
   })
 
   const start = async () => {
@@ -71,9 +72,9 @@ export default function CinesCerca() {
             </div>
             <div>
               <h1 className="font-display font-extrabold text-2xl text-chalk leading-none">
-                Cines cerca tuyo
+                {tt("Cines cerca tuyo")}
               </h1>
-              <p className="text-muted text-xs mt-1">Powered by OpenStreetMap</p>
+              <p className="text-muted text-xs mt-1">{tt("Powered by OpenStreetMap")}</p>
             </div>
           </div>
         </div>
@@ -85,19 +86,16 @@ export default function CinesCerca() {
               <div className="flex items-start gap-3">
                 <Shield size={22} weight="fill" className="text-gold flex-shrink-0 mt-1" />
                 <div className="flex-1 space-y-3">
-                  <p className="text-chalk font-display font-bold text-lg">¿Qué te vamos a pedir?</p>
+                  <p className="text-chalk font-display font-bold text-lg">{tt("¿Qué te vamos a pedir?")}</p>
                   <p className="text-muted text-sm leading-relaxed">
-                    El próximo paso te va a abrir una ventana del navegador pidiendo permiso a
-                    <strong className="text-chalk/90"> tu ubicación</strong>. La usamos para
-                    una sola cosa:
+                    {tt("El próximo paso te va a abrir una ventana del navegador pidiendo permiso a")}
+                    <strong className="text-chalk/90"> {tt("tu ubicación")}</strong>{tt(". La usamos para una sola cosa:")}
                   </p>
                   <ol className="text-muted text-sm leading-relaxed list-decimal list-inside space-y-1 marker:text-gold/70">
-                    <li><strong className="text-chalk/90">Buscar cines a {radius} km</strong> a la redonda y mostrarte distancia + cómo llegar.</li>
+                    <li><strong className="text-chalk/90">{tt("Buscar cines a")} {radius} {tt("km")}</strong> {tt("a la redonda y mostrarte distancia + cómo llegar.")}</li>
                   </ol>
                   <p className="text-muted/70 text-xs leading-relaxed">
-                    ⚠️ Honestidad: también guardamos tu ciudad/país aproximados en nuestros analytics
-                    para entender desde dónde nos usan. Ver <Link to="/privacy" className="text-gold underline">política de privacidad</Link>.
-                    Si negás el permiso, esta página no funciona pero el resto del sitio sí.
+                    {tt("⚠️ Honestidad: también guardamos tu ciudad/país aproximados en nuestros analytics para entender desde dónde nos usan. Ver")} <Link to="/privacy" className="text-gold underline">{tt("política de privacidad")}</Link>{tt(". Si negás el permiso, esta página no funciona pero el resto del sitio sí.")}
                   </p>
                 </div>
               </div>
@@ -105,15 +103,15 @@ export default function CinesCerca() {
 
             <div className="flex items-center gap-3">
               <label className="text-muted text-xs flex items-center gap-2">
-                Radio:
+                {tt("Radio:")}
                 <select value={radius} onChange={(e) => setRadius(Number(e.target.value))}
                   className="bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-chalk">
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={20}>20 km</option>
-                  <option value={30}>30 km</option>
-                  <option value={50}>50 km</option>
-                  <option value={100}>100 km</option>
+                  <option value={5}>{tt("5 km")}</option>
+                  <option value={10}>{tt("10 km")}</option>
+                  <option value={20}>{tt("20 km")}</option>
+                  <option value={30}>{tt("30 km")}</option>
+                  <option value={50}>{tt("50 km")}</option>
+                  <option value={100}>{tt("100 km")}</option>
                 </select>
               </label>
               <motion.button
@@ -122,7 +120,7 @@ export default function CinesCerca() {
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-gold text-void font-bold shadow-[0_4px_24px_rgba(232,160,32,0.35)] hover:bg-gold-hi transition-colors"
               >
                 <MapPin size={16} weight="fill" />
-                Buscar cines cerca mío
+                {tt("Buscar cines cerca mío")}
               </motion.button>
             </div>
           </div>
@@ -132,8 +130,8 @@ export default function CinesCerca() {
         {phase === 'locating' && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
             <div className="w-12 h-12 rounded-full border-2 border-gold/15 border-t-gold animate-spin" />
-            <p className="text-chalk font-display font-semibold">Detectando ubicación…</p>
-            <p className="text-muted text-sm">Mirá el popup del navegador y aceptá el permiso.</p>
+            <p className="text-chalk font-display font-semibold">{tt("Detectando ubicación…")}</p>
+            <p className="text-muted text-sm">{tt("Mirá el popup del navegador y aceptá el permiso.")}</p>
           </div>
         )}
 
@@ -141,8 +139,8 @@ export default function CinesCerca() {
         {phase === 'searching' && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
             <MagnifyingGlass size={32} className="text-gold animate-pulse" />
-            <p className="text-chalk font-display font-semibold">Buscando cines a {radius} km…</p>
-            <p className="text-muted text-sm">Consultando OpenStreetMap.</p>
+            <p className="text-chalk font-display font-semibold">{tt("Buscando cines a")} {radius} {tt("km…")}</p>
+            <p className="text-muted text-sm">{tt("Consultando OpenStreetMap.")}</p>
           </div>
         )}
 
@@ -150,14 +148,13 @@ export default function CinesCerca() {
         {phase === 'denied' && (
           <div className="p-6 rounded-2xl bg-red-500/8 border border-red-500/20 text-center">
             <Warning size={36} weight="fill" className="text-red-400 mx-auto mb-3" />
-            <p className="text-chalk font-display font-bold text-lg mb-1">Permiso rechazado</p>
+            <p className="text-chalk font-display font-bold text-lg mb-1">{tt("Permiso rechazado")}</p>
             <p className="text-muted text-sm mb-4">
-              Sin tu ubicación no podemos calcular cines cercanos. Si cambiaste de opinión,
-              dale permiso al sitio en <strong className="text-chalk/90">candado de la barra</strong> y volvé a tocar el botón.
+              {tt("Sin tu ubicación no podemos calcular cines cercanos. Si cambiaste de opinión, dale permiso al sitio en")} <strong className="text-chalk/90">{tt("candado de la barra")}</strong> {tt("y volvé a tocar el botón.")}
             </p>
             <button onClick={start}
               className="px-5 py-2 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi transition-colors">
-              Volver a intentar
+              {tt("Volver a intentar")}
             </button>
           </div>
         )}
@@ -166,14 +163,13 @@ export default function CinesCerca() {
         {phase === 'error' && (
           <div className="p-6 rounded-2xl bg-amber-500/8 border border-amber-500/20 text-center">
             <Warning size={36} weight="fill" className="text-amber-400 mx-auto mb-3" />
-            <p className="text-chalk font-display font-bold text-lg mb-1">No pudimos cargar los cines</p>
+            <p className="text-chalk font-display font-bold text-lg mb-1">{tt("No pudimos cargar los cines")}</p>
             <p className="text-muted text-sm mb-4 max-w-md mx-auto">
-              El servicio de mapas está lento o tu conexión falló. Probamos varios servidores;
-              tocá reintentar en unos segundos.
+              {tt("El servicio de mapas está lento o tu conexión falló. Probamos varios servidores; tocá reintentar en unos segundos.")}
             </p>
             <button onClick={start}
               className="px-5 py-2 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi transition-colors">
-              Reintentar
+              {tt("Reintentar")}
             </button>
           </div>
         )}
@@ -183,20 +179,19 @@ export default function CinesCerca() {
           <>
             <div className="flex items-center justify-between mb-4 text-sm">
               <p className="text-muted">
-                Encontramos <strong className="text-chalk">{cinemas.length} cine{cinemas.length !== 1 ? 's' : ''}</strong>
-                {' '}a {radius} km.
+                {tt("Encontramos")} <strong className="text-chalk">{cinemas.length} {tt("cine")}{cinemas.length !== 1 ? 's' : ''}</strong>
+                {' '}{tt("a")} {radius} {tt("km.")}
               </p>
               <button onClick={() => setPhase('idle')}
-                className="text-gold text-xs hover:underline">Cambiar radio</button>
+                className="text-gold text-xs hover:underline">{tt("Cambiar radio")}</button>
             </div>
 
             {cinemas.length === 0 ? (
               <div className="p-6 rounded-2xl bg-surface border border-white/5 text-center">
                 <FilmSlate size={36} className="text-muted/50 mx-auto mb-3" />
-                <p className="text-chalk font-semibold mb-1">No hay cines registrados a {radius} km</p>
+                <p className="text-chalk font-semibold mb-1">{tt("No hay cines registrados a")} {radius} {tt("km")}</p>
                 <p className="text-muted text-sm mb-4 max-w-md mx-auto">
-                  Los datos vienen de OpenStreetMap y puede que en tu zona no estén mapeados todos.
-                  Probá ampliar el radio, o buscá directo en Google Maps (siempre tiene más cobertura):
+                  {tt("Los datos vienen de OpenStreetMap y puede que en tu zona no estén mapeados todos. Probá ampliar el radio, o buscá directo en Google Maps (siempre tiene más cobertura):")}
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {coords && (
@@ -205,12 +200,12 @@ export default function CinesCerca() {
                       target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold text-void text-sm font-bold hover:bg-gold-hi transition-colors"
                     >
-                      <MapPin size={14} weight="fill" /> Buscar cines en Google Maps
+                      <MapPin size={14} weight="fill" /> {tt("Buscar cines en Google Maps")}
                     </a>
                   )}
                   <button onClick={() => setPhase('idle')}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass border border-white/10 text-chalk text-sm font-semibold hover:border-gold/30 transition-all">
-                    Ampliar el radio
+                    {tt("Ampliar el radio")}
                   </button>
                 </div>
               </div>
@@ -249,12 +244,12 @@ function CinemaCard({ cinema: c }) {
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <a href={mapsDirectionsUrl(c.lat, c.lng, c.name)} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold text-void text-[11px] font-bold hover:bg-gold-hi transition-colors">
-              <MapPin size={11} weight="fill" /> Cómo llegar
+              <MapPin size={11} weight="fill" /> {tt("Cómo llegar")}
             </a>
             {c.website && (
               <a href={c.website} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-chalk text-[11px] font-semibold hover:bg-white/10 transition-colors">
-                <Globe size={11} /> Web <ArrowSquareOut size={9} />
+                <Globe size={11} /> {tt("Web")} <ArrowSquareOut size={9} />
               </a>
             )}
             {c.phone && (
@@ -270,7 +265,7 @@ function CinemaCard({ cinema: c }) {
             )}
             {c.wheelchair === 'yes' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[10px] font-mono">
-                <WheelchairMotion size={10} weight="fill" /> Accesible
+                <WheelchairMotion size={10} weight="fill" /> {tt("Accesible")}
               </span>
             )}
           </div>

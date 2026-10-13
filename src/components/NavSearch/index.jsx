@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MagnifyingGlass, FilmSlate, Television, User, X, ArrowRight } from '@phosphor-icons/react'
 import { searchSmart, addToHistory, getTitle, getYear, isPerson, isMovie } from '../../lib/searchEngine'
 import { IMG_W342 } from '../../api/tmdb'
+import { tt } from '../../lib/i18n'
 
 /**
  * Buscador inline para la navbar.
@@ -123,14 +124,14 @@ export default function NavSearch({ className = '' }) {
           onChange={(e) => { setQ(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Buscar... (presioná /)"
+          placeholder={tt("Buscar... (presioná /)")}
           className="w-full bg-white/[0.04] hover:bg-white/[0.06] focus:bg-white/[0.07] border border-white/10 focus:border-gold/40 rounded-full pl-9 pr-9 py-1.5 text-sm text-chalk placeholder:text-muted/50 outline-none transition-all duration-200"
           autoComplete="off"
         />
         {q && (
           <button type="button" onClick={() => { setQ(''); inputRef.current?.focus() }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/50 hover:text-chalk"
-            aria-label="Limpiar">
+            aria-label={tt("Limpiar")}>
             <X size={12} weight="bold" />
           </button>
         )}
@@ -148,13 +149,13 @@ export default function NavSearch({ className = '' }) {
             {loading && (
               <div className="px-4 py-3 flex items-center gap-2 text-muted text-xs">
                 <div className="w-3 h-3 rounded-full border-2 border-gold/20 border-t-gold animate-spin" />
-                Buscando…
+                {tt("Buscando…")}
               </div>
             )}
 
             {!loading && results.length === 0 && q.trim().length >= 2 && (
               <div className="px-4 py-6 text-center text-muted text-xs">
-                Sin resultados para "{q}"
+                {tt("Sin resultados para \"")}{q}"
               </div>
             )}
 
@@ -190,12 +191,12 @@ export default function NavSearch({ className = '' }) {
                           <p className="text-chalk text-sm font-medium truncate">{getTitle(item)}</p>
                           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted/70 font-mono">
                             {isPerson(item) ? (
-                              <span className="flex items-center gap-1"><User size={9} weight="fill" /> Persona</span>
+                              <span className="flex items-center gap-1"><User size={9} weight="fill" /> {tt("Persona")}</span>
                             ) : (
                               <>
                                 <span className="flex items-center gap-1">
                                   {item.media_type === 'tv' ? <Television size={9} weight="fill" /> : <FilmSlate size={9} weight="fill" />}
-                                  {item.media_type === 'tv' ? 'Serie' : 'Película'}
+                                  {item.media_type === 'tv' ? tt("Serie") : tt("Película")}
                                 </span>
                                 {getYear(item) && <span>{getYear(item)}</span>}
                                 {item.vote_average > 0 && <span className="text-gold">★ {item.vote_average.toFixed(1)}</span>}
@@ -215,7 +216,7 @@ export default function NavSearch({ className = '' }) {
                   onClick={() => goSearch()}
                   className="w-full px-4 py-2.5 border-t border-white/5 text-gold text-xs font-semibold hover:bg-gold/5 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  Ver todos los resultados para "{q}"
+                  {tt("Ver todos los resultados para \"")}{q}"
                   <ArrowRight size={11} weight="bold" />
                 </button>
               </>

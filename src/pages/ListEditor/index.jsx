@@ -8,6 +8,7 @@ import { social, errorText, useMe, refreshMe } from '../../lib/social'
 import { useAuth } from '../../lib/auth'
 import { useLibrary } from '../../lib/library'
 import { useSEO } from '../../lib/useSEO'
+import { tt } from '../../lib/i18n'
 
 const inputCls = 'w-full bg-surface border border-white/10 rounded-xl px-4 py-2.5 text-chalk text-sm placeholder:text-muted/50 focus:outline-none focus:border-gold/50 transition-colors'
 
@@ -25,7 +26,7 @@ export default function ListEditor() {
   const auth = useAuth()
   const me = useMe()
   const library = useLibrary()
-  useSEO({ title: editing ? 'Editar lista' : 'Nueva lista', description: 'Armá y compartí tu lista', noindex: true })
+  useSEO({ title: editing ? tt("Editar lista") : tt("Nueva lista"), description: tt("Armá y compartí tu lista"), noindex: true })
 
   const [form, setForm] = useState(() => ({
     title: String(location.state?.title || '').slice(0, 80), description: '',
@@ -48,7 +49,7 @@ export default function ListEditor() {
     let cancelled = false
     social.list(id).then((r) => {
       if (cancelled) return
-      if (!r.ok || !r.data.viewer.isOwner) { setError(r.ok ? 'Solo quien armó la lista puede editarla.' : errorText(r.error)); setLoading(false); return }
+      if (!r.ok || !r.data.viewer.isOwner) { setError(r.ok ? tt("Solo quien armó la lista puede editarla.") : errorText(r.error)); setLoading(false); return }
       const l = r.data.list
       setForm({ title: l.title, description: l.description || '', tag: l.tag, visibility: l.visibility, items: l.items })
       setLoading(false)
@@ -116,74 +117,74 @@ export default function ListEditor() {
     return (
       <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 px-6 text-center">
         <LockKey size={36} className="text-gold" weight="fill" />
-        <p className="text-chalk font-display font-bold text-xl">Para armar listas necesitás una cuenta gratis</p>
-        <Link to="/cuenta?modo=registro&volver=/lista/nueva" className="px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">Crear mi cuenta</Link>
+        <p className="text-chalk font-display font-bold text-xl">{tt("Para armar listas necesitás una cuenta gratis")}</p>
+        <Link to="/cuenta?modo=registro&volver=/lista/nueva" className="px-6 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi">{tt("Crear mi cuenta")}</Link>
       </main>
     )
   }
   if (error && editing && !form.title) {
-    return <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-3 px-6 text-center"><p className="text-muted text-sm">{error}</p><Link to="/perfil" className="text-gold text-sm hover:underline">Volver a mi perfil</Link></main>
+    return <main className="min-h-screen bg-void flex flex-col items-center justify-center gap-3 px-6 text-center"><p className="text-muted text-sm">{error}</p><Link to="/perfil" className="text-gold text-sm hover:underline">{tt("Volver a mi perfil")}</Link></main>
   }
 
   return (
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-void pt-28 pb-24">
       <form onSubmit={save} className="max-w-3xl mx-auto px-6 space-y-8">
         <div>
-          <Link to={editing ? `/lista/${id}` : '/comunidad'} className="inline-flex items-center gap-2 text-muted hover:text-gold text-sm mb-4"><ArrowLeft size={14} /> Volver</Link>
-          <h1 className="font-display font-extrabold text-3xl text-chalk">{editing ? 'Editar lista' : 'Nueva lista'}</h1>
-          <p className="text-muted text-sm mt-1">Una selección para compartir: un zapping, un plan de finde, una maratón.</p>
+          <Link to={editing ? `/lista/${id}` : '/comunidad'} className="inline-flex items-center gap-2 text-muted hover:text-gold text-sm mb-4"><ArrowLeft size={14} /> {tt("Volver")}</Link>
+          <h1 className="font-display font-extrabold text-3xl text-chalk">{editing ? tt("Editar lista") : tt("Nueva lista")}</h1>
+          <p className="text-muted text-sm mt-1">{tt("Una selección para compartir: un zapping, un plan de finde, una maratón.")}</p>
         </div>
 
         <section className="space-y-4">
-          <label className="block text-xs text-muted font-mono uppercase tracking-wider">Título
-            <input value={form.title} onChange={(e) => set({ title: e.target.value })} maxLength={LIMITS.title} placeholder="Ej: Plan de finde para ver en pareja" className={`${inputCls} mt-1.5 normal-case tracking-normal font-sans`} required />
+          <label className="block text-xs text-muted font-mono uppercase tracking-wider">{tt("Título")}
+            <input value={form.title} onChange={(e) => set({ title: e.target.value })} maxLength={LIMITS.title} placeholder={tt("Ej: Plan de finde para ver en pareja")} className={`${inputCls} mt-1.5 normal-case tracking-normal font-sans`} required />
           </label>
-          <label className="block text-xs text-muted font-mono uppercase tracking-wider">Descripción (opcional)
+          <label className="block text-xs text-muted font-mono uppercase tracking-wider">{tt("Descripción (opcional)")}
             <textarea value={form.description} onChange={(e) => set({ description: e.target.value })} maxLength={LIMITS.description} rows={3} className={`${inputCls} mt-1.5 normal-case tracking-normal font-sans`} />
           </label>
           <div className="grid sm:grid-cols-2 gap-4">
-            <label className="block text-xs text-muted font-mono uppercase tracking-wider">Tipo
+            <label className="block text-xs text-muted font-mono uppercase tracking-wider">{tt("Tipo")}
               <select value={form.tag} onChange={(e) => set({ tag: e.target.value })} className={`${inputCls} mt-1.5 normal-case tracking-normal font-sans`}>
-                {TAGS.map((t) => <option key={t} value={t}>{TAG_LABELS[t]}</option>)}
+                {TAGS.map((t) => <option key={t} value={t}>{tt(TAG_LABELS[t])}</option>)}
               </select>
             </label>
-            <label className="block text-xs text-muted font-mono uppercase tracking-wider">Quién la ve
+            <label className="block text-xs text-muted font-mono uppercase tracking-wider">{tt("Quién la ve")}
               <select value={form.visibility} onChange={(e) => set({ visibility: e.target.value })} className={`${inputCls} mt-1.5 normal-case tracking-normal font-sans`}>
-                <option value="public">Todos (pública)</option>
-                <option value="private" disabled={!premium}>Solo yo (privada){premium ? '' : ' — Premium'}</option>
+                <option value="public">{tt("Todos (pública)")}</option>
+                <option value="private" disabled={!premium}>{tt("Solo yo (privada)")}{premium ? '' : tt(" — Premium")}</option>
               </select>
             </label>
           </div>
-          {linkInText && <p role="alert" className="text-amber-300 text-xs">Por seguridad no se permiten links en los textos.</p>}
+          {linkInText && <p role="alert" className="text-amber-300 text-xs">{tt("Por seguridad no se permiten links en los textos.")}</p>}
         </section>
 
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display font-bold text-lg text-chalk">Títulos <span className="text-muted font-mono text-sm">({form.items.length}/{plan.items})</span></h2>
+            <h2 className="font-display font-bold text-lg text-chalk">{tt("Títulos")} <span className="text-muted font-mono text-sm">({form.items.length}/{plan.items})</span></h2>
             {library.list.length > 0 && (
               <button type="button" onClick={importFromMyList} disabled={full}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-white/10 text-muted text-xs hover:text-gold hover:border-gold/30 disabled:opacity-40">
-                <DownloadSimple size={13} /> Importar de Mi lista
+                <DownloadSimple size={13} /> {tt("Importar de Mi lista")}
               </button>
             )}
           </div>
 
           <div className="relative">
             <MagnifyingGlass size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar una película o serie para agregar…" className={`${inputCls} pl-10`} aria-label="Buscar títulos" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tt("Buscar una película o serie para agregar…")} className={`${inputCls} pl-10`} aria-label={tt("Buscar títulos")} />
           </div>
           {(results.length > 0 || searching) && (
             <ul className="rounded-2xl bg-card border border-white/10 divide-y divide-white/5 overflow-hidden">
-              {searching && results.length === 0 && <li className="p-3 text-muted text-xs">Buscando…</li>}
+              {searching && results.length === 0 && <li className="p-3 text-muted text-xs">{tt("Buscando…")}</li>}
               {results.map((r) => {
                 const already = keys.has(`${r.type}:${r.id}`)
                 return (
                   <li key={`${r.type}:${r.id}`} className="flex items-center gap-3 p-2.5">
                     <div className="w-9 h-[3.4rem] rounded-md overflow-hidden bg-surface flex-shrink-0">{r.poster && <img src={`${IMG_W342}${r.poster}`} alt="" className="w-full h-full object-cover" />}</div>
-                    <div className="min-w-0 flex-1"><p className="text-chalk text-sm font-semibold truncate">{r.title}</p><p className="text-muted text-xs font-mono">{r.year || '—'} · {r.type === 'tv' ? 'Serie' : 'Película'}</p></div>
-                    <button type="button" onClick={() => add(r)} disabled={already || full} aria-label={`Agregar ${r.title}`}
+                    <div className="min-w-0 flex-1"><p className="text-chalk text-sm font-semibold truncate">{r.title}</p><p className="text-muted text-xs font-mono">{r.year || '—'} · {r.type === 'tv' ? tt("Serie") : tt("Película")}</p></div>
+                    <button type="button" onClick={() => add(r)} disabled={already || full} aria-label={tt("Agregar {title}", { title: r.title })}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/30 text-gold text-xs font-semibold hover:bg-gold/25 disabled:opacity-40">
-                      <Plus size={12} weight="bold" /> {already ? 'Agregada' : 'Agregar'}
+                      <Plus size={12} weight="bold" /> {already ? tt("Agregada") : tt("Agregar")}
                     </button>
                   </li>
                 )
@@ -192,7 +193,7 @@ export default function ListEditor() {
           )}
 
           {form.items.length === 0 ? (
-            <p className="text-muted text-sm py-6 text-center border border-dashed border-white/10 rounded-2xl">Todavía no agregaste títulos. Buscalos arriba.</p>
+            <p className="text-muted text-sm py-6 text-center border border-dashed border-white/10 rounded-2xl">{tt("Todavía no agregaste títulos. Buscalos arriba.")}</p>
           ) : (
             <ol className="space-y-2">
               {form.items.map((it, i) => (
@@ -201,14 +202,14 @@ export default function ListEditor() {
                   <div className="w-10 h-[3.75rem] rounded-md overflow-hidden bg-surface flex-shrink-0">{it.poster ? <img src={`${IMG_W342}${it.poster}`} alt="" className="w-full h-full object-cover" /> : <FilmSlate size={18} className="m-3 text-dim" />}</div>
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <p className="text-chalk text-sm font-semibold truncate">{it.title} <span className="text-muted font-mono text-xs">{it.year || ''}</span></p>
-                    <input value={it.note || ''} onChange={(e) => setNote(i, e.target.value)} maxLength={LIMITS.note} placeholder="Una nota corta (opcional)" aria-label={`Nota para ${it.title}`}
+                    <input value={it.note || ''} onChange={(e) => setNote(i, e.target.value)} maxLength={LIMITS.note} placeholder={tt("Una nota corta (opcional)")} aria-label={tt("Nota para {title}", { title: it.title })}
                       className="w-full bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-chalk text-xs placeholder:text-muted/50 focus:outline-none focus:border-gold/40" />
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Subir" className="w-7 h-7 rounded-md text-muted hover:text-chalk hover:bg-white/5 disabled:opacity-25 flex items-center justify-center"><CaretUp size={14} /></button>
-                    <button type="button" onClick={() => move(i, 1)} disabled={i === form.items.length - 1} aria-label="Bajar" className="w-7 h-7 rounded-md text-muted hover:text-chalk hover:bg-white/5 disabled:opacity-25 flex items-center justify-center"><CaretDown size={14} /></button>
+                    <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={tt("Subir")} className="w-7 h-7 rounded-md text-muted hover:text-chalk hover:bg-white/5 disabled:opacity-25 flex items-center justify-center"><CaretUp size={14} /></button>
+                    <button type="button" onClick={() => move(i, 1)} disabled={i === form.items.length - 1} aria-label={tt("Bajar")} className="w-7 h-7 rounded-md text-muted hover:text-chalk hover:bg-white/5 disabled:opacity-25 flex items-center justify-center"><CaretDown size={14} /></button>
                   </div>
-                  <button type="button" onClick={() => remove(i)} aria-label={`Quitar ${it.title}`} className="w-7 h-7 rounded-md text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={14} /></button>
+                  <button type="button" onClick={() => remove(i)} aria-label={tt("Quitar {title}", { title: it.title })} className="w-7 h-7 rounded-md text-muted hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"><X size={14} /></button>
                 </li>
               ))}
             </ol>
@@ -219,9 +220,9 @@ export default function ListEditor() {
 
         <div className="flex gap-3">
           <button type="submit" disabled={!canSave} className="px-8 py-3 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Publicar lista'}
+            {saving ? tt("Guardando…") : editing ? tt("Guardar cambios") : tt("Publicar lista")}
           </button>
-          <Link to={editing ? `/lista/${id}` : '/comunidad'} className="px-6 py-3 rounded-full glass border border-white/10 text-muted text-sm hover:text-chalk">Cancelar</Link>
+          <Link to={editing ? `/lista/${id}` : '/comunidad'} className="px-6 py-3 rounded-full glass border border-white/10 text-muted text-sm hover:text-chalk">{tt("Cancelar")}</Link>
         </div>
       </form>
     </motion.main>

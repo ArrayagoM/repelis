@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { UsersThree, X, WhatsappLogo, TelegramLogo, Copy, Check, CalendarPlus } from '@phosphor-icons/react'
 import { dayOptions, defaultDay, parseWhen, buildInviteMessage } from '../../lib/watchTogether'
 import { buildIcs, downloadIcs } from '../../lib/ics'
+import { tt } from '../../lib/i18n'
 
 /**
  * "Ver juntos": elegís día y hora, y armamos el mensaje + el evento de calendario para invitar.
@@ -32,8 +33,8 @@ export default function WatchTogether({ title, type = 'movie', id, runtimeMin = 
     if (!when) return
     downloadIcs(`ver-juntos-${id}`, buildIcs({
       uid: `together-${type}-${id}-${when.getTime()}`,
-      title: `Ver "${title}" juntos`,
-      description: 'Cada uno mira desde su dispositivo y le da play a la misma hora.',
+      title: tt("Ver \"{title}\" juntos", { title: title }),
+      description: tt("Cada uno mira desde su dispositivo y le da play a la misma hora."),
       url,
       start: when,
       durationMin: runtimeMin || 120,
@@ -52,7 +53,7 @@ export default function WatchTogether({ title, type = 'movie', id, runtimeMin = 
       <button onClick={() => setOpen(true)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-white/10 text-muted text-sm hover:text-gold hover:border-gold/30 transition-all duration-200">
         <UsersThree size={14} weight="bold" />
-        Ver juntos
+        {tt("Ver juntos")}
       </button>
 
       <AnimatePresence>
@@ -61,35 +62,35 @@ export default function WatchTogether({ title, type = 'movie', id, runtimeMin = 
             className="fixed inset-0 z-[115] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
             <motion.div initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-              role="dialog" aria-label="Ver juntos"
+              role="dialog" aria-label={tt("Ver juntos")}
               className="w-full max-w-md rounded-2xl bg-[#0E0E18] border border-white/10 shadow-[0_48px_120px_rgba(0,0,0,1)] overflow-hidden">
               <div className="relative p-5 bg-gradient-to-br from-gold/15 to-transparent border-b border-white/5">
-                <button onClick={() => setOpen(false)} aria-label="Cerrar"
+                <button onClick={() => setOpen(false)} aria-label={tt("Cerrar")}
                   className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-chalk hover:bg-white/5">
                   <X size={14} weight="bold" />
                 </button>
-                <p className="font-display font-bold text-chalk text-lg flex items-center gap-2"><UsersThree size={20} weight="fill" className="text-gold" /> Ver juntos</p>
-                <p className="text-muted text-sm mt-1 leading-relaxed">Elegí cuándo y mandales la invitación. Cada uno mira desde su dispositivo y le dan play a la misma hora.</p>
+                <p className="font-display font-bold text-chalk text-lg flex items-center gap-2"><UsersThree size={20} weight="fill" className="text-gold" /> {tt("Ver juntos")}</p>
+                <p className="text-muted text-sm mt-1 leading-relaxed">{tt("Elegí cuándo y mandales la invitación. Cada uno mira desde su dispositivo y le dan play a la misma hora.")}</p>
               </div>
 
               <div className="p-5 space-y-4">
                 <div className="grid grid-cols-[1fr_auto] gap-3">
                   <label className="block text-xs text-muted font-mono uppercase tracking-wider">
-                    Día
+                    {tt("Día")}
                     <select value={day} onChange={(e) => setDay(e.target.value)}
                       className="mt-1 w-full bg-surface border border-white/10 rounded-xl px-3 py-2.5 text-chalk text-sm normal-case tracking-normal font-sans focus:outline-none focus:border-gold/40">
                       {days.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                     </select>
                   </label>
                   <label className="block text-xs text-muted font-mono uppercase tracking-wider">
-                    Hora
+                    {tt("Hora")}
                     <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
                       className="mt-1 w-full bg-surface border border-white/10 rounded-xl px-3 py-2.5 text-chalk text-sm font-sans focus:outline-none focus:border-gold/40" />
                   </label>
                 </div>
 
                 <p className="p-3 rounded-xl bg-surface border border-white/5 text-chalk/85 text-sm leading-relaxed">
-                  {message || 'Elegí un día y una hora válidos.'}
+                  {message || tt("Elegí un día y una hora válidos.")}
                 </p>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -103,11 +104,11 @@ export default function WatchTogether({ title, type = 'movie', id, runtimeMin = 
                   <button onClick={copy} disabled={!message}
                     className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-white/10 text-muted text-sm font-medium hover:text-gold hover:border-gold/40 transition-all disabled:opacity-40">
                     {copied ? <Check size={16} weight="bold" className="text-emerald-400" /> : <Copy size={16} weight="bold" />}
-                    {copied ? '¡Copiado!' : 'Copiar mensaje'}
+                    {copied ? tt("¡Copiado!") : tt("Copiar mensaje")}
                   </button>
                   <button onClick={addToCalendar} disabled={!message}
                     className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-white/10 text-muted text-sm font-medium hover:text-gold hover:border-gold/40 transition-all disabled:opacity-40">
-                    <CalendarPlus size={16} weight="bold" /> Calendario
+                    <CalendarPlus size={16} weight="bold" /> {tt("Calendario")}
                   </button>
                 </div>
               </div>

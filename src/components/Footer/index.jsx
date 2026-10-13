@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { FilmSlate, Heart, Code } from '@phosphor-icons/react'
 import CafecitoButton from '../CafecitoButton'
+import { tt } from '../../lib/i18n'
+import LanguageSwitch from '../LanguageSwitch'
 
 export default function Footer({ onDonateClick }) {
   return (
@@ -14,48 +16,47 @@ export default function Footer({ onDonateClick }) {
                 <FilmSlate size={16} weight="fill" className="text-void" />
               </div>
               <span className="font-display font-800 text-[1.1rem] tracking-tight text-chalk">
-                Life<span className="text-gold"> High</span>
+                {tt("Life")}<span className="text-gold"> {tt("High")}</span>
               </span>
             </Link>
             <p className="text-muted text-xs leading-relaxed max-w-sm mb-4">
-              Catálogo y reproductor agregador. Los metadatos son de TMDB,
-              el video lo sirven servidores de terceros independientes.
-              Life High no aloja ningún contenido.
+              {tt("Catálogo y reproductor agregador. Los metadatos son de TMDB, el video lo sirven servidores de terceros independientes. Life High no aloja ningún contenido.")}
             </p>
             <p className="text-muted/60 text-[11px] flex items-center gap-1.5">
               <Code size={11} weight="bold" className="text-gold" />
-              Hecho por <Link to="/about" className="text-gold hover:text-gold-hi font-semibold transition-colors">TinTech</Link>
+              {tt("Hecho por")} <Link to="/about" className="text-gold hover:text-gold-hi font-semibold transition-colors">{tt("TinTech")}</Link>
               <span className="text-muted/40 mx-1">·</span>
               <Heart size={10} weight="fill" className="text-red-400/70" />
-              <span>con amor</span>
+              <span>{tt("con amor")}</span>
             </p>
           </div>
 
           {/* Navegación */}
           <div>
-            <p className="text-chalk/80 font-display font-semibold text-sm mb-3">Explorar</p>
+            <p className="text-chalk/80 font-display font-semibold text-sm mb-3">{tt("Explorar")}</p>
             <ul className="space-y-2 text-muted text-xs">
-              <li><Link to="/" className="hover:text-gold transition-colors">Inicio</Link></li>
-              <li><Link to="/populares" className="hover:text-gold transition-colors">Películas</Link></li>
-              <li><Link to="/series" className="hover:text-gold transition-colors">Series</Link></li>
-              <li><Link to="/anime" className="hover:text-gold transition-colors">Anime</Link></li>
-              <li><Link to="/kdrama" className="hover:text-gold transition-colors">K-Drama</Link></li>
-              <li><Link to="/clasicos" className="hover:text-gold transition-colors">Clásicos</Link></li>
+              <li><Link to="/" className="hover:text-gold transition-colors">{tt("Inicio")}</Link></li>
+              <li><Link to="/populares" className="hover:text-gold transition-colors">{tt("Películas")}</Link></li>
+              <li><Link to="/series" className="hover:text-gold transition-colors">{tt("Series")}</Link></li>
+              <li><Link to="/anime" className="hover:text-gold transition-colors">{tt("Anime")}</Link></li>
+              <li><Link to="/kdrama" className="hover:text-gold transition-colors">{tt("K-Drama")}</Link></li>
+              <li><Link to="/clasicos" className="hover:text-gold transition-colors">{tt("Clásicos")}</Link></li>
             </ul>
           </div>
 
           {/* Legal */}
           <div>
-            <p className="text-chalk/80 font-display font-semibold text-sm mb-3">Legal</p>
+            <p className="text-chalk/80 font-display font-semibold text-sm mb-3">{tt("Legal")}</p>
             <ul className="space-y-2 text-muted text-xs">
-              <li><Link to="/about"   className="hover:text-gold transition-colors">Sobre Life High</Link></li>
-              <li><Link to="/descargar" className="hover:text-emerald-400 transition-colors font-semibold">📱 Descargar la app (Android, iOS, TV, PC, Mac)</Link></li>
-              <li><Link to="/terms"   className="hover:text-gold transition-colors">Términos y condiciones</Link></li>
-              <li><Link to="/privacy" className="hover:text-gold transition-colors">Política de privacidad</Link></li>
-              <li><Link to="/dmca"    className="hover:text-gold transition-colors">DMCA / Reclamos</Link></li>
+              <li><Link to="/about"   className="hover:text-gold transition-colors">{tt("Sobre Life High")}</Link></li>
+              <li><Link to="/descargar" className="hover:text-emerald-400 transition-colors font-semibold">{tt("📱 Descargar la app (Android, iOS, TV, PC, Mac)")}</Link></li>
+              <li><Link to="/terms"   className="hover:text-gold transition-colors">{tt("Términos y condiciones")}</Link></li>
+              <li><Link to="/privacy" className="hover:text-gold transition-colors">{tt("Política de privacidad")}</Link></li>
+              <li><Link to="/dmca"    className="hover:text-gold transition-colors">{tt("DMCA / Reclamos")}</Link></li>
             </ul>
 
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col items-start gap-3">
+              <LanguageSwitch />
               <CafecitoButton />
             </div>
           </div>
@@ -63,10 +64,10 @@ export default function Footer({ onDonateClick }) {
 
         <div className="mt-10 pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-muted/50 text-[11px] font-mono">
-            © {new Date().getFullYear()} Life High by TinTech · Todos los derechos sobre el contenido pertenecen a sus respectivos dueños
+            © {new Date().getFullYear()} {tt("Life High by TinTech · Todos los derechos sobre el contenido pertenecen a sus respectivos dueños")}
           </p>
           <p className="text-muted/40 text-[10px] font-mono">
-            Powered by <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">TMDB</a>
+            {tt("Powered by")} <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">{tt("TMDB")}</a>
           </p>
         </div>
       </div>
