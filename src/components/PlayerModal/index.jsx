@@ -5,6 +5,7 @@ import {
   X, FilmSlate, ArrowClockwise, CaretRight, CaretLeft,
   SmileySad, WifiLow, Subtitles, Info, Star,
   SkipForward, SkipBack, ArrowSquareOut, Warning,
+  CornersOut, CornersIn,
 } from '@phosphor-icons/react'
 import { closePlayer, setEpisode } from '../../store/slices/playerSlice'
 import { reportPlayerEvent, clearPlayback } from '../../lib/playback'
@@ -21,38 +22,31 @@ import NextEpisodeCard from '../NextEpisodeCard'
 import { showToast } from '../../lib/toast'
 import WatchProviders from '../WatchProviders'
 import { useWatchTracker } from '../../lib/useWatchTracker'
-import { tt } from '../../lib/i18n'
+import { tt, isEnglish } from '../../lib/i18n'
+import {
+  escShouldClose, nextUntried, emitsEvents, isPlayerSignal, loadTimeoutMs, silentTimeoutMs,
+} from '../../lib/playerGuard'
 
-// ─── Timeouts (balance entre velocidad y NO interrumpir reproducción) ──
-// Lección: timeouts agresivos cortaban videos que tardaban en arrancar.
-// Balance velocidad ↔ no-cerrarse-solo:
-//   - Si el iframe carga rápido (onLoad < 2s), asumimos que ya arrancó y
-//     dejamos que el usuario se quede ahí (sin auto-next).
-//   - Si tarda > 7s, mostramos botón "Saltar" prominente.
-//   - Si tarda > NEXT_MS_*, saltamos automático al próximo servidor.
-const NEXT_MS_GOOD     = 7000
-const NEXT_MS_MODERATE = 10000
-const NEXT_MS_SLOW     = 15000
+// ─── Cómo se decide si un servidor anda ───────────────────────────────────
+// Un iframe de otro sitio no deja ver qué muestra por dentro: "cargó" no quiere decir "se ve".
+//  · Si nunca carga (servidor caído)            → pasamos solos al siguiente.
+//  · Si avisa por postMessage (VidLink/VidFast) → con el primer aviso queda confirmado;
+//    si calla mucho tiempo y nadie tocó el video → pasamos solos al siguiente.
+//  · Si no avisa (el resto)                     → no lo tocamos (podría estar viéndose bien) y ofrecemos,
+//    bien a la vista, "¿No se ve? Probar otro servidor".
+// Nunca se cierra el reproductor solo: ESC en pantalla completa, toques en el fondo y el botón "atrás" no lo cierran por accidente.
 
-// Tras cuánto tiempo asumimos que el iframe está reproduciendo
-// (sin esperar señal del player).
+// Tras cuánto tiempo asumimos que está reproduciendo (para Continuar viendo), si el servidor no avisa.
 const ASSUME_PLAYING_MS = 5000
+// A los cuántos segundos de cargado ofrecemos "¿No se ve?" si nada confirmó que arrancó.
+const HELP_AFTER_MS = 9000
 
-// Skip rápido: si el servidor tuvo <30% uptime histórico, lo saltamos sin
-// esperar el timeout (solo aplica si hay >=5 mediciones previas).
+// Skip rápido: si el servidor tuvo <30% uptime histórico, lo mandamos al final de la cola
+// (solo aplica si hay >=5 mediciones previas).
 const UPTIME_SKIP_THRESHOLD = 30
 const UPTIME_MIN_SAMPLES = 5
 
 // ─── Guards ──────────────────────────────────────────────────────────────
-const useWindowFocusGuard = (active) => {
-  useEffect(() => {
-    if (!active) return
-    const regain = () => { if (!document.hidden) window.focus() }
-    window.addEventListener('blur', regain)
-    return () => window.removeEventListener('blur', regain)
-  }, [active])
-}
-
 const useNetworkQuality = () => {
   const [info, setInfo] = useState(getNetworkInfo)
   useEffect(() => {
@@ -66,11 +60,11 @@ const useNetworkQuality = () => {
 }
 
 const TOP_DOMAINS = [
-  'https://embedmaster.link',
-  'https://vidsrc.to',
-  'https://vidsrc.icu',
   'https://vidlink.pro',
-  'https://embed.su',
+  'https://embedmaster.link',
+  'https://111movies.com',
+  'https://vidfast.pro',
+  'https://vidsrc.cc',
 ]
 
 const usePreconnect = (active) => {
@@ -85,14 +79,47 @@ const usePreconnect = (active) => {
   }, [active])
 }
 
+/** Mantiene la pantalla encendida mientras se mira (el celular no se apaga en plena película). */
+const useWakeLock = (active) => {
+  useEffect(() => {
+    if (!active || typeof navigator === 'undefined' || !navigator.wakeLock) return undefined
+    let lock = null
+    let cancelled = false
+    const acquire = async () => {
+      try {
+        const l = await navigator.wakeLock.request('screen')
+        if (cancelled) { l.release?.().catch(() => {}); return }
+        lock = l
+      } catch { /* sin permiso o sin batería: no pasa nada */ }
+    }
+    const onVisible = () => { if (document.visibilityState === 'visible') acquire() }
+    acquire()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+      lock?.release?.().catch(() => {})
+    }
+  }, [active])
+}
+
+const isCompactScreen = () => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 639px)').matches
+
 // ─────────────────────────────────────────────────────────────────────────
 export default function PlayerModal() {
   const dispatch = useDispatch()
   const { isOpen, movieId, title, mediaType, season: initSeason, episode: initEpisode, totalSeasons, item: playerItem, runtimeMin, locked } =
     useSelector((s) => s.player)
   const auth = useAuth()
-  // Títulos muy calificados/populares: para darles play hace falta cuenta gratis (si el servicio de cuentas falla, se deja ver)
-  const gated = isOpen && locked && (auth.status === 'out' || auth.status === 'loading')
+  // Títulos muy calificados/populares: para darles play hace falta cuenta gratis (si el servicio de cuentas falla, se deja ver).
+  // La puerta se evalúa al abrir: si la sesión vence a mitad de la película, el video NO se reemplaza ni se corta.
+  const [passedGate, setPassedGate] = useState(false)
+  const needsGate = isOpen && locked && (auth.status === 'out' || auth.status === 'loading')
+  const gated = needsGate && !passedGate
+  useEffect(() => {
+    if (!isOpen) { setPassedGate(false); return }
+    if (!needsGate) setPassedGate(true)
+  }, [isOpen, needsGate])
 
   // El orden de SOURCES se calcula UNA vez por apertura. Después aplicamos
   // un "smart skip": los servidores con <30% uptime histórico van AL FINAL
@@ -112,10 +139,11 @@ export default function PlayerModal() {
 
   const [srcIdx,    setSrcIdx]    = useState(0)
   const [key,       setKey]       = useState(0)
-  const [phase,     setPhase]     = useState('loading')
-  const [progress,  setProgress]  = useState(0)
+  const [phase,     setPhase]     = useState('loading')   // loading → ready (cargó) → playing (confirmado/asumido) | failed
+  const [showHelp,  setShowHelp]  = useState(false)       // "¿No se ve? Probar otro servidor" sobre el video
   const [showLang,  setShowLang]  = useState(false)
   const [showExtConfirm, setShowExtConfirm] = useState(false)
+  const [immersive, setImmersive] = useState(false)       // video a pantalla completa (nativa o simulada)
   // TV local state
   const [localSeason,  setLocalSeason]  = useState(initSeason  || 1)
   const [localEpisode, setLocalEpisode] = useState(initEpisode || 1)
@@ -124,19 +152,23 @@ export default function PlayerModal() {
   const [nextDismissed, setNextDismissed] = useState('')
   const library = useLibrary()
 
-  const timerRef    = useRef(null)
-  const progressRef = useRef(null)
-  const assumeRef   = useRef(null)
-  const successRef  = useRef(false)
+  const shellRef    = useRef(null)
+  const iframeRef   = useRef(null)
+  const timers      = useRef({ load: null, silent: null, assume: null, help: null })
+  const successRef  = useRef(false)     // ya se da por reproduciendo (frena cualquier salto automático)
+  const verifiedRef = useRef(false)     // el propio reproductor avisó que arrancó
+  const interactedRef = useRef(false)   // la persona tocó el video
+  const loadedRef   = useRef(false)
+  const triedRef    = useRef(new Set([0]))
+  const lastFsRef   = useRef(0)
+  const closingRef  = useRef(false)
+  const latest      = useRef({})
 
   const net = useNetworkQuality()
   const isSlowNet = net.quality === 'slow' || net.quality === 'moderate'
-  const autoNextMs =
-    net.quality === 'slow' ? NEXT_MS_SLOW
-    : net.quality === 'moderate' ? NEXT_MS_MODERATE
-    : NEXT_MS_GOOD
 
   usePreconnect(isOpen)
+  useWakeLock(isOpen && !gated)
 
   // Continuar viendo / rachas / logros: cuenta el tiempo realmente reproducido
   const trackedItem = useMemo(
@@ -155,13 +187,11 @@ export default function PlayerModal() {
     runtimeMin,
     persist: canUsePersonal(auth.status),
   })
-  useWindowFocusGuard(isOpen && sources[srcIdx]?.sandbox === null)
 
   const stopTimers = useCallback(() => {
-    clearTimeout(timerRef.current)
-    clearTimeout(assumeRef.current)
-    clearInterval(progressRef.current)
-    setProgress(0)
+    const t = timers.current
+    clearTimeout(t.load); clearTimeout(t.silent); clearTimeout(t.assume); clearTimeout(t.help)
+    t.load = t.silent = t.assume = t.help = null
   }, [])
 
   const lockSuccess = useCallback((sourceId) => {
@@ -169,25 +199,66 @@ export default function PlayerModal() {
     successRef.current = true
     rememberSource(sourceId)
     stopTimers()
+    setShowHelp(false)
     setPhase('playing')
   }, [stopTimers])
 
+  /** Cambio MANUAL de servidor: se vuelve a poder probar cualquiera. */
   const goTo = useCallback((idx) => {
     stopTimers()
     successRef.current = false
+    verifiedRef.current = false
+    interactedRef.current = false
+    loadedRef.current = false
+    triedRef.current = new Set([idx])
     setSrcIdx(idx)
     setKey((k) => k + 1)
     setPhase('loading')
     setShowLang(false)
+    setShowHelp(false)
+  }, [stopTimers])
+
+  /** Salto AUTOMÁTICO (servidor caído o mudo): nunca repite uno ya probado; al agotarlos todos muestra el fallo. */
+  const advance = useCallback((reason) => {
+    const { sources: list, srcIdx: cur } = latest.current
+    if (!list?.length || successRef.current) return
+    stopTimers()
+    const failing = list[cur]
+    reportServerFailure(failing?.id)
+    triedRef.current.add(cur)
+    const nxt = nextUntried(triedRef.current, cur, list.length)
+    if (nxt < 0) { setPhase('failed'); setShowHelp(false); return }
+    triedRef.current.add(nxt)
+    loadedRef.current = false
+    verifiedRef.current = false
+    interactedRef.current = false
+    setSrcIdx(nxt)
+    setKey((k) => k + 1)
+    setPhase('loading')
+    setShowHelp(false)
+    showToast({
+      icon: '🔄',
+      title: tt("Probando otro servidor ({v1} de {length})", { v1: nxt + 1, length: list.length }),
+      text: reason === 'timeout' ? tt("{name} no respondió.", { name: failing?.label || '' }) : tt("{name} no arrancó el video.", { name: failing?.label || '' }),
+      ttl: 3000, tone: 'blue',
+    })
   }, [stopTimers])
 
   const handleClose = useCallback(() => {
+    if (closingRef.current) return
+    closingRef.current = true
     stopTimers()
+    // Si abrimos una entrada de historial al abrir, la sacamos (así "atrás" no deja la página)
+    try { if (window.history.state?.lhPlayer) window.history.back() } catch { /* nada */ }
+    try { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}) } catch { /* nada */ }
+    setImmersive(false)
     dispatch(closePlayer())
     setSrcIdx(0)
     setPhase('loading')
     setShowLang(false)
+    setShowHelp(false)
     successRef.current = false
+    setTimeout(() => { closingRef.current = false }, 300)
   }, [dispatch, stopTimers])
 
   // Sync TV episode + reset al abrir
@@ -196,14 +267,20 @@ export default function PlayerModal() {
       setLocalSeason(initSeason || 1)
       setLocalEpisode(initEpisode || 1)
       successRef.current = false
+      verifiedRef.current = false
+      interactedRef.current = false
+      loadedRef.current = false
+      triedRef.current = new Set([0])
       setSrcIdx(0)
       setKey((k) => k + 1)
       setPhase('loading')
-      // Mostramos el tip de audio español por 15s al abrir.
-      // El usuario lo puede cerrar con la X. El texto es lo suficientemente
-      // largo como para que necesite ese tiempo para leerlo.
-      setShowLang(true)
-      const t = setTimeout(() => setShowLang(false), 15_000)
+      setShowHelp(false)
+      // Tip del audio en español: solo en español y en pantallas grandes (en el celular no tapa el video; hay botón).
+      let t
+      if (!isEnglish() && !isCompactScreen()) {
+        setShowLang(true)
+        t = setTimeout(() => setShowLang(false), 15_000)
+      } else setShowLang(false)
       return () => clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,9 +292,14 @@ export default function PlayerModal() {
     dispatch(setEpisode({ season: newSeason, episode: newEpisode }))
     stopTimers()
     successRef.current = false
+    verifiedRef.current = false
+    interactedRef.current = false
+    loadedRef.current = false
+    triedRef.current = new Set([0])
     setSrcIdx(0)
     setKey((k) => k + 1)
     setPhase('loading')
+    setShowHelp(false)
   }, [dispatch, stopTimers])
 
   const target = useMemo(
@@ -251,88 +333,146 @@ export default function PlayerModal() {
     else if (localSeason > 1) changeEpisode(localSeason - 1, 1)
   }, [localSeason, localEpisode, changeEpisode])
 
+  // ─── Pantalla completa (nativa si el navegador deja; si no, "inmersiva" simulada) ───
+  const toggleImmersive = useCallback(() => {
+    const el = shellRef.current
+    if (document.fullscreenElement) { document.exitFullscreen?.().catch(() => {}); return }
+    if (immersive) { setImmersive(false); return }
+    if (el?.requestFullscreen) {
+      el.requestFullscreen({ navigationUI: 'hide' })
+        .then(() => { try { window.screen?.orientation?.lock?.('landscape')?.catch(() => {}) } catch { /* nada */ } })
+        .catch(() => setImmersive(true))
+    } else setImmersive(true)
+  }, [immersive])
+
   useEffect(() => {
-    if (!isOpen) return
-    const h = (e) => { if (e.key === 'Escape') handleClose() }
+    if (!isOpen) return undefined
+    const onFs = () => {
+      lastFsRef.current = Date.now()
+      setImmersive(!!document.fullscreenElement)
+      if (!document.fullscreenElement) { try { window.screen?.orientation?.unlock?.() } catch { /* nada */ } }
+    }
+    document.addEventListener('fullscreenchange', onFs)
+    return () => document.removeEventListener('fullscreenchange', onFs)
+  }, [isOpen])
+
+  // Teclado + bloqueo del scroll de fondo
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const h = (e) => {
+      if (e.key !== 'Escape') return
+      if (immersive && !document.fullscreenElement) { setImmersive(false); return }   // sale de la pantalla simulada
+      if (!escShouldClose({ fullscreenActive: !!document.fullscreenElement, lastFullscreenChangeAt: lastFsRef.current })) return
+      handleClose()
+    }
     window.addEventListener('keydown', h)
     document.body.style.overflow = 'hidden'
-    // Marca al body para que el CSS apague overlays/blur que comen GPU
-    // mientras el video se reproduce (noise-overlay, glass, etc.)
+    // Marca al body para que el CSS apague overlays/blur que comen GPU mientras el video se reproduce
     document.body.classList.add('player-active')
     return () => {
       window.removeEventListener('keydown', h)
       document.body.style.overflow = ''
       document.body.classList.remove('player-active')
     }
-  }, [isOpen, handleClose])
+  }, [isOpen, handleClose, immersive])
 
-  // PostMessage de cualquier player que reporte 'play' / 'playing'
+  // Botón "atrás" (Android/gesto del iPhone): cierra el reproductor en vez de sacar de la página
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return undefined
+    try { window.history.pushState({ ...(window.history.state || {}), lhPlayer: 1 }, '') } catch { /* nada */ }
+    const onPop = () => {
+      if (closingRef.current) return
+      closingRef.current = true
+      stopTimers()
+      try { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}) } catch { /* nada */ }
+      setImmersive(false)
+      dispatch(closePlayer())
+      setSrcIdx(0); setPhase('loading'); setShowLang(false); setShowHelp(false)
+      successRef.current = false
+      setTimeout(() => { closingRef.current = false }, 300)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
+
+  // Si un servidor intenta mandarte a otra página (anuncio), el navegador pregunta antes de irse
+  useEffect(() => {
+    if (!isOpen || gated) return undefined
+    const guard = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', guard)
+    return () => window.removeEventListener('beforeunload', guard)
+  }, [isOpen, gated])
+
+  // Avisos del propio reproductor (VidLink/VidFast/…): confirman que arrancó y alimentan las salas
+  useEffect(() => {
+    if (!isOpen) return undefined
     const handler = (e) => {
       const d = e.data
       if (!d) return
       reportPlayerEvent(d)          // minuto de reproducción (para sincronizar las salas)
-      const evt = d.event || d.type
-      const isPlay = evt === 'play' || evt === 'playing' || evt === 'started' || evt === 'PLAYER_EVENT'
-      if (isPlay) lockSuccess(sources[srcIdx]?.id)
+      if (isPlayerSignal(d)) {
+        verifiedRef.current = true
+        lockSuccess(latest.current.sources?.[latest.current.srcIdx]?.id)
+      }
     }
     window.addEventListener('message', handler)
     return () => { window.removeEventListener('message', handler); clearPlayback() }
-  }, [isOpen, srcIdx, sources, lockSuccess])
+  }, [isOpen, lockSuccess])
 
-  const onIframeLoad = useCallback(() => {
-    if (successRef.current) return
-    setPhase('ready')
-    stopTimers()
-
-    // Asumimos éxito si el iframe aguanta ASSUME_PLAYING_MS sin que tengamos
-    // razón para descartarlo. Mientras tanto seguimos midiendo y permitiendo
-    // que el usuario o el postMessage del player confirmen.
-    assumeRef.current = setTimeout(() => {
-      lockSuccess(sources[srcIdx]?.id)
-    }, ASSUME_PLAYING_MS)
-
-    // Barra de progreso visual + auto-next si nada llega.
-    const start = Date.now()
-    progressRef.current = setInterval(() => {
-      setProgress(Math.min(100, ((Date.now() - start) / autoNextMs) * 100))
-    }, 80)
-
-    timerRef.current = setTimeout(() => {
-      if (successRef.current) return
-      clearInterval(progressRef.current)
-      setSrcIdx((cur) => {
-        const next = cur + 1
-        if (next >= sources.length) { setPhase('failed'); return cur }
-        clearTimeout(assumeRef.current)
-        successRef.current = false
-        setKey((k) => k + 1)
-        setPhase('loading')
-        setShowLang(false)
-        return next
-      })
-    }, autoNextMs)
-  }, [autoNextMs, sources, srcIdx, lockSuccess, stopTimers])
-
-  // El onError de iframe es muy poco confiable (dispara falsos positivos
-  // incluso en servidores que cargan bien). Lo dejamos como no-op a propósito.
-  const onIframeError = useCallback(() => {}, [])
-
-  const onUserInteract = useCallback(() => {
-    // Cualquier mouse/click del usuario sobre el player es un voto fuerte
-    // de que está viendo algo. Bloqueamos cambios automáticos.
-    lockSuccess(sources[srcIdx]?.id)
-  }, [lockSuccess, sources, srcIdx])
+  // Un toque dentro del video (cross-origin): el foco pasa al iframe. Es la señal de que la persona lo está usando.
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const onBlur = () => {
+      setTimeout(() => {
+        if (document.activeElement && document.activeElement === iframeRef.current) {
+          interactedRef.current = true
+          clearTimeout(timers.current.silent)
+          setShowHelp(false)
+          if (!emitsEvents(latest.current.sources?.[latest.current.srcIdx])) lockSuccess(latest.current.sources?.[latest.current.srcIdx]?.id)
+        }
+      }, 0)
+    }
+    window.addEventListener('blur', onBlur)
+    return () => window.removeEventListener('blur', onBlur)
+  }, [isOpen, lockSuccess])
 
   const src = sources[srcIdx]
+  latest.current = { sources, srcIdx }
   const isTV = mediaType === 'tv'
   const url = movieId ? buildUrl(src, { mediaType, id: movieId, season: localSeason, episode: localEpisode }) : ''
+  const iframeKey = `${movieId}-${mediaType}-${localSeason}-${localEpisode}-${srcIdx}-${key}`
+
+  // Servidor caído: si el iframe no termina de cargar, pasamos solos al siguiente
+  useEffect(() => {
+    if (!isOpen || gated || !movieId || !url) return undefined
+    timers.current.load = setTimeout(() => { if (!loadedRef.current) advance('timeout') }, loadTimeoutMs(net.quality))
+    return () => stopTimers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iframeKey, isOpen, gated])
+
+  const onIframeLoad = useCallback(() => {
+    if (loadedRef.current) return                 // algunos embeds recargan por dentro: lo ignoramos
+    loadedRef.current = true
+    clearTimeout(timers.current.load)
+    if (successRef.current) return
+    setPhase('ready')
+    const current = latest.current.sources?.[latest.current.srcIdx]
+    const talks = emitsEvents(current)
+    if (talks) {
+      // Este servidor avisa lo que pasa: si calla y nadie lo tocó, no arrancó
+      timers.current.silent = setTimeout(() => {
+        if (!verifiedRef.current && !interactedRef.current) advance('silent')
+      }, silentTimeoutMs(net.quality))
+    } else {
+      // No avisa: asumimos que anda (para Continuar viendo) y ofrecemos ayuda por si no se ve
+      timers.current.assume = setTimeout(() => lockSuccess(current?.id), ASSUME_PLAYING_MS)
+    }
+    timers.current.help = setTimeout(() => { if (!verifiedRef.current && !interactedRef.current) setShowHelp(true) }, HELP_AFTER_MS)
+  }, [advance, lockSuccess, net.quality])
 
   // Abre el URL actual del servidor en una pestaña nueva.
-  // Esto sirve para: (1) usar extensiones de descarga del browser (Video
-  // DownloadHelper, etc.), (2) pasar el iframe a fullscreen del servidor,
-  // (3) debug rápido cuando el embed se rompe.
+  // Sirve para: (1) usar extensiones de descarga del browser, (2) fullscreen del servidor, (3) debug.
   const handleOpenExternal = useCallback(() => {
     if (!url) return
     try { localStorage.setItem('repelis:extConfirm:v1', '1') } catch {}
@@ -347,6 +487,29 @@ export default function PlayerModal() {
     else setShowExtConfirm(true)
   }, [handleOpenExternal])
 
+  /** "¿No anda?": sigue la cola de servidores y deja constancia para ordenarlos mejor. */
+  const tryAnother = useCallback(() => {
+    reportServerFailure(src?.id)
+    const next = (srcIdx + 1) % sources.length
+    goTo(next)
+    showToast({ icon: '🔄', title: tt("Probando otro servidor ({v1} de {length})", { v1: next + 1, length: sources.length }), text: tt("Gracias por avisar: lo tenemos en cuenta para ordenar los servidores."), ttl: 3500, tone: 'blue' })
+  }, [src, srcIdx, sources.length, goTo])
+
+  const serverChip = (s, i, size) => (
+    <button key={s.id} onClick={() => goTo(i)} title={`${s.label}${s.esLat ? ' 🇲🇽 audio latino' : ''}`}
+      className={`${size} rounded-lg text-xs transition-all duration-150 flex items-center gap-1.5 flex-shrink-0 border ${
+        i === srcIdx
+          ? s.premium ? 'bg-purple-500/15 text-purple-200 border-purple-500/30'
+            : s.esLat ? 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30'
+            : 'bg-gold/15 text-gold border-gold/30'
+          : 'text-muted/70 hover:text-chalk border-white/10 hover:border-white/20 bg-white/[0.03]'
+      }`}>
+      {s.premium && <Star size={9} weight="fill" className={i === srcIdx ? 'text-purple-300' : 'text-muted/30'} />}
+      {!s.premium && s.esLat && <span className="text-[11px] leading-none">🇲🇽</span>}
+      {s.label}
+    </button>
+  )
+
   return (
     <AnimatePresence>
       {isOpen && movieId && gated && <AccessGate key="gate" title={title} onClose={handleClose} />}
@@ -355,19 +518,18 @@ export default function PlayerModal() {
           key="bg"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-3 sm:p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
+          className="player-backdrop"
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            ref={shellRef}
+            initial={{ scale: 0.97, opacity: 0, y: 16 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-[1300px] flex flex-col rounded-2xl overflow-hidden border border-white/[0.06] shadow-[0_48px_120px_rgba(0,0,0,1)]"
-            onClick={(e) => e.stopPropagation()}
+            exit={{ scale: 0.97, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className={`player-shell ${immersive ? 'player-immersive' : ''}`}
           >
             {/* ── BARRA SUPERIOR ─────────────────────────────────────── */}
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-[#0E0E18] border-b border-white/[0.05]">
+            <div className="player-topbar flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#0E0E18] border-b border-white/[0.05]">
               <FilmSlate size={14} className="text-gold flex-shrink-0" />
               <span className="text-chalk/85 font-display font-medium text-sm truncate flex-1 min-w-0">
                 {title || tt("Reproduciendo…")}
@@ -408,9 +570,9 @@ export default function PlayerModal() {
                 </select>
               )}
 
-              {/* Badge idioma */}
+              {/* Badge idioma (solo escritorio; en el celular está en el panel de abajo) */}
               <AnimatePresence>
-                {(phase === 'playing' || phase === 'ready') && (
+                {!isEnglish() && (phase === 'playing' || phase === 'ready') && (
                   <motion.button
                     key="langbtn"
                     initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
@@ -441,7 +603,7 @@ export default function PlayerModal() {
               </AnimatePresence>
 
               {/* Badge: servidor con buen catálogo LATAM (NO garantía por título) */}
-              {src?.esLat && (
+              {src?.esLat && !isEnglish() && (
                 <span
                   className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wide flex-shrink-0 cursor-help"
                   title={tt("Servidor con buen catálogo de doblaje LATAM. El audio del título específico depende de qué pistas tenga el server. Si arranca en otro idioma, cambialo desde el ícono Audio/CC del player.")}
@@ -451,8 +613,8 @@ export default function PlayerModal() {
                 </span>
               )}
 
-              {/* Nav servidores */}
-              <div className="flex items-center gap-0.5 flex-shrink-0">
+              {/* Nav servidores (escritorio) */}
+              <div className="hidden sm:flex items-center gap-0.5 flex-shrink-0">
                 <button onClick={() => goTo((srcIdx - 1 + sources.length) % sources.length)}
                   className="w-6 h-6 flex items-center justify-center rounded text-muted/50 hover:text-chalk transition-colors">
                   <CaretLeft size={10} weight="bold" />
@@ -477,28 +639,33 @@ export default function PlayerModal() {
                   className="w-6 h-6 flex items-center justify-center rounded text-muted/50 hover:text-chalk transition-colors">
                   <CaretRight size={10} weight="bold" />
                 </button>
-                <span className="text-muted/30 text-[10px] font-mono ml-1.5 hidden sm:block w-20 truncate">
+                <span className="text-muted/30 text-[10px] font-mono ml-1.5 hidden lg:block w-20 truncate">
                   {src?.label}
                 </span>
               </div>
 
+              <button onClick={toggleImmersive} title={immersive ? tt("Salir de pantalla completa") : tt("Pantalla completa")}
+                aria-label={immersive ? tt("Salir de pantalla completa") : tt("Pantalla completa")}
+                className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-muted/60 hover:text-gold hover:bg-gold/8 transition-all flex-shrink-0">
+                {immersive ? <CornersIn size={15} weight="bold" /> : <CornersOut size={15} weight="bold" />}
+              </button>
               <button onClick={handleExternalClick} title={tt("Abrir en pestaña externa")}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-gold hover:bg-gold/8 transition-all flex-shrink-0">
+                className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-muted/50 hover:text-gold hover:bg-gold/8 transition-all flex-shrink-0">
                 <ArrowSquareOut size={13} weight="bold" />
               </button>
               <button onClick={() => goTo(srcIdx)} title={tt("Recargar")}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-chalk hover:bg-white/5 transition-all flex-shrink-0">
+                className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-muted/50 hover:text-chalk hover:bg-white/5 transition-all flex-shrink-0">
                 <ArrowClockwise size={13} />
               </button>
-              <button onClick={handleClose} title={tt("Cerrar")}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-muted/50 hover:text-red-400 hover:bg-red-400/8 transition-all flex-shrink-0">
-                <X size={13} weight="bold" />
+              <button onClick={handleClose} title={tt("Cerrar")} aria-label={tt("Cerrar")}
+                className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-chalk/70 sm:text-muted/50 hover:text-red-400 hover:bg-red-400/8 transition-all flex-shrink-0">
+                <X size={16} weight="bold" />
               </button>
             </div>
 
             {/* ── PANEL INFO ESPAÑOL ── */}
             <AnimatePresence>
-              {showLang && (
+              {showLang && !isEnglish() && (
                 <motion.div
                   key="langtip"
                   initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
@@ -522,7 +689,7 @@ export default function PlayerModal() {
                         💡 <strong>{tt("EmbedMaster")}</strong>, <strong>{tt("VidLink")}</strong> {tt("y")} <strong>{tt("111Movies")}</strong> {tt("son los que con más frecuencia traen pista latina.")}
                       </p>
                     </div>
-                    <button onClick={() => setShowLang(false)} className="text-muted/40 hover:text-chalk transition-colors flex-shrink-0">
+                    <button onClick={() => setShowLang(false)} aria-label={tt("Cerrar")} className="text-muted/40 hover:text-chalk transition-colors flex-shrink-0 p-1">
                       <X size={12} weight="bold" />
                     </button>
                   </div>
@@ -531,14 +698,8 @@ export default function PlayerModal() {
             </AnimatePresence>
 
             {/* ── PLAYER ── */}
-            <div
-              className="relative w-full bg-black"
-              style={{ paddingBottom: '56.25%' }}
-              onMouseMove={onUserInteract}
-              onMouseDown={onUserInteract}
-              onTouchStart={onUserInteract}
-            >
-              {/* Spinner — ahora con botón "Saltar al siguiente" prominente */}
+            <div className="player-stage">
+              {/* Spinner — con botón "Saltar al siguiente" */}
               <AnimatePresence>
                 {phase === 'loading' && (
                   <motion.div key="spin"
@@ -551,13 +712,12 @@ export default function PlayerModal() {
                       <span className="text-muted/40 ml-2">· {srcIdx + 1}/{sources.length}</span>
                     </p>
 
-                    {/* Botón SALTAR — aparece después de 3s sin importar nada */}
                     <motion.button
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 3, duration: 0.3 }}
                       onClick={() => goTo((srcIdx + 1) % sources.length)}
-                      className="px-5 py-2 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi shadow-[0_4px_24px_rgba(232,160,32,0.4)] transition-all"
+                      className="px-5 py-2.5 rounded-full bg-gold text-void font-bold text-sm hover:bg-gold-hi shadow-[0_4px_24px_rgba(232,160,32,0.4)] transition-all"
                     >
                       {tt("Saltar al siguiente →")}
                     </motion.button>
@@ -572,28 +732,20 @@ export default function PlayerModal() {
                 )}
               </AnimatePresence>
 
-              {/* Barra de auto-next */}
+              {/* ¿No se ve? — ayuda sobre el video si nada confirmó que arrancó */}
               <AnimatePresence>
-                {phase === 'ready' && (
-                  <motion.div key="bar"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-                    <div className="h-[2px] w-full bg-white/5">
-                      <div className="h-full bg-gold/50 transition-none" style={{ width: `${progress}%` }} />
-                    </div>
-                    {progress > 35 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                        className="absolute bottom-3 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-void/80 border border-white/8 backdrop-blur-sm">
-                        <span className="text-muted/70 text-[10px] font-mono">
-                          {tt("Probando")} {srcIdx + 2}/{sources.length}
-                        </span>
-                        <button onClick={(e) => { e.stopPropagation(); goTo(srcIdx + 1) }}
-                          className="text-gold text-[10px] font-semibold hover:underline pointer-events-auto">
-                          {tt("Ahora")}
-                        </button>
-                      </motion.div>
-                    )}
+                {showHelp && phase !== 'failed' && (
+                  <motion.div key="help"
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="absolute z-10 left-2 right-2 bottom-2 sm:left-4 sm:right-auto sm:bottom-4 flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full bg-void/90 border border-gold/30 shadow-lg">
+                    <span className="text-chalk/80 text-xs">{tt("¿No se ve?")}</span>
+                    <button onClick={tryAnother}
+                      className="px-3 py-1.5 rounded-full bg-gold text-void text-xs font-bold hover:bg-gold-hi active:scale-95 transition-all whitespace-nowrap">
+                      {tt("Probar otro servidor")}
+                    </button>
+                    <button onClick={() => setShowHelp(false)} aria-label={tt("Cerrar aviso")} className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:text-chalk">
+                      <X size={11} weight="bold" />
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -603,8 +755,8 @@ export default function PlayerModal() {
                 {phase === 'failed' && (
                   <motion.div key="fail"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 bg-void text-center px-6 overflow-y-auto pointer-events-auto">
-                    <SmileySad size={36} className="text-dim" />
+                    className="absolute inset-0 z-20 flex flex-col items-center justify-start sm:justify-center gap-4 sm:gap-5 bg-void text-center px-4 sm:px-6 py-4 overflow-y-auto pointer-events-auto">
+                    <SmileySad size={36} className="text-dim flex-shrink-0" />
                     <div className="space-y-2 max-w-md">
                       <p className="text-chalk font-display font-semibold text-lg">
                         {tt("Esta peli no la tenemos")}
@@ -619,7 +771,7 @@ export default function PlayerModal() {
 
                     <div className="flex flex-wrap gap-2 justify-center">
                       <button onClick={() => goTo(0)}
-                        className="px-5 py-2 rounded-full bg-gold text-void text-sm font-semibold hover:bg-gold-hi transition-colors">
+                        className="px-5 py-2.5 rounded-full bg-gold text-void text-sm font-semibold hover:bg-gold-hi transition-colors">
                         {tt("Reintentar")}
                       </button>
                       <button onClick={() => {
@@ -630,13 +782,13 @@ export default function PlayerModal() {
                             localStorage.setItem('repelis:reported:v1', JSON.stringify(reported))
                           }
                         } catch {}
-                        alert(tt("Gracias. Reportamos esta peli como no disponible para revisar."))
+                        showToast({ icon: '🙏', title: tt("Gracias. Reportamos esta peli como no disponible para revisar."), ttl: 3500, tone: 'blue' })
                       }}
-                        className="px-5 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-semibold hover:bg-amber-500/20 transition-colors">
+                        className="px-5 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-semibold hover:bg-amber-500/20 transition-colors">
                         {tt("Reportar")}
                       </button>
                       <button onClick={handleClose}
-                        className="px-5 py-2 rounded-full glass border border-white/10 text-muted text-sm hover:text-chalk transition-colors">
+                        className="px-5 py-2.5 rounded-full glass border border-white/10 text-muted text-sm hover:text-chalk transition-colors">
                         {tt("Cerrar")}
                       </button>
                     </div>
@@ -663,7 +815,8 @@ export default function PlayerModal() {
               </AnimatePresence>
 
               <iframe
-                key={`${movieId}-${mediaType}-${localSeason}-${localEpisode}-${srcIdx}-${key}`}
+                ref={iframeRef}
+                key={iframeKey}
                 src={url}
                 title={title || tt("Reproductor")}
                 className="absolute inset-0 w-full h-full"
@@ -674,7 +827,6 @@ export default function PlayerModal() {
                 loading="eager"
                 importance="high"
                 onLoad={onIframeLoad}
-                onError={onIframeError}
                 style={{
                   // Fuerza al iframe a su propia capa de GPU para que el
                   // browser no recomponga el video con cada repaint del DOM.
@@ -731,55 +883,72 @@ export default function PlayerModal() {
               )}
             </AnimatePresence>
 
-            {/* ── BARRA INFERIOR ── */}
-            <div className="flex flex-wrap items-center justify-between gap-y-1.5 px-4 py-1.5 bg-[#0A0A14] border-t border-white/[0.03]">
-              <div className="flex items-center gap-2">
+            {/* ── PANEL INFERIOR: en el celular es el panel de control principal (botones grandes, desplazable) ── */}
+            <div className="player-body bg-[#0A0A14] border-t border-white/[0.03] px-3 sm:px-4 py-2.5 sm:py-1.5">
+              {/* Fila 1: probar otro servidor + acciones */}
+              <div className="flex flex-wrap items-center gap-2 mb-2.5 sm:mb-1.5">
                 <button
-                  onClick={() => {
-                    reportServerFailure(src?.id)
-                    const next = (srcIdx + 1) % sources.length
-                    goTo(next)
-                    showToast({ icon: '🔄', title: tt("Probando otro servidor ({v1} de {length})", { v1: next + 1, length: sources.length }), text: tt("Gracias por avisar: lo tenemos en cuenta para ordenar los servidores."), ttl: 3500, tone: 'blue' })
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-[11px] font-semibold hover:bg-gold/20 active:scale-95 transition-all"
+                  onClick={tryAnother}
+                  className="flex items-center gap-1.5 px-4 sm:px-3 py-2.5 sm:py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs sm:text-[11px] font-semibold hover:bg-gold/20 active:scale-95 transition-all"
                   title={tt("Si no carga, se ve mal o no está en español, probá otro servidor")}
                 >
-                  <ArrowClockwise size={12} weight="bold" />
+                  <ArrowClockwise size={13} weight="bold" />
                   {tt("¿No anda? Probar otro servidor")}
                 </button>
                 <span className="text-muted/25 text-[10px] font-mono hidden sm:block">{tt("ESC · cerrar")}</span>
-                {isTV && (
-                  <div className="flex items-center gap-1.5 sm:hidden">
-                    <button onClick={prevEpisode} disabled={localSeason === 1 && localEpisode === 1}
-                      className="text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors p-1">
-                      <SkipBack size={12} weight="fill" />
+                {/* Acciones extra solo en el celular (en escritorio están arriba) */}
+                <div className="flex sm:hidden items-center gap-2 ml-auto">
+                  {!isEnglish() && (
+                    <button onClick={() => setShowLang((v) => !v)} aria-label={tt("Audio en español")}
+                      className="h-10 px-3 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 text-muted text-xs">
+                      <Subtitles size={14} weight="fill" /> {tt("ES")}
                     </button>
-                    <span className="text-[10px] font-mono text-muted/50">{tt("S")}{localSeason}{tt("E")}{localEpisode}</span>
-                    <button onClick={nextEpisode} disabled={!target} className="text-muted/50 hover:text-chalk disabled:opacity-20 transition-colors p-1">
-                      <SkipForward size={12} weight="fill" />
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-1 mx-auto sm:mx-0 flex-wrap justify-center">
-                {sources.map((s, i) => (
-                  <button key={s.id} onClick={() => goTo(i)} title={`${s.label}${s.esLat ? ' 🇲🇽 audio latino' : ''}`}
-                    className={`px-2 py-0.5 rounded text-[10px] transition-all duration-150 flex items-center gap-1 ${
-                      i === srcIdx
-                        ? s.premium ? 'bg-purple-500/12 text-purple-300 border border-purple-500/20'
-                          : s.esLat ? 'bg-emerald-500/12 text-emerald-300 border border-emerald-500/20'
-                          : 'bg-gold/12 text-gold border border-gold/18'
-                        : 'text-muted/30 hover:text-muted border border-transparent'
-                    }`}>
-                    {s.premium && <Star size={8} weight="fill" className={i === srcIdx ? 'text-purple-400' : 'text-muted/20'} />}
-                    {!s.premium && s.esLat && <span className="text-[10px] leading-none">🇲🇽</span>}
-                    {s.label}
+                  )}
+                  <button onClick={() => goTo(srcIdx)} aria-label={tt("Recargar")}
+                    className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted">
+                    <ArrowClockwise size={15} />
                   </button>
-                ))}
+                  <button onClick={handleExternalClick} aria-label={tt("Abrir en pestaña externa")}
+                    className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted">
+                    <ArrowSquareOut size={15} weight="bold" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Fila 2: episodios (series) en el celular */}
+              {isTV && (
+                <div className="flex sm:hidden items-center gap-2 mb-2.5">
+                  <button onClick={prevEpisode} disabled={localSeason === 1 && localEpisode === 1} aria-label={tt("Episodio anterior")}
+                    className="w-11 h-11 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 text-chalk disabled:opacity-25">
+                    <SkipBack size={16} weight="fill" />
+                  </button>
+                  <span className="flex-1 text-center text-sm font-mono text-chalk/80">
+                    {tt("Temporada")} {localSeason} · {tt("Episodio")} {localEpisode}
+                  </span>
+                  <button onClick={nextEpisode} disabled={!target} aria-label={tt("Siguiente episodio")}
+                    className="w-11 h-11 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 text-chalk disabled:opacity-25">
+                    <SkipForward size={16} weight="fill" />
+                  </button>
+                  {totalSeasons > 1 && (
+                    <select value={localSeason} onChange={(e) => changeEpisode(Number(e.target.value), 1)}
+                      aria-label={tt("Temporada")}
+                      className="h-11 bg-surface border border-white/10 text-chalk text-xs rounded-xl px-2">
+                      {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((s) => (
+                        <option key={s} value={s}>{tt("Temporada")} {s}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {/* Fila 3: servidores */}
+              <div className="flex items-center gap-1.5 sm:gap-1 flex-wrap sm:justify-start">
+                <span className="text-muted/50 text-[10px] uppercase tracking-wider mr-1 sm:hidden w-full">{tt("Servidores")}</span>
+                {sources.map((s, i) => serverChip(s, i, 'px-3 py-2.5 sm:px-2 sm:py-0.5 min-h-[40px] sm:min-h-0'))}
               </div>
               {isSlowNet && (
-                <div className="flex items-center gap-1 sm:hidden">
-                  <WifiLow size={10} weight="fill" className="text-amber-400/50" />
+                <div className="flex items-center gap-1.5 mt-2 sm:hidden text-amber-400/70 text-[11px]">
+                  <WifiLow size={12} weight="fill" /> {net.quality === 'slow' ? tt("Red lenta") : tt("Señal media")}
                 </div>
               )}
             </div>
