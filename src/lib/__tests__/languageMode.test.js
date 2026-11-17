@@ -89,3 +89,21 @@ describe('filterResultsByMode', () => {
     expect(filterResultsByMode([], 'strict')).toEqual([])
   })
 })
+
+describe('filterResultsByMode — modo lenient (listas de temporada)', () => {
+  const sample = [
+    { id: 1, original_language: 'en', origin_country: ['US'], popularity: 20, vote_count: 5000 },  // clásico conocido
+    { id: 2, original_language: 'en', origin_country: ['US'], popularity: 20, vote_count: 40 },    // poco conocido
+    { id: 3, original_language: 'fr', origin_country: ['FR'], popularity: 20, vote_count: 5000 },  // no inglés
+  ]
+  it('sin lenient solo pasan los populares', () => {
+    expect(filterResultsByMode(sample, 'broad').map((x) => x.id)).toEqual([])
+  })
+  it('con lenient pasan los títulos en inglés muy votados', () => {
+    expect(filterResultsByMode(sample, 'broad', { lenient: true }).map((x) => x.id)).toEqual([1])
+  })
+  it('lenient no cambia strict ni all', () => {
+    expect(filterResultsByMode(sample, 'strict', { lenient: true })).toEqual([])
+    expect(filterResultsByMode(sample, 'all', { lenient: true })).toHaveLength(3)
+  })
+})

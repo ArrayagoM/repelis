@@ -40,6 +40,7 @@ const Privacy     = lazy(() => import('./pages/Privacy'))
 const DMCA        = lazy(() => import('./pages/DMCA'))
 const Admin       = lazy(() => import('./pages/Admin'))
 const Terror      = lazy(() => import('./pages/Terror'))
+const Navidad     = lazy(() => import('./pages/Navidad'))
 const Avisos      = lazy(() => import('./pages/Avisos'))
 const Salas       = lazy(() => import('./pages/Salas'))
 const Sala        = lazy(() => import('./pages/Sala'))
@@ -157,6 +158,8 @@ export default function App() {
 
             {/* Sesión de terror (Halloween) */}
             <Route path="/terror" element={<Terror />} />
+            {/* Navidad (15 de noviembre al 6 de enero) */}
+            <Route path="/navidad" element={<Navidad />} />
 
             {/* Biblioteca personal */}
             <Route path="/mi-lista" element={<MiLista />} />

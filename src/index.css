@@ -237,3 +237,19 @@ html.low-end .text-gold-gradient {
 .player-shell.player-immersive .player-stage { aspect-ratio: auto; flex: 1 1 0; min-height: 0; }
 .player-shell.player-immersive .player-body { display: none; }
 .player-backdrop:has(.player-immersive) { padding: 0; align-items: stretch; }
+
+/* ── Nieve (cabeceras navideñas) ───────────────────────── */
+.snow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.snow i {
+  position: absolute; top: -8px; display: block; border-radius: 50%;
+  background: #fff;
+  animation-name: snowfall; animation-timing-function: linear; animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes snowfall {
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(var(--drift, 20px), 560px, 0); }
+}
+body.player-active .snow,
+html.low-end .snow { display: none; }
+@media (prefers-reduced-motion: reduce) { .snow { display: none; } }

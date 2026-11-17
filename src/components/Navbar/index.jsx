@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, Ghost, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree, Bell, Popcorn } from '@phosphor-icons/react'
+import { MagnifyingGlass, FilmSlate, List, X, Coffee, CaretDown, Ghost, TreeEvergreen, DeviceMobile, MapPin, DownloadSimple, BookmarkSimple, UserCircle, ChartLineUp, UsersThree, Bell, Popcorn } from '@phosphor-icons/react'
 import { isStandalone, requestInstall } from '../../lib/install'
 import { fetchSearch } from '../../store/slices/searchSlice'
 import NavSearch from '../NavSearch'
@@ -11,7 +11,7 @@ import LanguageSwitch from '../LanguageSwitch'
 import { StreakChip } from '../Achievements'
 import { SupporterBadge } from '../Supporter'
 import { useAuth } from '../../lib/auth'
-import { isHalloweenSeason } from '../../lib/seasons'
+import { isHalloweenSeason, isChristmasSeason } from '../../lib/seasons'
 import { useUnread } from '../../lib/notifications'
 import { tt, isEnglish } from '../../lib/i18n'
 
@@ -302,6 +302,14 @@ export default function Navbar({ onDonateClick }) {
               </Link>
             )}
 
+            {isChristmasSeason() && (
+              <Link to="/navidad"
+                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-400/35 text-emerald-300 hover:bg-emerald-500/25 transition-all"
+                title={tt("Maratón de Navidad")} aria-label={tt("Navidad")}>
+                <TreeEvergreen size={14} weight="fill" />
+              </Link>
+            )}
+
             <PanelLink />
             <BellLink />
             <AccountLink />
@@ -473,6 +481,12 @@ export default function Navbar({ onDonateClick }) {
                 <Link to="/terror" onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-400/30 text-red-300 text-sm font-semibold">
                   <Ghost size={16} weight="fill" /> {tt("Sesión de terror")}
+                </Link>
+              )}
+              {isChristmasSeason() && (
+                <Link to="/navidad" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-sm font-semibold">
+                  <TreeEvergreen size={16} weight="fill" /> {tt("Navidad")}
                 </Link>
               )}
               <Link to="/cines-cerca" onClick={() => setMenuOpen(false)}

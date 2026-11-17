@@ -156,6 +156,32 @@ export const getHorrorSeries = (page = 1) =>
   api.get('/discover/tv', { params: { with_keywords: '12339|162846|15001|9712|616|12377|3133', sort_by: 'popularity.desc', 'vote_count.gte': 50, page } })
 
 // ════════════════════════════════════════════════════════════════════════
+//  NAVIDAD. Keywords de TMDB: 207317 christmas, 1991 santa claus, 10385 reno, 342557 elfo,
+//  5570 árbol de navidad, 260365 nochebuena, 613 nochevieja, 10115 muñeco de nieve
+// ════════════════════════════════════════════════════════════════════════
+const XMAS = 207317
+const xmasWith = (extra = {}) => (page = 1) =>
+  api.get('/discover/movie', { params: { with_keywords: XMAS, without_genres: 27, sort_by: 'popularity.desc', 'vote_count.gte': 80, page, ...extra } })
+
+export const getChristmasPopular = xmasWith({ 'vote_count.gte': 150 })
+export const getChristmasTop     = xmasWith({ sort_by: 'vote_average.desc', 'vote_count.gte': 1000 })
+export const getChristmasRecent  = (page = 1) => {
+  const from = new Date(Date.now() - 2 * 365 * 86400000).toISOString().slice(0, 10)
+  return xmasWith({ 'release_date.gte': from, 'vote_count.gte': 30 })(page)
+}
+export const getChristmasClassics = xmasWith({ sort_by: 'vote_average.desc', 'vote_count.gte': 300, 'release_date.lte': '1999-12-31' })
+export const getChristmasFamily   = xmasWith({ with_genres: 10751 })
+export const getChristmasComedy   = xmasWith({ with_genres: 35 })
+export const getChristmasRomance  = xmasWith({ with_genres: 10749 })
+export const getChristmasAnimation = xmasWith({ with_genres: 16 })
+export const getChristmasAction   = xmasWith({ with_genres: 28 })
+export const getChristmasHorror   = xmasWith({ with_genres: 27, without_genres: undefined })
+export const getChristmasSanta    = xmasWith({ with_keywords: '1991|10385|342557|10115' })
+export const getChristmasEve      = xmasWith({ with_keywords: '260365|613|5570' })
+export const getChristmasSeries   = (page = 1) =>
+  api.get('/discover/tv', { params: { with_keywords: XMAS, sort_by: 'popularity.desc', 'vote_count.gte': 20, page } })
+
+// ════════════════════════════════════════════════════════════════════════
 //  TV — endpoints clásicos
 // ════════════════════════════════════════════════════════════════════════
 export const getTrendingTV    = (page = 1) => api.get('/trending/tv/week',   { params: { page } })

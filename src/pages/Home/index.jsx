@@ -10,6 +10,7 @@ import { NewEpisodesRow } from '../../components/NewEpisodes'
 import ForYouRow from '../../components/ForYouRow'
 import { CinemaBanner } from '../../components/CinemaTickets'
 import TerrorBanner from '../../components/TerrorBanner'
+import NavidadBanner from '../../components/NavidadBanner'
 import { useLibrary, continueWatching } from '../../lib/library'
 import { usePersonal } from '../../lib/auth'
 import {
@@ -21,7 +22,7 @@ import * as TMDB from '../../api/tmdb'
 import { fetchGenres } from '../../store/slices/genresSlice'
 import { getDeviceCaps } from '../../lib/deviceCaps'
 import { isOut } from '../../lib/releaseStatus'
-import { isHalloweenSeason } from '../../lib/seasons'
+import { isHalloweenSeason, isChristmasSeason } from '../../lib/seasons'
 import { useSEO, useOrgSchema } from '../../lib/useSEO'
 import { tt } from '../../lib/i18n'
 
@@ -60,6 +61,8 @@ export default function Home() {
   const family      = byCategory.family      || { results: [], loading: false }
   const halloween   = isHalloweenSeason()
   const terror      = byCategory.terrorPopular || { results: [], loading: false }
+  const christmas   = isChristmasSeason()
+  const xmas        = byCategory.xmasPopular || { results: [], loading: false }
 
   useEffect(() => {
     // En low-end pedimos SOLO lo esencial (4 endpoints vs 13).
@@ -82,6 +85,7 @@ export default function Home() {
     dispatch(fetchCategory({ key: 'hiddenGems', fetcher: TMDB.getHiddenGems, page: 1 }))
     dispatch(fetchCategory({ key: 'family', fetcher: TMDB.getKidsMovies, page: 1 }))
     if (isHalloweenSeason()) dispatch(fetchCategory({ key: 'terrorPopular', fetcher: TMDB.getHorrorPopular, page: 1 }))
+    if (isChristmasSeason()) dispatch(fetchCategory({ key: 'xmasPopular', fetcher: TMDB.getChristmasPopular, page: 1 }))
     // Películas
     if (!trending.results.length)    dispatch(fetchTrending())
     if (!popular.results.length)     dispatch(fetchPopular())
@@ -133,8 +137,9 @@ export default function Home() {
           <div className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
         </div>
 
-        {/* ── HALLOWEEN (solo en temporada) ── */}
+        {/* ── TEMPORADAS (solo en su época) ── */}
         <TerrorBanner />
+        <NavidadBanner />
 
         {/* ── TU ESPACIO ── */}
         {personal && hasContinue && <ContinueRow />}
@@ -155,6 +160,11 @@ export default function Home() {
         {halloween && (
           <MovieRow title={tt("Sesión de terror")} badge={tt("Halloween")} badgeColor="red" onlyReleased movies={terror.results}
             loading={terror.loading && !terror.results.length} onViewAll={() => navigate('/terror')} />
+        )}
+
+        {christmas && (
+          <MovieRow title={tt("Navidad en Life High")} badge={tt("Navidad")} badgeColor="green" onlyReleased lenient movies={xmas.results}
+            loading={xmas.loading && !xmas.results.length} onViewAll={() => navigate('/navidad')} />
         )}
 
         <MovieRow title={tt("Tendencias")} badge={tt("Esta semana")} onlyReleased movies={trending.results}

@@ -10,11 +10,11 @@ import { tt } from '../../lib/i18n'
 const _LOW_END = typeof window !== 'undefined' && getDeviceCaps().lowEnd
 const ROW_LIMIT = _LOW_END ? 8 : 20
 
-export default function MovieRow({ title, badge, movies = [], loading = false, onViewAll, mediaType = 'movie', badgeColor, onlyReleased = false }) {
+export default function MovieRow({ title, badge, movies = [], loading = false, onViewAll, mediaType = 'movie', badgeColor, onlyReleased = false, lenient = false }) {
   const trackRef = useRef(null)
   // Filtra automáticamente por el modo de idioma activo
   const source = useMemo(() => (onlyReleased ? movies.filter(isOut) : movies), [movies, onlyReleased])
-  const filtered = useLanguageFilter(source)
+  const filtered = useLanguageFilter(source, { lenient })
   const visible = filtered.slice(0, ROW_LIMIT)
 
   // Si después del filtro no queda nada, no mostramos la fila vacía
@@ -30,6 +30,8 @@ export default function MovieRow({ title, badge, movies = [], loading = false, o
     ? 'bg-blue-500/10 border-blue-500/20 text-blue-300'
     : badgeColor === 'red'
     ? 'bg-red-500/10 border-red-500/20 text-red-300'
+    : badgeColor === 'green'
+    ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300'
     : badgeColor === 'purple'
     ? 'bg-purple-500/10 border-purple-500/20 text-purple-300'
     : 'bg-gold/10 border-gold/20 text-gold'

@@ -62,9 +62,9 @@ export const getDiscoverParamsForMode = (mode = getLanguageMode()) => {
 
 /**
  * Filtro cliente para listados que NO son discover (popular, trending, etc.).
- * Devuelve los items que cumplen el modo activo.
+ * Devuelve los items que cumplen el modo activo. `lenient` deja pasar también los títulos en inglés con muchos votos.
  */
-export const filterResultsByMode = (results = [], mode = getLanguageMode()) => {
+export const filterResultsByMode = (results = [], mode = getLanguageMode(), { lenient = false } = {}) => {
   if (mode === 'all' || !results.length) return results
 
   if (mode === 'strict') {
@@ -81,7 +81,9 @@ export const filterResultsByMode = (results = [], mode = getLanguageMode()) => {
     // Heurística: si el título es muy popular y la peli tiene release
     // en MX/AR (lo veríamos en release_dates), asumimos que tiene doblaje.
     // Sin hacer N requests extra, usamos popularidad como proxy:
-    return r.popularity > 50 && r.original_language === 'en'
+    if (r.popularity > 50 && r.original_language === 'en') return true
+    // Listas de temporada (Navidad): los títulos muy conocidos casi siempre tienen doblaje, aunque hoy no estén tan populares
+    return lenient && r.original_language === 'en' && (r.vote_count || 0) >= 300
   })
 }
 
